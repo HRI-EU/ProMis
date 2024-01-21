@@ -1,4 +1,4 @@
-# ProMis - Probabilistic Mission Design using Logic Programming
+# ProMis - Probabilistic Mission Design
 
 The goal of this repository is to provide an implementation and representation of inference on probabilistic logic programs that enables advanced, high level mission design.
 Probabilistic Mission Design (ProMis) aims at giving high-level control over the navigation of vehicles, e.g., to effortlessly integrate local laws and regulations, by employing declarative, probabilistic modeling languages into the navigation process. 
