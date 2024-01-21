@@ -47,7 +47,7 @@ docker run -it promis
 
 ## Documentation
 
-To build the documentation, ensure a full installation with the respective dependencies by running `pip install .[doc]`.
+To build the documentation, ensure a full installation with the respective dependencies by running `pip install ".[doc]"`.
 Then, using the following commands trigger Sphinx to create the documentation.
 
 ```bash
