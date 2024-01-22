@@ -1,3 +1,5 @@
+"""Provides mathematical abstractions for usage within Promis."""
+
 #
 # Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
 #
@@ -6,9 +8,8 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
-set -e
-set -u
-set -o pipefail
+# ProMis
+from promis.models.gaussian import Gaussian
+from promis.models.gaussian_mixture import GaussianMixture
 
-black promis
-ruff check promis --fix
+__all__ = ["Gaussian", "GaussianMixture"]

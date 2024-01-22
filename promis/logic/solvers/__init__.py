@@ -1,3 +1,5 @@
+"""The ProMis logic package provides probabilistic logic program inference."""
+
 #
 # Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
 #
@@ -6,9 +8,8 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
-set -e
-set -u
-set -o pipefail
+# ProMis
+from promis.logic.solvers.multithread_solver import MultithreadSolver
+from promis.logic.solvers.solver import Solver
 
-black promis
-ruff check promis --fix
+__all__ = ["Solver", "MultithreadSolver"]

@@ -1,3 +1,5 @@
+"""The ProMis spaital logic package provides probabilistic atoms for vectorized logic program."""
+
 #
 # Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
 #
@@ -6,9 +8,8 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
-set -e
-set -u
-set -o pipefail
+# ProMis
+from promis.logic.spatial.distance import Distance
+from promis.logic.spatial.over import Over
 
-black promis
-ruff check promis --fix
+__all__ = ["Distance", "Over"]

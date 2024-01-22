@@ -1,3 +1,5 @@
+"""ProMis - Probabilistic Mission Design using Logic Programming."""
+
 #
 # Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
 #
@@ -6,9 +8,13 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
-set -e
-set -u
-set -o pipefail
+__version__ = "0.1.0"
+__author__ = "Simon Kohaut"
 
-black promis
-ruff check promis --fix
+
+def get_author():
+    return __author__
+
+
+def get_version():
+    return __version__

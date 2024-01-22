@@ -1,3 +1,5 @@
+"""The ProMis loaders package provides data loading for various sources."""
+
 #
 # Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
 #
@@ -6,9 +8,7 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
-set -e
-set -u
-set -o pipefail
+# ProMis
+from promis.loaders.osm_loader import OsmLoader
 
-black promis
-ruff check promis --fix
+__all__ = ["OsmLoader"]
