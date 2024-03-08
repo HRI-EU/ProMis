@@ -1,7 +1,7 @@
 # Standard Library
 from multiprocessing import Pool
 from pickle import Pickler, load
-from time import sleep
+from time import sleep, time
 
 from overpy.exception import OverpassGatewayTimeout, OverpassTooManyRequests
 
@@ -118,4 +118,8 @@ class ProMis:
         for over in self.overs.values():
             solver.add_over(over)
 
-        return solver.solve_parallel(n_jobs), 0.0
+        start = time()
+        result = solver.solve_parallel(n_jobs)
+        elapsed = time() - start
+
+        return result, elapsed
