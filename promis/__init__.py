@@ -8,6 +8,9 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
+from promis.promis import ProMis
+
+
 __version__ = "0.1.0"
 __author__ = "Simon Kohaut"
 
@@ -18,3 +21,5 @@ def get_author():
 
 def get_version():
     return __version__
+
+

@@ -11,5 +11,6 @@
 # ProMis
 from promis.logic.solvers.multithread_solver import MultithreadSolver
 from promis.logic.solvers.solver import Solver
+from promis.logic.solvers.spatial_solver import SpatialSolver
 
-__all__ = ["Solver", "MultithreadSolver"]
+__all__ = ["Solver", "MultithreadSolver", "SpatialSolver"]

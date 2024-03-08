@@ -15,7 +15,7 @@ from itertools import product
 # Third Party
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
-from numpy import array, ndarray, sum, uint8, vstack, zeros
+from numpy import array, sum, uint8, vstack, zeros
 from PIL import Image
 from sklearn.preprocessing import MinMaxScaler
 
@@ -31,18 +31,20 @@ class RasterBand:
     """A Cartesian raster-band representing map data concerning a location type.
 
     Args:
-        data: The raster band data
+        resolution: The number of horizontal and vertical pixels
         origin: The polar coordinates of this raster-band's center
         width: The width the raster band stretches over in meters
         height: The height the raster band stretches over in meters
     """
 
-    def __init__(self, data: ndarray, origin: PolarLocation, width: float, height: float):
+    def __init__(
+        self, resolution: tuple[int, int], origin: PolarLocation, width: float, height: float
+    ):
         # Attributes setup
-        self.data = data
         self.origin = origin
         self.width = width
         self.height = height
+        self.data = zeros(resolution)
 
         # Dimension of each pixel in meters
         self.pixel_width = self.width / self.data.shape[0]
@@ -55,11 +57,11 @@ class RasterBand:
         # Precomputes locations of all pixels in Cartesian and polar space
         self.cartesian_locations = {
             index: self.index_to_cartesian(index)
-            for index in product(range(data.shape[0]), range(data.shape[1]))
+            for index in product(range(self.data.shape[0]), range(self.data.shape[1]))
         }
         self.polar_locations = {
             index: self.index_to_polar(index)
-            for index in product(range(data.shape[0]), range(data.shape[1]))
+            for index in product(range(self.data.shape[0]), range(self.data.shape[1]))
         }
 
     @classmethod

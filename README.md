@@ -18,8 +18,7 @@ To do so, run the following commands.
 
 ```bash
 # Install separate pip dependencies
-pip install pyro-ppl graphviz
-pip install --upgrade --force-reinstall --no-deps --no-binary :all: pysdd
+pip install pyro-ppl graphviz git+https://github.com/wannesm/PySDD.git#egg=PySDD
 
 # Clone and install Problog with distributional clauses
 # This contains bugfixes and features that are not part of the official release yet
@@ -44,6 +43,45 @@ cd ProMis
 docker build . -t promis
 docker run -it promis
 ```
+
+## Usage
+
+ProMis can be employed by first deciding the mission's setting and rules in the form of a Hybrid Probabilistic Logic Program.
+Examples for this can be found in the `/models` folder.
+Once the rules have been decided, the `ProMis` class can be used to generate a Probabilistic Mission Landscape (PML) in the relevant area.
+
+```python
+from promis import ProMis
+
+# ProMis Parameters
+dimensions = (1000.0, 1000.0)  # Meters
+resolution = (100, 100)          # Pixels
+spatial_samples = 50           # How many maps to generate to compute statistics
+model = "Park"                 # Hybrid ProbLog to be used
+types = [                      # Which types to load and compute relations for
+    LocationType.PARK,
+    LocationType.PRIMARY,
+    LocationType.SECONDARY,
+    LocationType.TERTIARY,
+]  
+tu_darmstadt = PolarLocation(latitude=49.878091, longitude=8.654052)
+
+# Setup engine
+pmd = ProMis(tu_darmstadt, dimensions, resolution, types, spatial_samples)
+
+# Set parameters that are unrelated to the loaded map data
+# Here, we imagine the operator to be situated at the center of the mission area
+pmd.create_from_location(CartesianLocation(0.0, 0.0, location_type=LocationType.OPERATOR))
+
+# Generate landscape
+with open(f"../models/{model}.pl", "r") as model_file:
+    landscape, time = pmd.generate(logic=model_file.read(), n_jobs=8)
+
+# Show result
+plt.imshow(landscape.data.T)
+```
+
+![Probabilistic Mission Landscape](examples/pml.png)
 
 ## Documentation
 

@@ -13,7 +13,7 @@ from itertools import product
 from pathlib import Path
 
 # Third Party
-from numpy import array, mean, unravel_index, var, zeros, zeros_like
+from numpy import array, mean, unravel_index, var, zeros_like
 from shapely.strtree import STRtree
 
 # ProMis
@@ -79,18 +79,23 @@ class Distance:
 
     def to_distributional_clauses(self) -> str:
         code = ""
-        feature_name = self.location_type.name.lower()
-        for x, y in product(range(self.mean.data.shape[0]), range(self.mean.data.shape[1])):
-            relation = f"distance(row_{x}, column_{y}, {feature_name})"
-
-            # TODO: Dirty fix
-            if self.variance.data[x, y] == 0.0:
-                self.variance.data[x, y] += 0.01
-
-            distribution = f"normal({self.mean.data[x, y]}, {self.variance.data[x, y]})"
-            code += f"{relation} ~ {distribution}.\n"
+        for index in product(range(self.mean.data.shape[0]), range(self.mean.data.shape[1])):
+            code += self.index_to_distributional_clause(index)
 
         return code
+
+    def index_to_distributional_clause(self, index: tuple[int, int]) -> str:
+        feature_name = self.location_type.name.lower()
+        relation = f"distance(row_{index[1]}, column_{index[0]}, {feature_name})"
+
+        # TODO: Find better treatment of zero variance
+        min_variance = 0.001
+        if self.variance.data[index] < min_variance:
+            self.variance.data[index] = min_variance
+
+        distribution = f"normal({self.mean.data[index]}, {self.variance.data[index]})"
+
+        return f"{relation} ~ {distribution}.\n"
 
     @classmethod
     def from_map(
@@ -129,10 +134,10 @@ class Distance:
 
         # Initialize raster-bands for mean and variance
         mean = RasterBand(
-            zeros(resolution), cartesian_map.origin, cartesian_map.width, cartesian_map.height
+            resolution, cartesian_map.origin, cartesian_map.width, cartesian_map.height
         )
         variance = RasterBand(
-            zeros(resolution), cartesian_map.origin, cartesian_map.width, cartesian_map.height
+            resolution, cartesian_map.origin, cartesian_map.width, cartesian_map.height
         )
 
         # Compute parameters of normal distributions for each location
