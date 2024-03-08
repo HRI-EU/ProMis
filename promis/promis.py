@@ -68,19 +68,21 @@ class ProMis:
             # Else recompute and store results
             except FileNotFoundError:
                 # Work on both spatial relations in parallel
-                pool = Pool(2)
-                distance = pool.apply_async(
-                    Distance.from_map,
-                    (self.map, location_type, self.resolution, self.number_of_random_maps),
-                )
-                over = pool.apply_async(
-                    Over.from_map,
-                    (self.map, location_type, self.resolution, self.number_of_random_maps),
-                )
+                with Pool(2) as pool:
+                    distance = pool.apply_async(
+                        Distance.from_map,
+                        (self.map, location_type, self.resolution, self.number_of_random_maps),
+                    )
+                    over = pool.apply_async(
+                        Over.from_map,
+                        (self.map, location_type, self.resolution, self.number_of_random_maps),
+                    )
 
-                # Append results to dictionaries and export as pkl
-                distance_result = distance.get()
-                over_result = over.get()
+                    # Append results to dictionaries
+                    distance_result = distance.get()
+                    over_result = over.get()
+                
+                # Export as pkl
                 if distance_result is not None:
                     self.distances[location_type] = distance_result
                     with open(f"../output/spatial/distance/distance_{extension}.pkl", "wb") as file:
@@ -118,30 +120,3 @@ class ProMis:
             solver.add_over(over)
 
         return solver.solve_parallel(n_jobs), 0.0
-
-
-# ProMis Parameters
-dimensions = (1000, 1000)  # Meters
-resolution = (25, 25)  # Pixels
-spatial_samples = 50  # How many maps to generate to compute statistics
-model = "Park"  # Hybrid ProbLog to be used
-types = [  # Which types to load and compute relations for
-    LocationType.PARK,
-    LocationType.PRIMARY,
-    LocationType.SECONDARY,
-    LocationType.TERTIARY,
-]
-tu_darmstadt = PolarLocation(latitude=49.878091, longitude=8.654052)
-
-# Setup engine
-pmd = ProMis(tu_darmstadt, dimensions, resolution, types, spatial_samples)
-
-# Set relations to operator position
-pmd.create_from_location(CartesianLocation(0.0, 0.0, location_type=LocationType.OPERATOR))
-
-# Generate landscape
-with open(f"../models/{model}.pl") as model_file:
-    landscape, time = pmd.generate(logic=model_file.read(), n_jobs=8)
-
-# Show result
-plt.imshow(landscape.data.T)
