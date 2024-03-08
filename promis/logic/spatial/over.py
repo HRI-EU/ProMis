@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import cast
 
 # Third Party
-from numpy import mean, unravel_index, zeros
+from numpy import mean, unravel_index
 from shapely.strtree import STRtree
 
 # ProMis
@@ -40,18 +40,22 @@ class Over:
 
     def to_distributional_clauses(self) -> str:
         code = ""
-        feature_name = self.location_type.name.lower()
-        for x, y in product(
+        for index in product(
             range(self.probability.data.shape[0]), range(self.probability.data.shape[1])
         ):
-            if self.probability.data[x, y] == 1.0:
-                code += f"over(row_{x}, column_{y}, {feature_name}).\n"
-            else:
-                code += (
-                    f"{self.probability.data[x, y]}::over(row_{x}, column_{y}, {feature_name}).\n"
-                )
+            code += self.index_to_distributional_clause(index)
 
         return code
+
+    def index_to_distributional_clause(self, index: tuple[int, int]) -> str:
+        feature_name = self.location_type.name.lower()
+
+        relation = f"over(row_{index[1]}, column_{index[0]}, {feature_name}).\n"
+
+        if self.probability.data[index] == 1.0:
+            return relation
+        else:
+            return f"{self.probability.data[index]}::{relation}"
 
     def split(self) -> "list[list[Over]] | Over":
         probability_splits = self.probability.split()
@@ -107,7 +111,7 @@ class Over:
 
         # Prepare raster bands
         probability = RasterBand(
-            zeros(resolution), cartesian_map.origin, cartesian_map.width, cartesian_map.height
+            resolution, cartesian_map.origin, cartesian_map.width, cartesian_map.height
         )
 
         # Compute parameters of normal distributions for each location
