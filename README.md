@@ -51,7 +51,9 @@ Examples for this can be found in the `/models` folder.
 Once the rules have been decided, the `ProMis` class can be used to generate a Probabilistic Mission Landscape (PML) in the relevant area.
 
 ```python
+import matplotlib.pyplot as plt
 from promis import ProMis
+from promis.geo import LocationType, PolarLocation, CartesianLocation
 
 # ProMis Parameters
 dimensions = (1000.0, 1000.0)  # Meters

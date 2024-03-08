@@ -3,10 +3,9 @@ from multiprocessing import Pool
 from pickle import Pickler, load
 from time import sleep
 
-import matplotlib.pyplot as plt
 from overpy.exception import OverpassGatewayTimeout, OverpassTooManyRequests
 
-from promis.geo import CartesianLocation, CartesianMap, LocationType, PolarLocation, RasterBand
+from promis.geo import CartesianMap, LocationType, PolarLocation, RasterBand
 from promis.loaders import OsmLoader
 from promis.logic.solvers import SpatialSolver
 from promis.logic.spatial import Distance, Over
@@ -19,8 +18,8 @@ class ProMis:
     def __init__(
         self,
         origin: PolarLocation,
-        dimensions: (float, float),
-        resolution: (int, int),
+        dimensions: tuple[float, float],
+        resolution: tuple[int, int],
         location_types: list[LocationType],
         number_of_random_maps: int,
     ) -> "ProMis":
@@ -106,7 +105,7 @@ class ProMis:
             cartesian_map, location_type, self.resolution, self.number_of_random_maps
         )
 
-    def generate(self, logic: str, n_jobs: int = 1) -> (RasterBand, float):
+    def generate(self, logic: str, n_jobs: int = 1) -> tuple[RasterBand, float]:
         solver = SpatialSolver(
             self.map.origin,
             self.dimensions,
