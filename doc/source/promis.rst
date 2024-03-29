@@ -1,7 +1,7 @@
-Solver
+ProMis
 ======
 
-.. automodule:: promis.logic.solvers.solver
+.. automodule:: promis.promis
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,13 +1,25 @@
+"""The ProMis engine for solving constrained navigation tasks using hybrid probabilistic logic."""
+
+#
+# Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
+#
+# This file is part of ProMis and licensed under the BSD 3-Clause License.
+# You should have received a copy of the BSD 3-Clause License along with ProMis.
+# If not, see https://opensource.org/license/bsd-3-clause/.
+#
+
 # Standard Library
 from multiprocessing import Pool
 from pickle import Pickler, load
-from time import sleep, time
+from time import sleep
 
+# Third Party
 from overpy.exception import OverpassGatewayTimeout, OverpassTooManyRequests
 
+# ProMis
 from promis.geo import CartesianMap, LocationType, PolarLocation, RasterBand
 from promis.loaders import OsmLoader
-from promis.logic.solvers import SpatialSolver
+from promis.logic import Solver
 from promis.logic.spatial import Distance, Over
 
 
@@ -22,7 +34,22 @@ class ProMis:
         resolution: tuple[int, int],
         location_types: list[LocationType],
         number_of_random_maps: int,
+        cache: str = "",
+        timeout: float = 5.0
     ) -> "ProMis":
+        """Setup the ProMis engine.
+
+        Args:
+            origin: Where to center mission in polar coordinates
+            dimensions: The extend of the mission area in meters
+            resolution: Into how many pixels the mission landscape is split up
+            location_types: Which types of geospatial data are relevant to the logic
+            number_of_random_maps: How often to sample from map data in order to
+                compute statistics of spatial relations
+            cache: Where to store or load from computed spatial relations
+            timeout: Timeout between tries to load OpenStreetMaps data
+        """
+
         # Set parameters
         self.dimensions = dimensions
         self.resolution = resolution
@@ -31,7 +58,6 @@ class ProMis:
 
         # Load map data
         self.map = None
-        timeout = "5.0"
         while self.map is None:
             try:
                 self.map = OsmLoader().load_cartesian(
@@ -44,9 +70,9 @@ class ProMis:
         # Setup distance and over relations
         self.distances = dict()
         self.overs = dict()
-        self.compute_distributions()
+        self.compute_distributions(cache)
 
-    def compute_distributions(self):
+    def compute_distributions(self, cache: str = ""):
         for location_type in self.location_types:
             # File identifier from parameters
             extension = (
@@ -58,10 +84,10 @@ class ProMis:
 
             # Load pickle if already exists
             try:
-                with open(f"../output/spatial/distance/distance_{extension}.pkl", "rb") as pkl_file:
+                with open(f"{cache}/distance_{extension}.pkl", "rb") as pkl_file:
                     distance = load(pkl_file)
                     self.distances[location_type] = distance
-                with open(f"../output/spatial/over/over_{extension}.pkl", "rb") as pkl_file:
+                with open(f"{cache}/over_{extension}.pkl", "rb") as pkl_file:
                     over = load(pkl_file)
                     self.overs[location_type] = over
             # Else recompute and store results
@@ -80,15 +106,15 @@ class ProMis:
                     # Append results to dictionaries
                     distance_result = distance.get()
                     over_result = over.get()
-                
+
                 # Export as pkl
                 if distance_result is not None:
                     self.distances[location_type] = distance_result
-                    with open(f"../output/spatial/distance/distance_{extension}.pkl", "wb") as file:
+                    with open(f"{cache}/distance_{extension}.pkl", "wb") as file:
                         Pickler(file).dump(self.distances[location_type])
                 if over_result is not None:
                     self.overs[location_type] = over_result
-                    with open(f"../output/spatial/over/over_{extension}.pkl", "wb") as file:
+                    with open(f"{cache}/over_{extension}.pkl", "wb") as file:
                         Pickler(file).dump(self.overs[location_type])
 
     def create_from_location(self, cartesian_location):
@@ -105,8 +131,20 @@ class ProMis:
             cartesian_map, location_type, self.resolution, self.number_of_random_maps
         )
 
-    def generate(self, logic: str, n_jobs: int = 1) -> tuple[RasterBand, float]:
-        solver = SpatialSolver(
+    def generate(self, logic: str, n_jobs: int = 1, batch_size: int = 1) -> tuple[RasterBand, float, float, float]:
+        """Solve the given ProMis problem.
+
+        Args:
+            - logic: The constraints of the landscape(R, C) predicate, including its definition
+            - n_jobs: How many workers to use in parallel
+            - batch_size: How many pixels to infer at once
+
+        Returns:
+            The Probabilistic Mission Landscape as well as time to
+            generate the code, time to compile and time for inference in seconds.
+        """
+
+        solver = Solver(
             self.map.origin,
             self.dimensions,
             self.resolution,
@@ -118,8 +156,4 @@ class ProMis:
         for over in self.overs.values():
             solver.add_over(over)
 
-        start = time()
-        result = solver.solve_parallel(n_jobs)
-        elapsed = time() - start
-
-        return result, elapsed
+        return solver.solve(n_jobs, batch_size)

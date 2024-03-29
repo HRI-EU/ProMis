@@ -85,14 +85,14 @@ class Distance:
         return code
 
     def index_to_distributional_clause(self, index: tuple[int, int]) -> str:
-        feature_name = self.location_type.name.lower()
-        relation = f"distance(row_{index[1]}, column_{index[0]}, {feature_name})"
-
         # TODO: Find better treatment of zero variance
         min_variance = 0.001
         if self.variance.data[index] < min_variance:
             self.variance.data[index] = min_variance
 
+        # Build code
+        feature_name = self.location_type.name.lower()
+        relation = f"distance(row_{index[1]}, column_{index[0]}, {feature_name})"
         distribution = f"normal({self.mean.data[index]}, {self.variance.data[index]})"
 
         return f"{relation} ~ {distribution}.\n"

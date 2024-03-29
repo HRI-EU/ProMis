@@ -8,4 +8,3 @@ Each logic program is based on various data sources, e.g., geospatial data, weat
    :caption: Modules:
 
    spatial/spatial
-   solvers/solvers

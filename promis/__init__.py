@@ -8,8 +8,8 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
+# ProMis
 from promis.promis import ProMis
-
 
 __version__ = "0.1.0"
 __author__ = "Simon Kohaut"
