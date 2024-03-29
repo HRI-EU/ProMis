@@ -57,7 +57,7 @@ from promis.geo import LocationType, PolarLocation, CartesianLocation
 
 # ProMis Parameters
 dimensions = (1000.0, 1000.0)  # Meters
-resolution = (100, 100)          # Pixels
+resolution = (100, 100)        # Pixels
 spatial_samples = 50           # How many maps to generate to compute statistics
 model = "Park"                 # Hybrid ProbLog to be used
 types = [                      # Which types to load and compute relations for

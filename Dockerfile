@@ -13,7 +13,7 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
 
 ## Git and pip setup ##
 # Get clone of repository
-RUN git clone git@github.com:HRI-EU/ProMis.git
+RUN git clone https://github.com/HRI-EU/ProMis.git
 WORKDIR /ProMis
 
 # Install separate pip dependencies
