@@ -66,7 +66,6 @@ setuptools.setup(
         # => testing and code quality
         #   -> static code analysis
         "black",
-        "pytype",
         "ruff",
         #   -> dynamic code analysis
         "hypothesis",
