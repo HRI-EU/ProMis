@@ -14,6 +14,7 @@ from pickle import Pickler, load
 from time import sleep
 
 # Third Party
+from numpy import ndarray
 from overpy.exception import OverpassGatewayTimeout, OverpassTooManyRequests
 
 # ProMis
@@ -34,7 +35,6 @@ class ProMis:
         resolution: tuple[int, int],
         location_types: list[LocationType],
         number_of_random_maps: int,
-        cache: str = "",
         timeout: float = 5.0
     ) -> "ProMis":
         """Setup the ProMis engine.
@@ -46,7 +46,6 @@ class ProMis:
             location_types: Which types of geospatial data are relevant to the logic
             number_of_random_maps: How often to sample from map data in order to
                 compute statistics of spatial relations
-            cache: Where to store or load from computed spatial relations
             timeout: Timeout between tries to load OpenStreetMaps data
         """
 
@@ -70,15 +69,25 @@ class ProMis:
         # Setup distance and over relations
         self.distances = dict()
         self.overs = dict()
-        self.compute_distributions(cache)
 
-    def compute_distributions(self, cache: str = ""):
+    def compute_distributions(self, covariance: ndarray, cache: str = ""):
+        """Compute distributional clauses.
+        
+        Args:
+            covariance: The covariance matrix to apply to all map features
+            cache: Where to store or load from computed spatial relations 
+        """
+
+        # Apply same uncertainty to all map features
+        self.map.apply_covariance(covariance)
+
         for location_type in self.location_types:
             # File identifier from parameters
             extension = (
                 f"{self.map.width}_{self.map.height}_"
                 + f"{self.resolution[0]}_{self.resolution[1]}_"
                 + f"{self.map.origin.latitude}_{self.map.origin.longitude}_"
+                + f"{self.number_of_random_maps}_"
                 + f"{location_type.name.lower()}"
             )
 
@@ -117,19 +126,8 @@ class ProMis:
                     with open(f"{cache}/over_{extension}.pkl", "wb") as file:
                         Pickler(file).dump(self.overs[location_type])
 
-    def create_from_location(self, cartesian_location):
-        cartesian_map = CartesianMap(
-            self.map.origin, self.map.width, self.map.height, [cartesian_location]
-        )
-
-        location_type = cartesian_location.location_type
-
-        self.distances[cartesian_location.location_type] = Distance.from_map(
-            cartesian_map, location_type, self.resolution, self.number_of_random_maps
-        )
-        self.overs[cartesian_location.location_type] = Over.from_map(
-            cartesian_map, location_type, self.resolution, self.number_of_random_maps
-        )
+    def add_feature(self, feature):
+        self.map.features.append(feature)
 
     def generate(self, logic: str, n_jobs: int = 1, batch_size: int = 1) -> tuple[RasterBand, float, float, float]:
         """Solve the given ProMis problem.

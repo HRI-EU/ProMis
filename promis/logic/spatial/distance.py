@@ -13,7 +13,8 @@ from itertools import product
 from pathlib import Path
 
 # Third Party
-from numpy import array, mean, unravel_index, var, zeros_like
+from numpy import array, clip, mean, unravel_index, var, vectorize
+from scipy.stats import multivariate_normal
 from shapely.strtree import STRtree
 
 # ProMis
@@ -31,27 +32,22 @@ class Distance:
         self.variance = variance
         self.location_type = location_type
 
+        # TODO: Find better treatment of zero variance
+        self.variance.data = clip(self.variance.data, 0.001, None)
+
     def __lt__(self, value: float) -> RasterBand:
         probabilities = RasterBand(
-            zeros_like(self.mean.data), self.mean.origin, self.mean.width, self.mean.height
+            self.mean.data.shape, self.mean.origin, self.mean.width, self.mean.height
         )
 
         for x, y in product(range(self.mean.data.shape[0]), range(self.mean.data.shape[1])):
-            probabilities.data[x, y] = Gaussian(
-                array([[self.mean.data[x, y]]]), array([[self.variance.data[x, y]]])
-            ).cdf(array([value]))
+            probabilities.data[x, y] = Gaussian(self.mean.data[x, y].reshape((1, 1)), self.variance.data[x, y].reshape((1, 1))).cdf(array([value]))
 
         return probabilities
 
     def __gt__(self, value: float) -> RasterBand:
-        probabilities = RasterBand(
-            zeros_like(self.mean.data), self.mean.origin, self.mean.width, self.mean.height
-        )
-
-        for x, y in product(range(self.mean.data.shape[0]), range(self.mean.data.shape[1])):
-            probabilities.data[x, y] = 1 - Gaussian(
-                array([[self.mean.data[x, y]]]), array([[self.variance.data[x, y]]])
-            ).cdf(array([value]))
+        probabilities = self < value
+        probabilities.data = 1 - probabilities.data
 
         return probabilities
 
@@ -85,11 +81,6 @@ class Distance:
         return code
 
     def index_to_distributional_clause(self, index: tuple[int, int]) -> str:
-        # TODO: Find better treatment of zero variance
-        min_variance = 0.001
-        if self.variance.data[index] < min_variance:
-            self.variance.data[index] = min_variance
-
         # Build code
         feature_name = self.location_type.name.lower()
         relation = f"distance(row_{index[1]}, column_{index[0]}, {feature_name})"

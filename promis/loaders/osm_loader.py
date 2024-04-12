@@ -49,6 +49,7 @@ class OsmLoader(SpatialLoader):
             )
             + self.load_polygons("'natural' = 'bay'", bounding_box, LocationType.BAY, is_way=True)
             + self.load_polygons("'building'", bounding_box, LocationType.BUILDING, is_way=True)
+            + self.load_routes("'highway' = 'residential'", bounding_box, LocationType.RESIDENTIAL)
             + self.load_routes("'highway' = 'primary'", bounding_box, LocationType.PRIMARY)
             + self.load_routes("'highway' = 'secondary'", bounding_box, LocationType.SECONDARY)
             + self.load_routes("'highway' = 'tertiary'", bounding_box, LocationType.TERTIARY)
