@@ -1,7 +1,14 @@
 # ProMis - Probabilistic Mission Design
 
-The goal of this repository is to provide an implementation and representation of inference on probabilistic logic programs that enables advanced, high level mission design.
-Probabilistic Mission Design (ProMis) aims at giving high-level control over the navigation of vehicles, e.g., to effortlessly integrate local laws and regulations, by employing declarative, probabilistic modeling languages into the navigation process. 
+This repository implements Probabilistic Mission Design (ProMis), i.e., employing inference over a declarative language (hybrid probabilistic logic programs) to provide a foundation for creating constitutional agents. ProMis aims to give high-level, easy-to-understand, and adaptable control over the navigation process, e.g., to effortlessly integrate local laws with operator requirements and environmental uncertainties into logical and spatial constraints. Using ProMis, scalar fields of the probability of adhering to the agent's constitution across its state-space are obtained and utilized for path planning and trajectory clearance, explaining the impact of and optimizing mission parameters.
+
+For an in-depth discussion of the methods implemented in this repository, please consult the following publications.
+- [Mission Design for Unmanned Aerial Vehicles using Hybrid Probabilistic Logic Programs](https://www.aiml.informatik.tu-darmstadt.de/papers/kohaut2023promis.pdf).
+  Simon Kohaut, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
+  In 26th IEEE International Intelligent Transportation Systems Conference (ITSC).
+- [Towards Probabilistic Clearance, Explanation and Optimization](https://www.aiml.informatik.tu-darmstadt.de/papers/kohaut2024ceo.pdf).
+  Simon Kohaut, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
+  In Proceedings of the 2024 International Conference on Unmanned Aircraft Systems (ICUAS).
 
 ## Installation
 
@@ -46,8 +53,53 @@ docker run -it promis
 
 ## Usage
 
-ProMis can be employed by first deciding the mission's setting and rules in the form of a Hybrid Probabilistic Logic Program.
+ProMis can be employed by first deciding the mission's setting and rules in the form of a Hybrid Probabilistic Logic Program (agent constitution).
 Examples for this can be found in the `/models` folder.
+Here, we will use the following constitution:
+```prolog
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mission parameters and UAV properties
+1.0::standard; 0.0::special.        % Standard license
+initial_charge ~ normal(90, 5).     % UAV battery state and discharge rate
+charge_cost ~ normal(-0.2, 0.1).
+weight ~ normal(2.0, 0.1).          % UAV take-off-mass
+1/10::fog; 9/10::clear.             % Mostly clear weather
+0.0::high_altitude.                 % UAV will not fly at high altitudes
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Mission rules
+% Visual line of sight
+vlos(X, Y) :- 
+    fog, distance(X, Y, operator) < 250;
+    clear, distance(X, Y, operator) < 500.
+
+% Simplified OPEN flight category
+open_flight(X, Y) :- 
+    standard, vlos(X, Y), weight < 25.
+
+% Sufficient charge is defined to be
+% enough to return to the operator
+can_return(X, Y) :-
+    B is initial_charge,
+    O is charge_cost,
+    D is distance(X, Y, operator),
+    0 < B + (2 * O * D).
+
+% Special permit for parks and roads
+permit(X, Y) :- 
+    over(X, Y, park); 
+    distance(X, Y, primary) < 15;
+    distance(X, Y, secondary) < 10;
+    distance(X, Y, tertiary) < 5.
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The Probabilistic Mission Landscape
+landscape(X, Y) :- 
+    permit(X, Y), open_flight(X, Y), can_return(X, Y);
+    special, high_altitude, can_return(X, Y).
+```
+
 Once the rules have been decided, the `ProMis` class can be used to generate a Probabilistic Mission Landscape (PML) in the relevant area.
 
 ```python
@@ -82,8 +134,10 @@ with open(f"../models/{model}.pl", "r") as model_file:
 # Show result
 plt.imshow(landscape.data.T)
 ```
+<img src="https://github.com/HRI-EU/ProMis/blob/main/examples/pml.png" width="256">
 
-![Probabilistic Mission Landscape](examples/pml.png)
+Note that each point in this landscape expresses an i.i.d. probability of the constitution being adhered to at that location.
+We can then integrate this landscape into the trajectory planning process, search for the most optimal mission setting or explain how mission parameters influence the obtained routes. 
 
 ## Documentation
 
