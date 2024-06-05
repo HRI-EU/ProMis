@@ -1,4 +1,8 @@
-# ProMis - Probabilistic Mission Design
+<p align="center">
+  <img src="https://github.com/HRI-EU/ProMis/blob/main/logo.png" width=512/>
+</p>
+
+# Probabilistic Mission Design
 
 This repository implements Probabilistic Mission Design (ProMis), i.e., employing inference over a declarative language (hybrid probabilistic logic programs) to provide a foundation for creating constitutional agents. ProMis aims to give high-level, easy-to-understand, and adaptable control over the navigation process, e.g., to effortlessly integrate local laws with operator requirements and environmental uncertainties into logical and spatial constraints. Using ProMis, scalar fields of the probability of adhering to the agent's constitution across its state-space are obtained and utilized for path planning and trajectory clearance, explaining the impact of and optimizing mission parameters.
 
