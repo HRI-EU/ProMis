@@ -381,7 +381,7 @@ class CartesianLocation(Location):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
-            covariance=array([degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]).reshape((2,2))
+            covariance=array([degrees(meters_to_radians(self.distribution.covariance))])
             if self.distribution is not None
             else None,
         )
