@@ -369,8 +369,8 @@ class CartesianLocation(Location):
                     "Need to give an explicit origin when the instance does not have one!"
                 )
             origin = self.origin
-        elif self.origin is not None:
-            raise ValueError("Provided an explicit origin while the instance already has one!")
+        elif self.origin is not None and origin is not self.origin:
+            raise ValueError("Provided an explicit origin while the instance already has a different one!")
 
         # Convert to polar coordinates
         longitude, latitude = origin.projection(self.east, self.north, inverse=True)
@@ -381,7 +381,7 @@ class CartesianLocation(Location):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
-            covariance=array([degrees(meters_to_radians(self.distribution.covariance))])
+            covariance=array([degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]).reshape((2,2))
             if self.distribution is not None
             else None,
         )
