@@ -11,14 +11,16 @@ in WGS84 and local coordinate frames."""
 
 # Standard Library
 from typing import Any, TypeVar
+from math import degrees, radians
 
 # Third Party
-from numpy import array, isfinite, ndarray, vstack
+from numpy import array, isfinite, ndarray, vstack, array
 from shapely.geometry import LineString
 
 # ProMis
 from promis.geo.geospatial import Geospatial, LocationType
 from promis.geo.location import CartesianLocation, PolarLocation
+from promis.geo.helpers import meters_to_radians, radians_to_meters
 from promis.models import Gaussian
 
 #: Helper to define <Polar|Cartesian>Location operatios within base class
@@ -159,6 +161,9 @@ class PolarRoute(Route):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
+            covariance=radians_to_meters(array([radians(degree) for degree in self.distribution.covariance.reshape(4)]).reshape(2, 2))
+            if self.distribution is not None
+            else None,
         )
 
     @classmethod
@@ -260,6 +265,9 @@ class CartesianRoute(Route):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
+            covariance=array([degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]).reshape(2, 2)
+            if self.distribution is not None
+            else None,
         )
 
     @classmethod

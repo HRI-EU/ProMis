@@ -11,18 +11,20 @@ coordinates using shapely."""
 
 # Standard Library
 from typing import Any, TypeVar
+from math import degrees, radians
 
 # Third Party
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path
-from numpy import asarray, isfinite, ndarray, vstack
+from numpy import asarray, isfinite, ndarray, vstack, array
 from shapely.geometry import Polygon as ShapelyPolygon
 
 # ProMis
 from promis.geo.geospatial import Geospatial, LocationType
 from promis.geo.location import CartesianLocation, PolarLocation
 from promis.models import Gaussian
+from promis.geo.helpers import radians_to_meters, meters_to_radians
 
 #: Helper to define <Polar|Cartesian>Location operatios within base class
 DerivedPolygon = TypeVar("DerivedPolygon", bound="Polygon")
@@ -226,11 +228,13 @@ class PolarPolygon(Polygon):
         return CartesianPolygon(
             [location.to_cartesian(origin) for location in self.locations],
             [[location.to_cartesian(origin) for location in hole] for hole in self.holes],
-            self.location_type,
-            self.name,
-            self.identifier,
-            self.covariance,
-            origin,
+            location_type=self.location_type,
+            name=self.name,
+            identifier=self.identifier,
+            covariance=radians_to_meters(array([radians(degree) for degree in self.distribution.covariance.reshape(4)]).reshape(2, 2))
+            if self.distribution is not None
+            else None,
+            origin=origin,
         )
 
     def __repr__(self) -> str:
@@ -380,6 +384,9 @@ class CartesianPolygon(Polygon):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
+            covariance=array([degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]).reshape(2, 2)
+            if self.distribution is not None
+            else None,
         )
 
     def plot(self, axis, **kwargs) -> None:
