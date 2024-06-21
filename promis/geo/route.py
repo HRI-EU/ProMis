@@ -246,8 +246,8 @@ class CartesianRoute(Route):
                     "Need to give an explicit origin when the instance does not have one!"
                 )
             origin = self.origin
-        elif self.origin is not None:
-            raise ValueError("Provided an explicit origin while the instance already has one!")
+        elif self.origin is not None and origin is not self.origin:
+            raise ValueError("Provided an explicit origin while the instance already has a different one!")
 
         # convert to cartesian
         coordinates = self.to_numpy()

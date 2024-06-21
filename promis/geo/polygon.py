@@ -367,11 +367,11 @@ class CartesianPolygon(Polygon):
                     "You need to provide an explicit origin when the instance does not have one"
                 )
             origin = self.origin
-        elif self.origin is not None:
-            raise ValueError("You provided an explicit origin while the instance already has one")
+        elif self.origin is not None and origin is not self.origin:
+            raise ValueError("You provided an explicit origin while the instance already has a different one")
 
         # Hole locations to polar
-        holes = [[location.to_cartesian(origin) for location in hole] for hole in self.holes]
+        holes = [[location.to_polar(origin) for location in hole] for hole in self.holes]
 
         # Return appropriate Polygon in polar coordinates
         return PolarPolygon(
