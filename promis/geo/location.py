@@ -260,7 +260,7 @@ class PolarLocation(Location):
             name=self.name,
             identifier=self.identifier,
             origin=origin,
-            covariance=array([radians_to_meters(radians(self.distribution.covariance))])
+            covariance=radians_to_meters(array([radians(degree) for degree in self.distribution.covariance.reshape(4)]).reshape(2, 2))
             if self.distribution is not None
             else None,
         )
@@ -381,7 +381,7 @@ class CartesianLocation(Location):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
-            covariance=array([degrees(meters_to_radians(self.distribution.covariance))])
+            covariance=array([degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]).reshape(2, 2)
             if self.distribution is not None
             else None,
         )
