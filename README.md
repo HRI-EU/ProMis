@@ -6,25 +6,25 @@
 
 This repository implements Probabilistic Mission Design (ProMis), i.e., employing inference over a declarative language (hybrid probabilistic logic programs) to provide a foundation for creating constitutional agents. ProMis aims to give high-level, easy-to-understand, and adaptable control over the navigation process, e.g., to effortlessly integrate local laws with operator requirements and environmental uncertainties into logical and spatial constraints. Using ProMis, scalar fields of the probability of adhering to the agent's constitution across its state-space are obtained and utilized for path planning and trajectory clearance, explaining the impact of and optimizing mission parameters.
 
-For an in-depth discussion of the methods implemented in this repository, please consult the following publications.
-- [Mission Design for Unmanned Aerial Vehicles using Hybrid Probabilistic Logic Programs](https://www.aiml.informatik.tu-darmstadt.de/papers/kohaut2023promis.pdf).
+Please consult the following publications for an in-depth discussion of the methods implemented in this repository.
+- [Mission Design for Unmanned Aerial Vehicles using Hybrid Probabilistic Logic Programs](https://arxiv.org/abs/2406.03454).
   Simon Kohaut, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
   In 26th IEEE International Intelligent Transportation Systems Conference (ITSC).
-- [Towards Probabilistic Clearance, Explanation and Optimization](https://www.aiml.informatik.tu-darmstadt.de/papers/kohaut2024ceo.pdf).
+- [Towards Probabilistic Clearance, Explanation and Optimization](https://arxiv.org/abs/2406.15088).
   Simon Kohaut, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
   In Proceedings of the 2024 International Conference on Unmanned Aircraft Systems (ICUAS).
 
 ## Installation
 
 First, clone the repository to create a local workspace using `git clone git@github.com:HRI-EU/ProMis.git`.
-It is recommandable to employ a `Python virtualenv` or similar in order to contain the installed packages in their own space:
+It is recommended to employ a `Python virtualenv` or similar to contain the installed packages in their own space:
 
 ```bash
 python -m venv venv
 source venv/bin/activate
 ```
 
-Further, we need to install `Problog` with support for Distributional Clauses (DC) and Sentential Decision Diagrams (SDD).
+Further, we must install `Problog` with support for Distributional Clauses (DC) and Sentential Decision Diagrams (SDD).
 To do so, run the following commands.
 
 ```bash
@@ -58,7 +58,7 @@ docker run -it promis
 ## Usage
 
 ProMis can be employed by first deciding the mission's setting and rules in the form of a Hybrid Probabilistic Logic Program (agent constitution).
-Examples for this can be found in the `/models` folder.
+Examples of this can be found in the `/models` folder.
 Here, we will use the following constitution:
 ```prolog
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -146,14 +146,14 @@ We can then integrate this landscape into the trajectory planning process, searc
 ## Documentation
 
 To build the documentation, ensure a full installation with the respective dependencies by running `pip install ".[doc]"`.
-Then, using the following commands trigger Sphinx to create the documentation.
+Then, using the following commands, trigger Sphinx to create the documentation.
 
 ```bash
 cd doc
 make html
 ```
 
-To view the documentation, open the file `ProMis/doc/build/html/index.html` with the browser of your choice.
+To view the documentation, open the file `ProMis/doc/build/html/index.html` using the browser of your choice.
 
 ## Quality Assurance
 
