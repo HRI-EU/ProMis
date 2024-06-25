@@ -11,6 +11,9 @@
 # Standard Library
 from copy import deepcopy
 from multiprocessing import Pool
+from pickle import Pickler, load
+from time import sleep
+from pathlib import Path
 
 # Third Party
 from numpy import array
@@ -21,6 +24,7 @@ from promis.geo import CartesianCollection
 from promis.logic import Solver
 
 from .star_map import StaRMap
+from promis.logic.spatial import Distance, Over, Depth
 
 
 class ProMis:

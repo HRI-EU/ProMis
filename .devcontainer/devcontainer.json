@@ -1,0 +1,30 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/alpine
+{
+	"name": "ProMis Development",
+	// "image": "python:3.11",
+	// "postCreateCommand": "apt-get update -qq && apt-get install libsqlite3-mod-spatialite swi-prolog -yqq && pip install -r requirements.txt && problog install",
+	"build": {
+		"dockerfile": "../Dockerfile",
+		"context": ".."
+	},
+	// "postCreateCommand": "pip install -r requirements.txt",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-toolsai.jupyter",
+				"ms-python.python",
+				"GitHub.copilot",
+				"rebornix.prolog",
+				"mechatroner.rainbow-csv",
+				"tamasfe.even-better-toml",
+				"charliermarsh.ruff"
+			],
+			"settings": {
+				"files.associations": {
+					"*.pl": "prolog"
+				}
+			}
+		}
+	}
+}
