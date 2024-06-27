@@ -21,4 +21,4 @@ status(Ship, 'special') :- status(Ship, 13); status(Ship, 14); status(Ship, 15).
 type(Ship, 'not available') :- type(Ship, 0).
 % ... this is complicated
 
-% carge seems to redundant with type
+% The cargo type seems to redundant with type

@@ -11,12 +11,10 @@ from itertools import product
 from pathlib import Path
 
 # Third Party
-from numpy import array, clip, mean, unravel_index, var, vectorize, full_like
-from scipy.stats import multivariate_normal
-from shapely.strtree import STRtree
+from numpy import array, clip
 
 # ProMis
-from promis.geo import CartesianLocation, CartesianMap, LocationType, PolarMap, RasterBand
+from promis.geo import CartesianMap, LocationType, PolarMap, RasterBand
 from promis.models import Gaussian
 
 
@@ -27,6 +25,8 @@ class Depth:
         # Setup attributes
         self.mean = mean
         self.variance = variance
+
+        # self.location_type = LocationType.WATER
 
         # TODO: Find better treatment of zero variance
         self.variance.data = clip(self.variance.data, 0.001, None)
@@ -62,7 +62,7 @@ class Depth:
 
     def index_to_distributional_clause(self, index: tuple[int, int]) -> str:
         # Build code
-        feature_name = self.location_type.name.lower()
+        # feature_name = self.location_type.name.lower()
         relation = f"depth(row_{index[1]}, column_{index[0]})"
         distribution = f"normal({self.mean.data[index]}, {self.variance.data[index]})"
 
@@ -109,4 +109,4 @@ class Depth:
         variance.data[:] = 0.5
 
         # Create and return Distance object
-        return cls(mean, variance, location_type)
+        return cls(mean, variance)

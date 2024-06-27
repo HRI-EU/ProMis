@@ -1,0 +1,3 @@
+ship_name,time,lat,lon,sog,cog,heading,vessel_type,vessel_status,length,width,draft,cargo,class
+ship_367121040,100,41.90694,-80.78465,0.0,0.0,359.0,70,1,193,20,8.3,0,A
+ship_367121040,101,41.90694,-80.78465,0.1,0.0,359.0,70,1,193,20,8.3,0,A

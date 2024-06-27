@@ -17,7 +17,7 @@ from problog.tasks.dcproblog.solver import InferenceSolver
 
 # ProMis
 from promis.geo import PolarLocation, RasterBand
-from promis.logic.spatial import Distance, Over, Depth
+from promis.logic.spatial import Depth, Distance, Over
 
 
 class Solver:

@@ -16,6 +16,7 @@ time(Ship, X) :- ais_report(Ship, X, _, _, _, _, _, _, _, _, _, _, _, _).
 0.95:: sog_reported(Ship, X) :- ais_report(Ship, _, _, _, X, _, _, _, _, _, _, _, _, _).
 0.99:: type(Ship, X) :- ais_report(Ship, _, _, _, _, _, _, X, _, _, _, _, _, _).
 0.95:: status(Ship, X) :- ais_report(Ship, _, _, _, _, _, _, _, X, _, _, _, _, _).
+draft(Ship, d) :- ais_report(Ship, _, _, _, _, _, _, _, _, _, _, d, _, _).  % in reality, this is uncertain
 % ... this is incomplete
 
 % Ship data interpreatation
@@ -23,65 +24,71 @@ time(Ship, X) :- ais_report(Ship, X, _, _, _, _, _, _, _, _, _, _, _, _).
 :- consult('prolog_lib/ais_parsing.pl').
 
 % we trust some data only somewhat. We could also make this a parameter to a distribution
-% sog(Ship, X) ~ normal(X, 0.1), reported_sog(Ship, X).
+% sog(Ship) ~ normal(X, 0.1), reported_sog(Ship, X).
 
 % Weather information
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-wind_speed ~ normal(25, 5).
-wind_direction ~ uniform(0, 360).
+% Comment: The Weibull is appropriate as a prior distribution for wind speed.
+% However, we do have some observation with some uncertainty.
+% https://www.reuk.co.uk/wordpress/wind/wind-speed-distribution-weibull
+% https://en.wikipedia.org/wiki/Weibull_distribution
+wind_speed(X, Y) ~ weibull(2, 8). % This could also be locationd dependant
+% We do not explicitly model wind_direction, since it has no large influence on the ship's movement.
+
+stormy(X, Y) :- wind_speed(X, Y) > 20.
+
+expected_waves(X, Y) ~ normal(0.5, 0.2) :- not stormy(X, Y).
+expected_waves(X, Y) ~ normal(2, 0.5) :- stormy(X, Y).
+
+% The surrounding landscape
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+anchoring_ground(X, Y) :- over(X, Y, 'anchoring').  % TODO this is not nessesary?
+% ... this is loaded from the chart data
+
+over(X, Y, 'shipping_lane_east').
+% ... this is loaded from the chart data
+shipping_lane(X, Y, 'east') :- over(X, Y, 'shipping_lane_east').
+% ... same for other directions
+shipping_lane(X, Y) :- shipping_lane(X, Y, _).
+
+indetermined(X, Y) :- not anchoring_ground(X, Y), not shipping_lane(X, Y).
+
+% -5 means 5m below mean sea level
+% Positive depths are fine, thats actually what we call land area
+chart_depth(X, Y) ~ normal(-5, 0.5).
+% ... this is loaded from the chart data
+
+% Again, negative depths are fine, this gets added to chart_depth witht he same sign
+tide ~ normal(0.4, 0.1).
+
+% Our ship
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+% TODO: there is not egecontric view, we model this for all ships!
+this_draft ~ normal(5, 0.5).
+
+prev_speed ~ finite([1.0:17.3]).  % this maybe needs to be a placeholder for the program template?
+speed ~ finite([1.0:17.6]).  % this maybe needs to be a placeholder for the program template?
+
+heading('east').  % determined by the ship's compass
 
 % The actual model
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-% proclaimed_depth(waterway_1) :- 6.
-% depth(waterway) ~
-%     wind_speed < 30,
-%     normal(proclaimed_depth(waterway_1), 0.1)
-%     ;
-%     wind_speed >= 30,
-%     normal(proclaimed_depth(waterway_1), 0.4) .
+is_safe_depth(X, Y) :- D + T + this_draft + expected_waves < 0.5, chart_depth(X, Y, D), tide(X, Y, T).
 
-% % how to model that this is missing? some prior based on the ship type?
-% announced_draft(vessel_1) ~ normal(3, 0.001).  % this is from a measurement
-% announced_draft(vessel_1) ~ normal(3, 5). % without depth, we use a prior (-> learn this from data)
-% ...
-% draft(vessel_1) ~
-%     normal(announced_draft(vessel_1), 0.75).
+0.8::was_anchoring :- prev_speed < 0.2.
+0.8::is_anchoring :- speed < 0.2.
 
-% 0.9::anchoring(vessel_1).
-% ...
-% in_movement(vessel_1) :- \+anchoring(vessel_1).
+is_legal :- indetermined(X, Y).  % You can go anywhere where there are no special rules
+is_legal :- anchoring_ground, speed < 10.0.
+is_legal :- shipping_lane(curr_X, curr_Y, H), heading(H).
 
-% % emergency vessels have different behaviour
+is_safe :- is_safe_depth, not extremely_stormy(curr_X, curr_Y).
 
-% % Example statements
-% will_follow_waterway(vessel, waterway) :-
-%     depth(waterway_1) >= draft(vessel_1) + 0.5,
-%     distance(vessel, other_vessel) > 100,
-%     abs(heading(vessel) - alignment(waterway)) < 10,
-%     (
-%         is_following(vessel, waterway),
-%         ;
-%         \+is_following(vessel, waterway),
-%         in_movement(vessel_1)
-%     ) .
-
-% % in the end, we need:
-% action(vessel_1, ?).
-% % -> could be follow waterway 1, follow waterway 2,
-% % anchor, change course, dock
+likely_behaviour :- is_safe, is_legal.
 
 % Queries
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-query(status(ship_367121040, 'at anchor')).
-
-% ####
-
-% # model this as independent for fast and simple inference
-% anchoring(Ship, Lat, Lon) :- is_legal, makes_sense, is_safe.
-% follow_lane :- is_legal, makes_sense, is_safe.
-% ...
-
-% # query the entire landscape at one time point, make path search over the entire landscape,
-% # assuming it is static for the time being
-% query(anchoring(ship_367121040, -, -)).
+% query(likely_behaviour(ship_367121040)).

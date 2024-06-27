@@ -11,9 +11,9 @@
 # Standard Library
 from copy import deepcopy
 from multiprocessing import Pool
+from pathlib import Path
 from pickle import Pickler, load
 from time import sleep
-from pathlib import Path
 
 # Third Party
 from numpy import array
@@ -25,10 +25,13 @@ from promis.logic import Solver
 
 from .star_map import StaRMap
 from promis.logic.spatial import Distance, Over, Depth
+from promis.geo import LocationType, PolarLocation, RasterBand
+from promis.loaders import OsmLoader
+from promis.logic import Solver
+from promis.logic.spatial import Depth, Distance, Over
 
 
 class ProMis:
-
     """The ProMis engine to create Probabilistic Mission Landscapes."""
 
     def __init__(self, star_map: StaRMap) -> "ProMis":
