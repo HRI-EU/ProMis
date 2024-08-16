@@ -22,6 +22,7 @@ from shapely.geometry import Polygon as ShapelyPolygon
 
 # ProMis
 from promis.geo.geospatial import Geospatial
+from promis.geo.geospatial import Geospatial, LocationType
 from promis.geo.helpers import meters_to_radians, radians_to_meters
 from promis.geo.location import CartesianLocation, PolarLocation
 from promis.models import Gaussian
@@ -128,7 +129,6 @@ class Polygon(Geospatial):
 
 
 class PolarPolygon(Polygon):
-
     """A polygon based on WGS84 coordinates.
 
     An object with only a single point may be represented by
@@ -258,7 +258,6 @@ class PolarPolygon(Polygon):
 
 
 class CartesianPolygon(Polygon):
-
     """A cartesian polygon based on local coordinates with an optional global reference.
 
     Examples:
@@ -359,6 +358,14 @@ class CartesianPolygon(Polygon):
         assert len(data.shape) == 2
         assert data.shape[0] == 2
         assert isfinite(data).all()
+
+        # Transform the holes too, if given
+        if args and isinstance(args[0], list):
+            args[0] = [[CartesianLocation(x, y) for x, y in hole.T] for hole in args[0]]
+        elif "holes" in kwargs:
+            kwargs["holes"] = [
+                [CartesianLocation(x, y) for x, y in hole.T] for hole in kwargs["holes"]
+            ]
 
         # Return appropriate polygon type
         return cls(

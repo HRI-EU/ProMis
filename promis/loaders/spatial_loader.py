@@ -17,7 +17,6 @@ from promis.geo import CartesianLocation, CartesianMap, PolarLocation, PolarMap
 
 
 class SpatialLoader(ABC):
-
     """A base class for loaders of geospatial objects from differents sources and interfaces."""
 
     def __init__(self, origin: PolarLocation, dimensions: tuple[float, float]):

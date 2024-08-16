@@ -7,6 +7,7 @@
 #
 
 # Standard Library
+from copy import deepcopy
 from itertools import product
 from pathlib import Path
 
@@ -14,22 +15,35 @@ from pathlib import Path
 from numpy import array, clip
 
 # ProMis
-from promis.geo import CartesianMap, LocationType, PolarMap, RasterBand
+from promis.geo import (
+    CartesianGeometry,
+    CartesianMap,
+    CartesianPolygon,
+    LocationType,
+    PolarMap,
+    RasterBand,
+)
 from promis.models import Gaussian
 
 
 class Depth:
-    """Models water depth. Eventually to be used as: `depth(location) < 5`."""
+    """Models water depth. Eventually to be used as: `depth(location) < -2`."""
 
-    def __init__(self, mean: RasterBand, variance: RasterBand) -> None:
+    _MIN_ALLOWED_VARIANCE: float = 0.01
+
+    def __init__(self, mean: RasterBand, variance: RasterBand | float = 0.25) -> None:
         # Setup attributes
         self.mean = mean
-        self.variance = variance
 
-        # self.location_type = LocationType.WATER
-
-        # TODO: Find better treatment of zero variance
-        self.variance.data = clip(self.variance.data, 0.001, None)
+        if isinstance(variance, RasterBand):
+            self.variance = variance
+            # TODO: Find better treatment of zero variance
+            self.variance.data = clip(self.variance.data, Depth._MIN_ALLOWED_VARIANCE, None)
+        else:
+            if variance < Depth._MIN_ALLOWED_VARIANCE:
+                raise ValueError(f"Variance must be at least {Depth._MIN_ALLOWED_VARIANCE}.")
+            self.variance = deepcopy(self.mean)
+            self.variance.data[:] = variance
 
     def __lt__(self, value: float) -> RasterBand:
         probabilities = RasterBand(
@@ -73,40 +87,66 @@ class Depth:
         cls,
         map_: PolarMap | CartesianMap,
         resolution: tuple[int, int],
-        number_of_samples: int = 50,
+        variance: RasterBand | float = 0.25,
     ) -> "Depth | None":
-        # Setup attributes
+        # Setup the data source
         cartesian_map = map_ if isinstance(map_, CartesianMap) else map_.to_cartesian()
-
-        location_type = LocationType.WATER
 
         # If map is empty return
         if cartesian_map.features is None:
             return None
 
         # Get all relevant features
+        location_types = {LocationType.LAND, LocationType.WATER}
         features = [
-            feature for feature in cartesian_map.features if feature.location_type == location_type
+            feature
+            for feature in cartesian_map.features
+            if feature.location_type in location_types and isinstance(feature, CartesianPolygon)
         ]
         if not features:
             return None
 
         mean = RasterBand.from_map(
-            CartesianMap(
-                origin=cartesian_map.origin,
-                width=cartesian_map.width,
-                height=cartesian_map.height,
-                features=features,
-            ),
-            location_type,
-            resolution,
+            map=cartesian_map,
+            location_types=location_types,
+            resolution=resolution,
+            feature_to_value=feature_to_depth,
         )
+        mean.data = mean.data.T  # TODO: Understand why this is necessary
 
-        # Initialize raster-bands for mean and variance
-        variance = RasterBand(
-            resolution, cartesian_map.origin, cartesian_map.width, cartesian_map.height
-        )
-        variance.data[:] = 0.5
+        # Create and return the new object
+        return cls(mean=mean, variance=variance)
 
-        # Create and return Distance object
-        return cls(mean, variance)
+
+def feature_to_depth(feature: CartesianGeometry, land_height: float = 10) -> float:
+    """Extracts the depth from a feature, if present.
+
+    Args:
+        feature: The feature to extract the depth from.
+            Only :class:`CartesianPolygon` s are supported.
+        land_height: The height of the land, if the feature is not a water feature.
+
+    Returns:
+        The depth of the feature in meters. 5 meters below sea level would be returned as `-5`.
+        Set to `land_height` for land features (usually positive values).
+
+    Raises:
+        NotImplementedError: If the feature is not a :class:`CartesianPolygon` or if
+            the location type is neither `LocationType.WATER` nor `LocationType.LAND`.
+    """
+    match feature:
+        case CartesianPolygon():
+            match feature.location_type:
+                case LocationType.WATER:
+                    # Formatted as 'US4MA23M#0226023E40DAFB90 (Depth=1.8m): "---"'
+                    # We parse the depth from the name of the feature:
+                    return -float(feature.name.split("Depth=")[1].split("m")[0])
+                case LocationType.LAND:
+                    # We could use LNDELV for hight contours, but we don't really care about that now
+                    return land_height
+                case _:
+                    raise NotImplementedError(
+                        f"Cannot handle location type {feature.location_type} of feature {feature}"
+                    )
+        case _:
+            raise NotImplementedError(f"Cannot handle geometry type {type(feature)}")
