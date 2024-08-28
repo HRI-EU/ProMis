@@ -48,7 +48,7 @@
     "ignorePatterns": [
       "App.test.js",
       "rhill-voronoi-core.min.js",
-      "src/lib/*"
+      "src/libs/*"
     ]
   },
   "browserslist": {

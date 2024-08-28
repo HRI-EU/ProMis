@@ -27,6 +27,6 @@ module.exports = {
     "plugins": [
         "react"
     ],
-    "ignorePatterns": ["App.test.js", "rhill-voronoi-core.min.js", "src/lib/*"],
+    "ignorePatterns": ["App.test.js", "rhill-voronoi-core.min.js", "src/libs/*"],
     "rules": {}
 }

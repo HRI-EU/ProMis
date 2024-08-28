@@ -13,15 +13,23 @@ The project is based on React.js and Leaflet.
     - [ProMis](https://github.com/HRI-EU/ProMis) for Probabilistic Mission Design.
     - [FastAPI](https://fastapi.tiangolo.com/) for the backend server.
 
-You can then start the backend server with:
+You can then start the backend server with the following script:
 
-### `fastapi run ./backend/main.py`
+```
+cd backend
+fastapi run ./backend/main.py
+```
 
-In the frontend project directory, you can run:
+The backend now opens in port 8000.
 
-### `npm start`
+The following script will then start the frontend:
 
-Runs the app in the development mode.\
+```
+cd frontend
+npm run start
+```
+
+It runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
 The page will reload when you make changes.\
@@ -68,7 +76,7 @@ Geojson can be exported in the left sidebar for all the layers. You can also cho
 
 ### run a model
 
-dc-problog models can be imported in the bottom bar. This will display the code and highlight it. You can configure your run by selecting an origin, height and width of the mission. The resolution can also be configure to have better precision.
+Dc-problog models can be imported in the bottom bar. This will display the code and highlight it. You can configure your run by selecting an origin, height and width of the mission. The resolution can also be configure to have better precision.
 
 ## Add and Remove Markers
 
