@@ -11,15 +11,16 @@ coordinates using shapely."""
 
 # Standard Library
 from abc import ABC
+from pickle import dump, load
 from typing import Any, TypeVar
 
 # Third Party
 from geojson import Feature, FeatureCollection, dumps
 from numpy import ndarray
+from shapely import STRtree
 
 # ProMis
 from promis.geo.location import CartesianLocation, PolarLocation
-from promis.geo.location_type import LOCATION_STYLES, LocationType
 from promis.geo.polygon import CartesianPolygon, PolarPolygon
 from promis.geo.route import CartesianRoute, PolarRoute
 
@@ -33,27 +34,26 @@ class Map(ABC):
 
     Args:
         origin: The origin point of this map
-        width: The width of the map in meters
-        height: The height of the map in meters
         features: A list of features that should be contained by this map
     """
 
     def __init__(
         self,
         origin: PolarLocation,
-        width: float,
-        height: float,
         features: list[Any] | None = None,
     ) -> None:
-        # Assertion on arguments
-        assert width > 0, "A map's width in meters shall never be less than or equal to 0!"
-        assert height > 0, "A map's height in meters shall never be less than or equal to 0!"
-
         # Attributes setup
         self.origin = origin
-        self.width = width
-        self.height = height
         self.features: list[Any] | None = features if features is not None else []
+
+    @staticmethod
+    def load(path) -> "Map":
+        with open(path, "rb") as file:
+            return load(file)
+
+    def save(self, path):
+        with open(path, "wb") as file:
+            dump(self, file)
 
     def is_valid(self) -> bool:
         """Whether this map contains only valid polygonal shapes according to :mod:`shapely`.
@@ -68,8 +68,33 @@ class Map(ABC):
 
         return True
 
+    def filter(self, location_type: str) -> DerivedMap:
+        """Get a map with only features of the given type.
+
+        Args:
+            location_type: The type of locations to filter for
+
+        Returns:
+            A map that only contains features of the given type
+        """
+
+        return type(self)(
+            self.origin,
+            [feature for feature in self.features if feature.location_type == location_type],
+        )
+
+    def to_rtree(self) -> STRtree | None:
+        """Convert this map into a Shapely STRtree for efficient spatial queries.
+
+        Returns:
+            The Shapely STRtree containing this map's features
+        """
+
+        # Construct an STR tree with the geometry of this map
+        return STRtree([feature.geometry for feature in self.features])
+
     def to_geo_json(
-        self, location_type: LocationType | None = None, indent: int | str | None = None, **kwargs
+        self, location_type: str | None = None, indent: int | str | None = None, **kwargs
     ) -> str:
         """Constructs the GeoJSON string representing this map as a FeatureCollection.
 
@@ -82,7 +107,6 @@ class Map(ABC):
                     Feature(
                         geometry=feature,
                         id=feature.identifier,
-                        properties=LOCATION_STYLES[feature.location_type],
                     )
                     for feature in self.features
                     if location_type is None or feature.location_type == location_type
@@ -106,8 +130,6 @@ class Map(ABC):
         return [
             type(self)(
                 self.origin,
-                self.width,
-                self.height,
                 [feature.sample()[0] for feature in self.features],
             )
             for _ in range(number_of_samples)
@@ -130,19 +152,15 @@ class PolarMap(Map):
 
     Args:
         origin: The origin point of this map
-        width: The width of the map in meters
-        height: The height of the map in meters
         features: A list of features that should be contained by this map
     """
 
     def __init__(
         self,
         origin: PolarLocation,
-        width: float,
-        height: float,
         features: list[PolarLocation | PolarRoute | PolarPolygon] = None,
     ) -> None:
-        super().__init__(origin, width, height, features)
+        super().__init__(origin, features)
 
     def to_cartesian(self) -> "CartesianMap":
         """Projects this map to a cartesian representation according to its global reference.
@@ -153,7 +171,7 @@ class PolarMap(Map):
 
         cartesian_features = [feature.to_cartesian(self.origin) for feature in self.features]
 
-        return CartesianMap(self.origin, self.width, self.height, cartesian_features)
+        return CartesianMap(self.origin, cartesian_features)
 
 
 class CartesianMap(Map):
@@ -162,19 +180,15 @@ class CartesianMap(Map):
 
     Args:
         origin: The origin point of this map
-        width: The width of the map in meters
-        height: The height of the map in meters
         features: A list of features that should be contained by this map
     """
 
     def __init__(
         self,
         origin: PolarLocation,
-        width: float,
-        height: float,
         features: list[CartesianLocation | CartesianRoute | CartesianPolygon] | None = None,
     ) -> None:
-        super().__init__(origin, width, height, features)
+        super().__init__(origin, features)
 
     def to_polar(self) -> PolarMap:
         """Projects this map to a polar representation according to the map's global reference.
@@ -185,4 +199,4 @@ class CartesianMap(Map):
 
         polar_features = [feature.to_polar(self.origin) for feature in self.features]
 
-        return PolarMap(self.origin, self.width, self.height, polar_features)
+        return PolarMap(self.origin, polar_features)

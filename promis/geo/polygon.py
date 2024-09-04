@@ -10,21 +10,21 @@ coordinates using shapely."""
 #
 
 # Standard Library
-from typing import Any, TypeVar
 from math import degrees, radians
+from typing import Any, TypeVar
 
 # Third Party
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import PathPatch
 from matplotlib.path import Path
-from numpy import asarray, isfinite, ndarray, vstack, array
+from numpy import array, asarray, isfinite, ndarray, vstack
 from shapely.geometry import Polygon as ShapelyPolygon
 
 # ProMis
-from promis.geo.geospatial import Geospatial, LocationType
+from promis.geo.geospatial import Geospatial
+from promis.geo.helpers import meters_to_radians, radians_to_meters
 from promis.geo.location import CartesianLocation, PolarLocation
 from promis.models import Gaussian
-from promis.geo.helpers import radians_to_meters, meters_to_radians
 
 #: Helper to define <Polar|Cartesian>Location operatios within base class
 DerivedPolygon = TypeVar("DerivedPolygon", bound="Polygon")
@@ -35,7 +35,7 @@ class Polygon(Geospatial):
         self,
         locations: list[PolarLocation | CartesianLocation],
         holes: list[list[PolarLocation | CartesianLocation]] | None = None,
-        location_type: LocationType = LocationType.UNKNOWN,
+        location_type: str | None = None,
         name: str | None = None,
         identifier: int | None = None,
         covariance: ndarray | None = None,
@@ -89,8 +89,16 @@ class Polygon(Geospatial):
             The set of sampled polygons, each with same name, identifier etc.
         """
 
-        # Check that this actually has some uncertainty
-        assert self.distribution is not None, "Sampling can only be done on uncertain geometry!"
+        # Check if a distribution is given
+        if self.distribution is None:
+            return type(self)(
+                self.locations,
+                self.holes,
+                self.location_type,
+                self.name,
+                self.identifier,
+                self.covariance,
+            )
 
         # Gather all the sampled polygons
         sampled_polygons = []
@@ -176,7 +184,7 @@ class PolarPolygon(Polygon):
         self,
         locations: list[PolarLocation],
         holes: list[list[PolarLocation]] | None = None,
-        location_type: LocationType = LocationType.UNKNOWN,
+        location_type: str | None = None,
         name: str | None = None,
         identifier: int | None = None,
         covariance: ndarray | None = None,
@@ -231,7 +239,11 @@ class PolarPolygon(Polygon):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
-            covariance=radians_to_meters(array([radians(degree) for degree in self.distribution.covariance.reshape(4)]).reshape(2, 2))
+            covariance=radians_to_meters(
+                array(
+                    [radians(degree) for degree in self.distribution.covariance.reshape(4)]
+                ).reshape(2, 2)
+            )
             if self.distribution is not None
             else None,
             origin=origin,
@@ -302,7 +314,7 @@ class CartesianPolygon(Polygon):
         self,
         locations: list[CartesianLocation],
         holes: list[list[CartesianLocation]] | None = None,
-        location_type: LocationType = LocationType.UNKNOWN,
+        location_type: str | None = None,
         name: str | None = None,
         identifier: int | None = None,
         covariance: ndarray | None = None,
@@ -372,7 +384,9 @@ class CartesianPolygon(Polygon):
                 )
             origin = self.origin
         elif self.origin is not None and origin is not self.origin:
-            raise ValueError("You provided an explicit origin while the instance already has a different one")
+            raise ValueError(
+                "You provided an explicit origin while the instance already has a different one"
+            )
 
         # Hole locations to polar
         holes = [[location.to_polar(origin) for location in hole] for hole in self.holes]
@@ -384,7 +398,9 @@ class CartesianPolygon(Polygon):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
-            covariance=array([degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]).reshape(2, 2)
+            covariance=array(
+                [degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]
+            ).reshape(2, 2)
             if self.distribution is not None
             else None,
         )

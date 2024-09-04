@@ -9,149 +9,89 @@
 #
 
 # Standard Library
+from copy import deepcopy
 from multiprocessing import Pool
-from pickle import Pickler, load
-from time import sleep
 
 # Third Party
-from numpy import ndarray
-from overpy.exception import OverpassGatewayTimeout, OverpassTooManyRequests
+from numpy import array
 
 # ProMis
-from promis.geo import CartesianMap, LocationType, PolarLocation, RasterBand
-from promis.loaders import OsmLoader
+from promis.geo import CartesianRasterBand
 from promis.logic import Solver
-from promis.logic.spatial import Distance, Over
+
+from .star_map import StaRMap
 
 
 class ProMis:
 
     """The ProMis engine to create Probabilistic Mission Landscapes."""
 
-    def __init__(
-        self,
-        origin: PolarLocation,
-        dimensions: tuple[float, float],
-        resolution: tuple[int, int],
-        location_types: list[LocationType],
-        number_of_random_maps: int,
-        timeout: float = 5.0
-    ) -> "ProMis":
+    def __init__(self, star_map: StaRMap) -> "ProMis":
         """Setup the ProMis engine.
 
         Args:
-            origin: Where to center mission in polar coordinates
-            dimensions: The extend of the mission area in meters
-            resolution: Into how many pixels the mission landscape is split up
-            location_types: Which types of geospatial data are relevant to the logic
-            number_of_random_maps: How often to sample from map data in order to
-                compute statistics of spatial relations
-            timeout: Timeout between tries to load OpenStreetMaps data
+            star_map: The statistical relational map holding the parameters for ProMis
         """
 
         # Set parameters
-        self.dimensions = dimensions
-        self.resolution = resolution
-        self.location_types = location_types
-        self.number_of_random_maps = number_of_random_maps
+        self.star_map = star_map
 
-        # Load map data
-        self.map = None
-        while self.map is None:
-            try:
-                self.map = OsmLoader().load_cartesian(
-                    origin=origin, width=self.dimensions[0], height=self.dimensions[1]
-                )
-            except (OverpassGatewayTimeout, OverpassTooManyRequests):
-                print(f"OSM query failed, sleeping {timeout}s...")
-                sleep(timeout)
-
-        # Setup distance and over relations
-        self.distances = dict()
-        self.overs = dict()
-
-    def compute_distributions(self, covariance: ndarray, cache: str = ""):
-        """Compute distributional clauses.
-        
-        Args:
-            covariance: The covariance matrix to apply to all map features
-            cache: Where to store or load from computed spatial relations 
-        """
-
-        # Apply same uncertainty to all map features
-        self.map.apply_covariance(covariance)
-
-        for location_type in self.location_types:
-            # File identifier from parameters
-            extension = (
-                f"{self.map.width}_{self.map.height}_"
-                + f"{self.resolution[0]}_{self.resolution[1]}_"
-                + f"{self.map.origin.latitude}_{self.map.origin.longitude}_"
-                + f"{self.number_of_random_maps}_"
-                + f"{location_type.name.lower()}"
-            )
-
-            # Load pickle if already exists
-            try:
-                with open(f"{cache}/distance_{extension}.pkl", "rb") as pkl_file:
-                    distance = load(pkl_file)
-                    self.distances[location_type] = distance
-                with open(f"{cache}/over_{extension}.pkl", "rb") as pkl_file:
-                    over = load(pkl_file)
-                    self.overs[location_type] = over
-            # Else recompute and store results
-            except FileNotFoundError:
-                # Work on both spatial relations in parallel
-                with Pool(2) as pool:
-                    distance = pool.apply_async(
-                        Distance.from_map,
-                        (self.map, location_type, self.resolution, self.number_of_random_maps),
-                    )
-                    over = pool.apply_async(
-                        Over.from_map,
-                        (self.map, location_type, self.resolution, self.number_of_random_maps),
-                    )
-
-                    # Append results to dictionaries
-                    distance_result = distance.get()
-                    over_result = over.get()
-
-                # Export as pkl
-                if distance_result is not None:
-                    self.distances[location_type] = distance_result
-                    with open(f"{cache}/distance_{extension}.pkl", "wb") as file:
-                        Pickler(file).dump(self.distances[location_type])
-                if over_result is not None:
-                    self.overs[location_type] = over_result
-                    with open(f"{cache}/over_{extension}.pkl", "wb") as file:
-                        Pickler(file).dump(self.overs[location_type])
-
-    def add_feature(self, feature):
-        self.map.features.append(feature)
-
-    def generate(self, logic: str, n_jobs: int = 1, batch_size: int = 1) -> tuple[RasterBand, float, float, float]:
+    def solve(self, logic: str, n_jobs: int = 1, batch_size: int = 1) -> CartesianRasterBand:
         """Solve the given ProMis problem.
 
         Args:
-            - logic: The constraints of the landscape(R, C) predicate, including its definition
-            - n_jobs: How many workers to use in parallel
-            - batch_size: How many pixels to infer at once
+            logic: The constraints of the landscape(X) predicate, including its definition
+            n_jobs: How many workers to use in parallel
+            batch_size: How many pixels to infer at once
 
         Returns:
             The Probabilistic Mission Landscape as well as time to
             generate the code, time to compile and time for inference in seconds.
         """
 
-        solver = Solver(
-            self.map.origin,
-            self.dimensions,
-            self.resolution,
-            logic,
-        )
+        relations = []
+        for relation_type in self.star_map.relations.keys():
+            for location_type in self.star_map.relations[relation_type].keys():
+                relations.append(self.star_map.get(relation_type, location_type))
 
-        for distance in self.distances.values():
-            solver.add_distance(distance)
-        for over in self.overs.values():
-            solver.add_over(over)
+        # For each point in the target CartesianCollection, we need to run a query
+        number_of_queries = len(self.star_map.target.data)
+        queries = [f"query(landscape(x_{index})).\n" for index in range(number_of_queries)]
 
-        return solver.solve(n_jobs, batch_size)
+        # We batch up queries into separate programs
+        programs = []
+        for index in range(0, number_of_queries, batch_size):
+            # Define the current batch of indices
+            batch = range(index, index + batch_size)
+
+            # Write the background knowledge, queries and parameters to the program
+            program = logic + "\n"
+            for batch_index in batch:
+                if batch_index >= number_of_queries:
+                    break
+
+                program += queries[batch_index]
+                
+                for relation in relations:
+                    program += relation.index_to_distributional_clause(batch_index)
+
+            # Add program to collection
+            programs.append([program])
+
+        # Solve in parallel with pool of workers
+        with Pool(n_jobs) as pool:
+            batched_results = pool.starmap(self.run_inference, programs)
+
+        # Make result of Pool computation into flat list of probabilities
+        flattened_data = []
+        for batch in batched_results:
+            flattened_data.extend(batch)
+
+        # Write results to CartesianCollection and return
+        inference_results = deepcopy(self.star_map.target)
+        inference_results.data["v0"] = array(flattened_data)
+        return inference_results
+
+    @staticmethod
+    def run_inference(program):
+        return Solver(program).inference()

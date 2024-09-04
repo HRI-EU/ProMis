@@ -20,7 +20,7 @@ from pyproj import Proj
 from shapely.geometry import Point
 
 # ProMis
-from promis.geo.geospatial import Geospatial, LocationType
+from promis.geo.geospatial import Geospatial
 from promis.geo.helpers import (
     meters_to_radians,
     normalize_latitude,
@@ -38,7 +38,7 @@ class Location(Geospatial):
         self,
         x: float,
         y: float,
-        location_type: LocationType = LocationType.UNKNOWN,
+        location_type: str | None = None,
         name: str | None = None,
         identifier: int | None = None,
         covariance: ndarray | None = None,
@@ -152,7 +152,10 @@ class Location(Geospatial):
         """
 
         # Check if a distribution is given
-        assert self.distribution is not None, "Sampling requires a covariance to be set!"
+        if self.distribution is None:
+            return type(self)(
+                self.x, self.y, self.location_type, self.name, self.identifier, self.covariance
+            )
 
         # Convert all samples to individual locations and return as list
         return [
@@ -191,7 +194,7 @@ class PolarLocation(Location):
         self,
         longitude: float,
         latitude: float,
-        location_type: LocationType = LocationType.UNKNOWN,
+        location_type: str | None = None,
         name: str | None = None,
         identifier: int | None = None,
         covariance: ndarray | None = None,
@@ -260,7 +263,11 @@ class PolarLocation(Location):
             name=self.name,
             identifier=self.identifier,
             origin=origin,
-            covariance=radians_to_meters(array([radians(degree) for degree in self.distribution.covariance.reshape(4)]).reshape(2, 2))
+            covariance=radians_to_meters(
+                array(
+                    [radians(degree) for degree in self.distribution.covariance.reshape(4)]
+                ).reshape(2, 2)
+            )
             if self.distribution is not None
             else None,
         )
@@ -328,7 +335,7 @@ class CartesianLocation(Location):
         self,
         east: float,
         north: float,
-        location_type: LocationType = LocationType.UNKNOWN,
+        location_type: str | None = None,
         name: str | None = None,
         identifier: int | None = None,
         covariance: ndarray | None = None,
@@ -370,7 +377,9 @@ class CartesianLocation(Location):
                 )
             origin = self.origin
         elif self.origin is not None and origin is not self.origin:
-            raise ValueError("Provided an explicit origin while the instance already has a different one!")
+            raise ValueError(
+                "Provided an explicit origin while the instance already has a different one!"
+            )
 
         # Convert to polar coordinates
         longitude, latitude = origin.projection(self.east, self.north, inverse=True)
@@ -381,7 +390,9 @@ class CartesianLocation(Location):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
-            covariance=array([degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]).reshape(2, 2)
+            covariance=array(
+                [degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]
+            ).reshape(2, 2)
             if self.distribution is not None
             else None,
         )
