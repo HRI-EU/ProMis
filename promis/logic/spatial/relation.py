@@ -26,41 +26,102 @@ DerivedRelation = TypeVar("DerivedRelation", bound="Relation")
 
 
 class Relation(ABC):
+
+    """A spatial relation between points in space and typed map features.
+
+    Args:
+        parameters: A CartesianCollection relating points with parameters
+            of the relation's distribution, e.g., mean and variance
+        location_type: The type of location this relates to, e.g., buildings or roads
+    """
+
     def __init__(self, parameters: CartesianCollection, location_type: str) -> None:
         # Setup attributes
         self.parameters = parameters
         self.location_type = location_type
 
     @staticmethod
-    def load(path) -> DerivedRelation:
+    def load(path: str) -> DerivedRelation:
+        """Load the relation from a .pkl file.
+
+        Args:
+            path: The path to the file including its name and file extension
+
+        Returns:
+            The loaded Relation instance
+        """
+
         with open(path, "rb") as file:
             return load(file)
 
-    def save(self, path):
+    def save(self, path: Path):
+        """Save the relation to a .pkl file.
+
+        Args:
+            path: The path to the file including its name and file extension
+        """
+
         with open(path, "wb") as file:
             dump(self, file)
 
-    def save_as_plp(self, path: Path) -> None:
-        with open(path, "w") as plp_file:
-            plp_file.write(self.to_distributional_clauses())
+    def save_as_plp(self, path: Path):
+        """Save the relation as a text file containing distributional clauses.
 
-    def to_distributional_clauses(self) -> str:
-        clauses = ""
-        for index in range(len(self.parameters.data.len)):
-            clauses += self.index_to_distributional_clause(index)
-        return clauses
+        Args:
+            path: The path to the file including its name and file extension
+        """
+
+        with open(path, "w") as plp_file:
+            plp_file.write(self.to_distributional_clauses().join(""))
+
+    def to_distributional_clauses(self) -> list[str]:
+        """Express the Relation as distributional clause.
+
+        Returns:
+            The distributional clauses representing according to this Relation
+        """
+
+        return [
+            self.index_to_distributional_clause(index) for index in range(len(self.parameters.data))
+        ]
 
     @abstractmethod
     def index_to_distributional_clause(self, index: int) -> str:
+        """Express a single index of this  Relation as distributional clause.
+
+        Returns:
+            The distributional clause representing the respective entry of this Relation
+        """
+
         pass
 
     @staticmethod
     @abstractmethod
     def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
+        """Compute the value of this Relation type for a specific location and map.
+
+        Args:
+            location: The location to evaluate in Cartesian coordinates
+            r_tree: The map represented as r-tree
+
+        Returns:
+            The value of this Relation for the given location and map
+        """
+
         pass
 
     @classmethod
     def compute_parameters(cls, location: CartesianLocation, r_trees: list[STRtree]) -> array:
+        """Compute the parameters of this Relation type for a specific location and set of maps.
+
+        Args:
+            location: The location to evaluate in Cartesian coordinates
+            r_trees: The set of generated maps represented as r-tree
+
+        Returns:
+            The parameters of this Relation for the given location and maps
+        """
+
         relation_data = [cls.compute_relation(location, r_tree) for r_tree in r_trees]
 
         return array([mean(relation_data), var(relation_data)])
