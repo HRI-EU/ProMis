@@ -28,11 +28,10 @@ from sklearn.preprocessing import StandardScaler, normalize
 
 # ProMis
 from promis.geo import CartesianCollection, CartesianLocation, CartesianMap, CartesianRasterBand
-from promis.logic.spatial import Distance, Over, Relation
+from promis.logic.spatial import Distance, Over, Relation, Depth
 
 
 class StaRMap:
-
     """A Statistical Relational Map.
 
     Args:
@@ -84,6 +83,7 @@ class StaRMap:
         self.relations = {
             "over": defaultdict(self.empty_relation),
             "distance": defaultdict(self.empty_relation),
+            # TOIDO depth
         }
 
     def empty_relation(self):
@@ -93,7 +93,7 @@ class StaRMap:
         }
 
     @staticmethod
-    def relation_name_to_class(relation: str) -> type(Over) | type(Distance):
+    def relation_name_to_class(relation: str) -> Relation:
         assert relation in [
             "over",
             "distance",

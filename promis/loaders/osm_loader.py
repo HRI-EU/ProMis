@@ -21,7 +21,6 @@ from promis.loaders.spatial_loader import SpatialLoader
 
 
 class OsmLoader(SpatialLoader):
-
     """A loader for spatial data from OpenStreetMaps (OSM) via the overpy package."""
 
     def __init__(
@@ -61,7 +60,7 @@ class OsmLoader(SpatialLoader):
         """
 
         # Compute bounding box and format it for Overpass
-        south, west, north, east = self.compute_bounding_box(self.origin, self.dimensions)
+        south, west, north, east = self.compute_polar_bounding_box(self.origin, self.dimensions)
         bounding_box = f"({south:.4f}, {west:.4f}, {north:.4f}, {east:.4f})"
 
         # Load data via Overpass
@@ -112,7 +111,7 @@ class OsmLoader(SpatialLoader):
         """
 
         # Compute bounding box and format it for Overpass
-        south, west, north, east = self.compute_bounding_box(self.origin, self.dimensions)
+        south, west, north, east = self.compute_polar_bounding_box(self.origin, self.dimensions)
         bounding_box = f"({south:.4f}, {west:.4f}, {north:.4f}, {east:.4f})"
 
         # Load data via Overpass

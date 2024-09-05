@@ -30,18 +30,19 @@ from sklearn.preprocessing import MinMaxScaler
 from promis.geo import (
     CartesianCollection,
     CartesianLocation,
+    PolarCollection,
+    PolarLocation,
     CartesianPolygon,
     PolarCollection,
     PolarLocation,
 )
 import promis.geo
-from promis.geo.map import CartesianLocation, CartesianMap, PolarLocation, PolarMap
-from promis.geo.polygon import CartesianPolygon
+from promis.geo.map import CartesianMap, PolarMap
 from promis.models import GaussianMixture
 
 
-class RasterBand:
-    """A Cartesian raster-band representing map data concerning a location type.
+class RasterBand(ABC):
+    """A raster-band of spatially referenced data.
 
     Args:
         resolution: The number of horizontal and vertical pixels
@@ -60,16 +61,8 @@ class RasterBand:
         self.resolution = resolution
         self.width = width
         self.height = height
-        if isinstance(resolution, ndarray):
-            self.data = resolution
-        else:
-            self.data = zeros(resolution)
-
-        # Dimension of each pixel in meters
-        self.pixel_width = self.width / self.data.shape[0]
-        self.pixel_height = self.height / self.data.shape[1]
-
-        # Location of center in meters relative to top-left corner
+        self.pixel_width = self.width / self.resolution[0]
+        self.pixel_height = self.height / self.resolution[1]
         self.center_x = self.width / 2
         self.center_y = self.height / 2
 
@@ -84,15 +77,7 @@ class RasterBand:
         resolution: tuple[int, int],
         feature_to_value: None | Callable[["promis.geo.CartesianGeometry"], float] = None,
     ) -> "RasterBand":
-        """Takes a PolarMap or CartesianMap to initialize the raster band data.
-
-        Args:
-            map: The map to read from
-            location_type: The location type to create a raster-band from
-            resolution: The resolution of the raster-band data
-            feature_to_value: A function that takes a feature and returns a value for the final data
-
-    """
+        """Takes a PolarMap or CartesianMap to initialize the raster band data."""
 
         # Attributes setup
         map = map if isinstance(map, CartesianMap) else map.to_cartesian()
@@ -309,7 +294,6 @@ class RasterBand:
 
 
 class PolarRasterBand(RasterBand, PolarCollection):
-
     """A raster-band of Polar referenced data.
 
     Args:

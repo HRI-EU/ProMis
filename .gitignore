@@ -283,3 +283,4 @@ dist
 
 data/
 .promis_cache/
+examples/*.pkl

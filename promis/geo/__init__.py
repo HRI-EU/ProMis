@@ -37,7 +37,6 @@ __all__ = [
     "Direction",
     "Geospatial",
     "PolarCollection",
-    "LocationType",
     "PolarGeometry",
     "PolarLocation",
     "PolarMap",

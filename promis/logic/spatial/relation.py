@@ -20,6 +20,12 @@ from shapely.strtree import STRtree
 
 # ProMis
 from promis.geo import CartesianCollection, CartesianLocation
+from numpy import array, clip, mean, sqrt, var, vstack
+from scipy.stats import norm
+from shapely.strtree import STRtree
+
+# ProMis
+from promis.geo import CartesianCollection, CartesianLocation, CartesianRasterBand
 
 #: Helper to define derived relations within base class
 DerivedRelation = TypeVar("DerivedRelation", bound="Relation")
@@ -157,3 +163,64 @@ class Relation(ABC):
         parameters.append(locations, statistical_moments)
 
         return cls(parameters, location_type)
+
+
+class ScalarRelation(Relation):
+    """The relation of a scalar with a Gaussian distribution.
+
+    Args:
+        parameters: A collection of points with each having values as [mean, variance]
+        location_type: The name of the locations this distance relates to
+        problog_name: The name of the relation in Problog
+    """
+
+    def __init__(
+        self,
+        parameters: CartesianCollection,
+        location_type: str | None,
+        problog_name: str,
+        enforced_min_variance: float | None = 0.001,
+    ) -> None:
+        super().__init__(parameters, location_type)
+
+        self.problog_name = problog_name
+
+        self.parameters.data["v1"] = clip(self.parameters.data["v1"], enforced_min_variance, None)
+
+    def __lt__(self, value: float) -> CartesianCollection:
+        means = self.parameters.data["v0"]
+        stds = self.parameters.data["v1"]
+        cdf = norm.cdf(value, loc=means, scale=sqrt(stds))
+
+        if isinstance(self.parameters, CartesianRasterBand):
+            probabilities = CartesianRasterBand(
+                self.parameters.origin,
+                self.parameters.resolution,
+                self.parameters.width,
+                self.parameters.height,
+            )
+
+            probabilities.data["v0"] = cdf
+        else:
+            probabilities = CartesianCollection(self.parameters.origin)
+            probabilities.append(self.parameters.to_cartesian_locations(), cdf)
+
+        return probabilities
+
+    def __gt__(self, value: float) -> CartesianCollection:
+        probabilities = self < value
+        probabilities.data["v0"] = 1.0 - probabilities.data["v0"]
+
+        return probabilities
+
+    def index_to_distributional_clause(self, index: int) -> str:
+        if self.location_type is None:
+            relation = f"{self.problog_name}(x_{index})"
+        else:
+            relation = f"{self.problog_name}(x_{index}, {self.location_type})"
+
+        distribution = (
+            f"normal({self.parameters.data['v0'][index]}, {self.parameters.data['v1'][index]})"
+        )
+
+        return f"{relation} ~ {distribution}.\n"

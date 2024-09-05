@@ -119,7 +119,7 @@ class Collection(ABC):
 
         Args:
             coordinates: A list of locations to append or matrix of coordinates
-            values: The associated values as 2D matrix, each row belongs to a single locations
+            values: The associated values as 2D matrix, each row belongs to a single location
         """
 
         assert (

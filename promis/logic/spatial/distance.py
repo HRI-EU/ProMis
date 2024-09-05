@@ -19,7 +19,7 @@ from promis.geo import CartesianCollection, CartesianLocation, CartesianRasterBa
 from .relation import Relation
 
 
-class Distance(Relation):
+class Distance(Relation):  # TODO make ScalarRelation
 
     """The distance relation as Gaussian distribution.
 

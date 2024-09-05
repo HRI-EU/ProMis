@@ -7,115 +7,76 @@
 #
 
 # Standard Library
-from copy import deepcopy
-from itertools import product
-from pathlib import Path
+from warnings import warn
+
+# Plotting
+import matplotlib.pyplot as plt
+from matplotlib.colors import CenteredNorm
 
 # Third Party
-from numpy import array, clip
+from numpy import array, full_like
+from shapely import STRtree
 
 # ProMis
-from promis.geo import (
-    CartesianGeometry,
-    CartesianMap,
-    CartesianPolygon,
-    LocationType,
-    PolarMap,
-    RasterBand,
-)
-from promis.models import Gaussian
+from promis.geo import CartesianGeometry, CartesianMap, CartesianPolygon, CartesianRoute
+from promis.geo.collection import CartesianCollection
+from promis.geo.location import CartesianLocation
+from promis.logic.spatial.relation import ScalarRelation
 
 
-class Depth:
-    """Models water depth. Eventually to be used as: `depth(location) < -2`."""
+class Depth(ScalarRelation):
+    """The depth information as a Gaussian distribution. This relation is unary.
 
-    _MIN_ALLOWED_VARIANCE: float = 0.01
+    Args:
+        parameters: A collection of points with each having values as [mean, variance]
+    """
 
-    def __init__(self, mean: RasterBand, variance: RasterBand | float = 0.25) -> None:
-        # Setup attributes
-        self.mean = mean
+    RELEVANT_LOCATION_TYPES = {"water", "land"}
 
-        if isinstance(variance, RasterBand):
-            self.variance = variance
-            # TODO: Find better treatment of zero variance
-            self.variance.data = clip(self.variance.data, Depth._MIN_ALLOWED_VARIANCE, None)
-        else:
-            if variance < Depth._MIN_ALLOWED_VARIANCE:
-                raise ValueError(f"Variance must be at least {Depth._MIN_ALLOWED_VARIANCE}.")
-            self.variance = deepcopy(self.mean)
-            self.variance.data[:] = variance
+    def __init__(self, parameters: CartesianCollection) -> None:
+        super().__init__(parameters, location_type=None, problog_name="depth")
 
-    def __lt__(self, value: float) -> RasterBand:
-        probabilities = RasterBand(
-            self.mean.data.shape, self.mean.origin, self.mean.width, self.mean.height
-        )
-
-        for x, y in product(range(self.mean.data.shape[0]), range(self.mean.data.shape[1])):
-            probabilities.data[x, y] = Gaussian(
-                self.mean.data[x, y].reshape((1, 1)), self.variance.data[x, y].reshape((1, 1))
-            ).cdf(array([value]))
-
-        return probabilities
-
-    def __gt__(self, value: float) -> RasterBand:
-        probabilities = self < value
-        probabilities.data = 1 - probabilities.data
-
-        return probabilities
-
-    def save_as_plp(self, path: Path) -> None:
-        with open(path, "w") as plp_file:
-            plp_file.write(self.to_distributional_clauses())
-
-    def to_distributional_clauses(self) -> str:
-        code = ""
-        for index in product(range(self.mean.data.shape[0]), range(self.mean.data.shape[1])):
-            code += self.index_to_distributional_clause(index)
-
-        return code
-
-    def index_to_distributional_clause(self, index: tuple[int, int]) -> str:
-        # Build code
-        # feature_name = self.location_type.name.lower()
-        relation = f"depth(row_{index[1]}, column_{index[0]})"
-        distribution = f"normal({self.mean.data[index]}, {self.variance.data[index]})"
-
-        return f"{relation} ~ {distribution}.\n"
+    @staticmethod
+    def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
+        raise NotImplementedError("Please use the compute_relations method instead.")
 
     @classmethod
-    def from_map(
-        cls,
-        map_: PolarMap | CartesianMap,
-        resolution: tuple[int, int],
-        variance: RasterBand | float = 0.25,
-    ) -> "Depth | None":
-        # Setup the data source
-        cartesian_map = map_ if isinstance(map_, CartesianMap) else map_.to_cartesian()
+    def compute_parameters(
+        cls, data_map: CartesianMap, support: CartesianCollection, uniform_variance: float = 0.25
+    ) -> array:
+        """Compute the depth values for the requested support locations.
 
-        # If map is empty return
-        if cartesian_map.features is None:
-            return None
+        Args:
+            data_map: The map containing the depth information. Will be filtered for the location type.
+            support: The Collection of points for which the deoth will be computed
+            uniform_variance: The variance of the depth values for all points
+        """
+        data_map: CartesianMap = data_map.filter(Depth.RELEVANT_LOCATION_TYPES)
+        if len(data_map) == 0:
+            warn("No water features found in the map. Returning uniform depth values.")
 
-        # Get all relevant features
-        location_types = {LocationType.LAND, LocationType.WATER}
-        features = [
-            feature
-            for feature in cartesian_map.features
-            if feature.location_type in location_types and isinstance(feature, CartesianPolygon)
-        ]
-        if not features:
-            return None
+        depth_values = array(list(map(feature_to_depth, data_map.features)))
+        r_tree = data_map.to_rtree()
 
-        mean = RasterBand.from_map(
-            map=cartesian_map,
-            location_types=location_types,
-            resolution=resolution,
-            feature_to_value=feature_to_depth,
+        # Indices of the nearest features
+        all_nearest = r_tree.nearest(
+            [location.geometry for location in support.to_cartesian_locations()]
         )
-        mean.data = mean.data.T  # TODO: Understand why this is necessary
 
-        # Create and return the new object
-        return cls(mean=mean, variance=variance)
+        mean = depth_values[all_nearest]
+        variance = full_like(mean, uniform_variance)
+        return array([mean, variance])
+
+    def plot(self, resolution: tuple[int, int], value_index: int = 0, axis=None, **kwargs) -> None:
+        if axis is None:
+            axis = plt
+
+        color = self.parameters.values()[:, value_index].reshape(resolution).T
+        # Use a diverging colormap with sea level (depth 0.0) as the center point
+        axis.imshow(
+            color.T, norm=CenteredNorm(vcenter=0.0), cmap="BrBG_r", origin="lower", **kwargs
+        )
+        axis.colorbar()
 
 
 def feature_to_depth(feature: CartesianGeometry, land_height: float = 10) -> float:
@@ -132,16 +93,16 @@ def feature_to_depth(feature: CartesianGeometry, land_height: float = 10) -> flo
 
     Raises:
         NotImplementedError: If the feature is not a :class:`CartesianPolygon` or if
-            the location type is neither `LocationType.WATER` nor `LocationType.LAND`.
+            the location type is neither `'water'` nor `'land'`.
     """
     match feature:
-        case CartesianPolygon():
+        case CartesianLocation() | CartesianRoute() | CartesianPolygon():
             match feature.location_type:
-                case LocationType.WATER:
+                case "water":
                     # Formatted as 'US4MA23M#0226023E40DAFB90 (Depth=1.8m): "---"'
                     # We parse the depth from the name of the feature:
                     return -float(feature.name.split("Depth=")[1].split("m")[0])
-                case LocationType.LAND:
+                case "land":
                     # We could use LNDELV for hight contours, but we don't really care about that now
                     return land_height
                 case _:

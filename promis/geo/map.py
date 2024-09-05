@@ -29,7 +29,6 @@ DerivedMap = TypeVar("DerivedMap", bound="Map")
 
 
 class Map(ABC):
-
     """A base class for maps.
 
     Args:
@@ -160,9 +159,21 @@ class Map(ABC):
             for feature in self.features:
                 feature.covariance = covariance
 
+    @property
+    def all_location_types(self) -> set[str]:
+        """Get all location types contained in this map.
+
+        Returns:
+            A set of all location types contained in this map
+        """
+
+        return {feature.location_type for feature in self.features}
+
+    def __len__(self) -> int:
+        return len(self.features)
+
 
 class PolarMap(Map):
-
     """A map containing geospatial objects based on WGS84 coordinates.
 
     Args:
@@ -190,7 +201,6 @@ class PolarMap(Map):
 
 
 class CartesianMap(Map):
-
     """A map containing geospatial objects based on local coordinates with a global reference point.
 
     Args:

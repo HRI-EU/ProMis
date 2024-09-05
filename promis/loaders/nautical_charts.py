@@ -50,11 +50,9 @@ from promis.geo import (
     CartesianPolygon,
     CartesianRoute,
     Geospatial,
-    LocationType,
     PolarLocation,
     PolarPolygon,
 )
-from promis.geo.map import PolarMap
 from promis.loaders.spatial_loader import SpatialLoader
 
 # Allow osgeo to be missing
@@ -99,8 +97,6 @@ class S57ChartHandler:
     The names of the objects are created like this:
     ``{chart file name}#{chart-unique alphanumeric identifier} ({human-readable type}): "{common name}"``.
 
-    All objects are associated with the applicable :class:`pyrate.plan.geometry.LocationType`.
-
     Raises:
         ImportError: If the :mod:`osgeo` package is missing
     """
@@ -111,32 +107,32 @@ class S57ChartHandler:
 
     #: This maps layer names to the corresponding parameters for S57ChartHandler._create_obstacle(...)
     #: These are not all objects but merely the ones which are trivial to map.
-    _SIMPLE_MAPPINGS: Mapping[str, tuple[LocationType, str]] = {
-        "LNDARE": (LocationType.LAND, "Landmass"),
+    _SIMPLE_MAPPINGS: Mapping[str, tuple[str, str]] = {
+        "LNDARE": ("land", "Landmass"),
         #
-        "BOYCAR": (LocationType.OBSTRUCTION, "Buoy (BOYCAR)"),
-        "BOYINB": (LocationType.OBSTRUCTION, "Buoy (BOYINB)"),
-        "BOYISD": (LocationType.OBSTRUCTION, "Buoy (BOYISD)"),
-        "BOYLAT": (LocationType.OBSTRUCTION, "Buoy (BOYLAT)"),
-        "BOYSAW": (LocationType.OBSTRUCTION, "Buoy (BOYSAW)"),
-        "BOYSPP": (LocationType.OBSTRUCTION, "Buoy (BOYSPP)"),
+        "BOYCAR": ("obstruction", "Buoy (BOYCAR)"),
+        "BOYINB": ("obstruction", "Buoy (BOYINB)"),
+        "BOYISD": ("obstruction", "Buoy (BOYISD)"),
+        "BOYLAT": ("obstruction", "Buoy (BOYLAT)"),
+        "BOYSAW": ("obstruction", "Buoy (BOYSAW)"),
+        "BOYSPP": ("obstruction", "Buoy (BOYSPP)"),
         #
-        "OBSTRN": (LocationType.OBSTRUCTION, "Obstruction"),
-        "OFSPLF": (LocationType.OBSTRUCTION, "Platform"),
-        "OSPARE": (LocationType.OBSTRUCTION, "Production Area/Wind farm"),
-        "PILPNT": (LocationType.OBSTRUCTION, "Post"),
-        "MIPARE": (LocationType.OBSTRUCTION, "Military Exercise Area"),
-        "DMPGRD": (LocationType.OBSTRUCTION, "Dumping Ground"),
-        "DOCARE": (LocationType.OBSTRUCTION, "Dock Area"),
-        "DRYDOC": (LocationType.OBSTRUCTION, "Dry Dock"),
-        "FLODOC": (LocationType.OBSTRUCTION, "Floating Dock"),
-        "DYKCON": (LocationType.OBSTRUCTION, "Dyke/Levee"),
+        "OBSTRN": ("obstruction", "Obstruction"),
+        "OFSPLF": ("obstruction", "Platform"),
+        "OSPARE": ("obstruction", "Production Area/Wind farm"),
+        "PILPNT": ("obstruction", "Post"),
+        "MIPARE": ("obstruction", "Military Exercise Area"),
+        "DMPGRD": ("obstruction", "Dumping Ground"),
+        "DOCARE": ("obstruction", "Dock Area"),
+        "DRYDOC": ("obstruction", "Dry Dock"),
+        "FLODOC": ("obstruction", "Floating Dock"),
+        "DYKCON": ("obstruction", "Dyke/Levee"),
         #
-        "DWRTPT": (LocationType.WATER_ROUTE, "Deep Water Way"),  # primary
-        # "DWRTCL": (LocationType.WATER_ROUTE, "Deep Water Way (Centerline)"),  # primary
-        "FAIRWY": (LocationType.WATER_ROUTE, "Fairway"),  # secondary
+        "DWRTPT": ("water route", "Deep Water Way"),  # primary
+        # "DWRTCL": ("water route", "Deep Water Way (Centerline)"),  # primary
+        "FAIRWY": ("water route", "Fairway"),  # secondary
         #
-        "ACHARE": (LocationType.ANCHORAGE, "Anchorage Area"),
+        "ACHARE": ("anchorage", "Anchorage Area"),
         # In parctice, one would also want to parse ACHBRT (single ship anchorage) with the corresponding radius
     }
 
@@ -218,9 +214,7 @@ class S57ChartHandler:
                 # Warning: we assume these depths are given in meters, which could be wrong in some cases but
                 # worked in our tests
                 depth_max = feature["DRVAL2"]
-                yield from S57ChartHandler._create_obstacle(
-                    feature, f"Depth={depth_max}m", LocationType.WATER
-                )
+                yield from S57ChartHandler._create_obstacle(feature, f"Depth={depth_max}m", "water")
         else:
             if layer_name in S57ChartHandler._SIMPLE_MAPPINGS:
                 location_type, human_readable_type = S57ChartHandler._SIMPLE_MAPPINGS[layer_name]
@@ -233,7 +227,7 @@ class S57ChartHandler:
     def _create_obstacle(
         feature: ogr.Feature,
         human_readable_type: str,
-        location_type: LocationType,
+        location_type: str,
     ) -> Generator[tuple[PolarChartGeometry, str], None, None]:
         """Creates a point or area obstacle from a given feature.
 
@@ -304,8 +298,10 @@ class S57ChartHandler:
 
 
 class NauticalChartLoader(SpatialLoader):
-    def __init__(self, chart_root: Path) -> None:
-        super().__init__()
+    def __init__(
+        self, chart_root: Path, origin: PolarLocation, dimensions: tuple[float, float]
+    ) -> None:
+        super().__init__(origin, dimensions)
 
         self.chart_root = chart_root
 
@@ -314,23 +310,13 @@ class NauticalChartLoader(SpatialLoader):
         if not chart_root.is_dir():
             raise NotADirectoryError(f"chart_root must be a directory, but got {chart_root}")
 
-    def load_polar(self, origin: PolarLocation, width: float, height: float) -> PolarMap:
-        return self.load_cartesian(origin, width, height).to_polar()
-
-    def load_cartesian(self, origin: PolarLocation, width: float, height: float) -> CartesianMap:
+    def load_chart_data(self) -> CartesianMap:
         handler = S57ChartHandler()
 
         # This is in local coordinates realtive to `origin`,
         # so we can just use a simple bounding box
-        bounding_box = CartesianPolygon(
-            [
-                # clockwise: top-left, ...
-                CartesianLocation(east=-width / 2, north=height / 2),
-                CartesianLocation(east=width / 2, north=height / 2),
-                CartesianLocation(east=width / 2, north=-height / 2),
-                CartesianLocation(east=-width / 2, north=-height / 2),
-            ],
-            origin=origin,
+        bounding_box = SpatialLoader.compute_cartesian_bounding_box(
+            CartesianLocation(0, 0), self.dimensions
         )
 
         def from_shapely(
@@ -379,18 +365,18 @@ class NauticalChartLoader(SpatialLoader):
                 )
 
         def generate() -> Generator[PolarChartGeometry, None, None]:
+            # TODO: This is quite slow and could easily be parallelized
             for file in handler.find_chart_files(self.chart_root):
                 for geo_object in handler.read_chart_file(file):
-                    geometry = geo_object.to_cartesian(origin=origin)
+                    geometry = geo_object.to_cartesian(origin=self.origin)
 
+                    # Make sure to only return the objects that are within the relevant bounding box
                     cropped = intersection(bounding_box.geometry, geometry.geometry)
 
                     if not cropped.is_empty:
                         yield from from_shapely(cropped, copy_metadata_from=geometry)
 
         return CartesianMap(
-            origin=origin,
-            width=width,
-            height=height,
+            origin=self.origin,
             features=list(generate()),
         )
