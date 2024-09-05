@@ -1,0 +1,11 @@
+/* CSVFileReader.css */
+.csv-reader-input input {
+  display: none;
+}
+
+.csv-reader-input label {
+  background: none;
+  color: white;
+  cursor: pointer;
+  /* Add any additional styling as needed */
+}
