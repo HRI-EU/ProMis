@@ -10,17 +10,17 @@ in WGS84 and local coordinate frames."""
 #
 
 # Standard Library
-from typing import Any, TypeVar
 from math import degrees, radians
+from typing import Any, TypeVar
 
 # Third Party
-from numpy import array, isfinite, ndarray, vstack, array
+from numpy import array, isfinite, ndarray, vstack
 from shapely.geometry import LineString
 
 # ProMis
-from promis.geo.geospatial import Geospatial, LocationType
-from promis.geo.location import CartesianLocation, PolarLocation
+from promis.geo.geospatial import Geospatial
 from promis.geo.helpers import meters_to_radians, radians_to_meters
+from promis.geo.location import CartesianLocation, PolarLocation
 from promis.models import Gaussian
 
 #: Helper to define <Polar|Cartesian>Location operatios within base class
@@ -31,7 +31,7 @@ class Route(Geospatial):
     def __init__(
         self,
         locations: list[PolarLocation | CartesianLocation],
-        location_type: LocationType = LocationType.UNKNOWN,
+        location_type: str | None = None,
         name: str | None = None,
         identifier: int | None = None,
         covariance: ndarray | None = None,
@@ -73,8 +73,11 @@ class Route(Geospatial):
             The set of sampled routes, each with same name, identifier etc.
         """
 
-        # Check that this actually has some uncertainty
-        assert self.distribution is not None, "Sampling can only be done on uncertain geometry!"
+        # Check if a distribution is given
+        if self.distribution is None:
+            return type(self)(
+                self.locations, self.location_type, self.name, self.identifier, self.covariance
+            )
 
         # Gather all the sampled routes
         sampled_routes = []
@@ -131,7 +134,7 @@ class PolarRoute(Route):
     def __init__(
         self,
         locations: list[PolarLocation],
-        location_type: LocationType = LocationType.UNKNOWN,
+        location_type: str | None = None,
         name: str | None = None,
         identifier: int | None = None,
         covariance: ndarray | None = None,
@@ -161,7 +164,11 @@ class PolarRoute(Route):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
-            covariance=radians_to_meters(array([radians(degree) for degree in self.distribution.covariance.reshape(4)]).reshape(2, 2))
+            covariance=radians_to_meters(
+                array(
+                    [radians(degree) for degree in self.distribution.covariance.reshape(4)]
+                ).reshape(2, 2)
+            )
             if self.distribution is not None
             else None,
         )
@@ -220,7 +227,7 @@ class CartesianRoute(Route):
     def __init__(
         self,
         locations: list[CartesianLocation],
-        location_type: LocationType = LocationType.UNKNOWN,
+        location_type: str | None = None,
         name: str | None = None,
         identifier: int | None = None,
         covariance: ndarray | None = None,
@@ -252,7 +259,9 @@ class CartesianRoute(Route):
                 )
             origin = self.origin
         elif self.origin is not None and origin is not self.origin:
-            raise ValueError("Provided an explicit origin while the instance already has a different one!")
+            raise ValueError(
+                "Provided an explicit origin while the instance already has a different one!"
+            )
 
         # convert to cartesian
         coordinates = self.to_numpy()
@@ -265,7 +274,9 @@ class CartesianRoute(Route):
             location_type=self.location_type,
             name=self.name,
             identifier=self.identifier,
-            covariance=array([degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]).reshape(2, 2)
+            covariance=array(
+                [degrees(rad) for rad in meters_to_radians(self.distribution.covariance).reshape(4)]
+            ).reshape(2, 2)
             if self.distribution is not None
             else None,
         )

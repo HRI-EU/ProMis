@@ -55,96 +55,9 @@ docker build . -t promis
 docker run -it promis
 ```
 
-## Usage
-
-ProMis can be employed by first deciding the mission's setting and rules in the form of a Hybrid Probabilistic Logic Program (agent constitution).
-Examples of this can be found in the `/models` folder.
-Here, we will use the following constitution:
-```prolog
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Mission parameters and UAV properties
-1.0::standard; 0.0::special.        % Standard license
-initial_charge ~ normal(90, 5).     % UAV battery state and discharge rate
-charge_cost ~ normal(-0.2, 0.1).
-weight ~ normal(2.0, 0.1).          % UAV take-off-mass
-1/10::fog; 9/10::clear.             % Mostly clear weather
-0.0::high_altitude.                 % UAV will not fly at high altitudes
-
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Mission rules
-% Visual line of sight
-vlos(X, Y) :- 
-    fog, distance(X, Y, operator) < 250;
-    clear, distance(X, Y, operator) < 500.
-
-% Simplified OPEN flight category
-open_flight(X, Y) :- 
-    standard, vlos(X, Y), weight < 25.
-
-% Sufficient charge is defined to be
-% enough to return to the operator
-can_return(X, Y) :-
-    B is initial_charge,
-    O is charge_cost,
-    D is distance(X, Y, operator),
-    0 < B + (2 * O * D).
-
-% Special permit for parks and roads
-permit(X, Y) :- 
-    over(X, Y, park); 
-    distance(X, Y, primary) < 15;
-    distance(X, Y, secondary) < 10;
-    distance(X, Y, tertiary) < 5.
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% The Probabilistic Mission Landscape
-landscape(X, Y) :- 
-    permit(X, Y), open_flight(X, Y), can_return(X, Y);
-    special, high_altitude, can_return(X, Y).
-```
-
-Once the rules have been decided, the `ProMis` class can be used to generate a Probabilistic Mission Landscape (PML) in the relevant area.
-
-```python
-import matplotlib.pyplot as plt
-from promis import ProMis
-from promis.geo import LocationType, PolarLocation, CartesianLocation
-
-# ProMis Parameters
-dimensions = (1000.0, 1000.0)  # Meters
-resolution = (100, 100)        # Pixels
-spatial_samples = 50           # How many maps to generate to compute statistics
-model = "Park"                 # Hybrid ProbLog to be used
-types = [                      # Which types to load and compute relations for
-    LocationType.PARK,
-    LocationType.PRIMARY,
-    LocationType.SECONDARY,
-    LocationType.TERTIARY,
-]  
-tu_darmstadt = PolarLocation(latitude=49.878091, longitude=8.654052)
-
-# Setup engine
-pmd = ProMis(tu_darmstadt, dimensions, resolution, types, spatial_samples)
-
-# Set parameters that are unrelated to the loaded map data
-# Here, we imagine the operator to be situated at the center of the mission area
-pmd.create_from_location(CartesianLocation(0.0, 0.0, location_type=LocationType.OPERATOR))
-
-# Generate landscape
-with open(f"../models/{model}.pl", "r") as model_file:
-    landscape, time = pmd.generate(logic=model_file.read(), n_jobs=8)
-
-# Show result
-plt.imshow(landscape.data.T)
-```
-<img src="https://github.com/HRI-EU/ProMis/blob/main/examples/pml.png" width="256">
-
-Note that each point in this landscape expresses an i.i.d. probability of the constitution being adhered to at that location.
-We can then integrate this landscape into the trajectory planning process, search for the most optimal mission setting or explain how mission parameters influence the obtained routes. 
-
 ## Documentation
 
+A Jupyter Notebook demonstrating the usage of ProMis is given in the examples folder.
 To build the documentation, ensure a full installation with the respective dependencies by running `pip install ".[doc]"`.
 Then, using the following commands, trigger Sphinx to create the documentation.
 

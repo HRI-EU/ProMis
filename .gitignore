@@ -1,6 +1,9 @@
 # VS Code settings
 .vscode/
 
+# Stored Python objects
+*.pkl
+
 # For mutation testing
 .hammett-db
 .mutmut-cache

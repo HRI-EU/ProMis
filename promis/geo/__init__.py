@@ -9,26 +9,28 @@
 #
 
 # ProMis
+from promis.geo.collection import CartesianCollection, PolarCollection
 from promis.geo.geospatial import Geospatial
 from promis.geo.helpers import Direction
 from promis.geo.location import CartesianLocation, PolarLocation
-from promis.geo.location_type import LocationType
 from promis.geo.map import CartesianMap, PolarMap
 from promis.geo.polygon import CartesianPolygon, PolarPolygon
-from promis.geo.raster_band import RasterBand
+from promis.geo.raster_band import CartesianRasterBand, PolarRasterBand
 from promis.geo.route import CartesianRoute, PolarRoute
 
 __all__ = [
+    "CartesianCollection",
     "CartesianLocation",
     "CartesianMap",
     "CartesianPolygon",
+    "CartesianRasterBand",
     "CartesianRoute",
     "Direction",
     "Geospatial",
-    "LocationType",
+    "PolarCollection",
     "PolarLocation",
     "PolarMap",
     "PolarPolygon",
+    "PolarRasterBand",
     "PolarRoute",
-    "RasterBand",
 ]

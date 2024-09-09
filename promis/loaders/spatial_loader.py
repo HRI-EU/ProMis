@@ -9,7 +9,7 @@
 #
 
 # Standard Library
-from abc import ABC, abstractmethod
+from abc import ABC
 
 # Third Party
 from numpy import vstack
@@ -22,52 +22,33 @@ class SpatialLoader(ABC):
 
     """A base class for loaders of geospatial objects from differents sources and interfaces."""
 
-    def __init__(self):
-        pass
+    def __init__(self, origin: PolarLocation, dimensions: tuple[float, float]):
+        self.origin = origin
+        self.dimensions = dimensions
+        self.features = []
 
-    @abstractmethod
-    def load_polar(self, origin: PolarLocation, width: float, height: float) -> PolarMap:
-        """Loads a :class:promis.geo.PolarMap around a given origin point.
+    def to_polar_map(self) -> PolarMap:
+        return PolarMap(self.origin, self.features)
 
-        Args:
-            origin: A point that defines the center of the map
-            width: The width of the map in meters
-            height: The height of the map in meters
-
-        Returns:
-            The PolarMap with all features within the specified area
-        """
-
-        raise NotImplementedError()
-
-    def load_cartesian(self, origin: PolarLocation, width: float, height: float) -> CartesianMap:
-        """Loads a :class:promis.geo.CartesianMap around a given origin point.
-
-        Args:
-            origin: A point that defines the center of the map
-            width: The width of the map in meters
-            height: The height of the map in meters
-
-        Returns:
-            The PolarMap with all features within the specified area
-        """
-
-        return self.load_polar(origin, width, height).to_cartesian()
+    def to_cartesian_map(self) -> CartesianMap:
+        return PolarMap(self.origin, self.features).to_cartesian()
 
     @staticmethod
     def compute_bounding_box(
-        origin: PolarLocation, width: float, height: float
+        origin: PolarLocation, dimensions: tuple[float, float]
     ) -> tuple[float, float, float, float]:
         """Computes the north, east, south and west limits of the area to be loaded.
 
         Args:
             origin: A point that defines the center of the map
-            width: The width of the map in meters
-            height: The height of the map in meters
+            dimensions: The width and height of the map in meters
 
         Returns:
             Southern latitude, western longitude, northern latitude and eastern longitude
         """
+
+        # Unpack dimensions
+        width, height = dimensions
 
         # Compute bounding box corners in Cartesian and project back to polar
         cartesian_origin = origin.to_cartesian()

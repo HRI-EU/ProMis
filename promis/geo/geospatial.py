@@ -16,8 +16,6 @@ from uuid import uuid4
 # Third Party
 from geojson import Feature, dumps
 
-from .location_type import LOCATION_STYLES, LocationType
-
 
 class Geospatial(ABC):
 
@@ -33,11 +31,11 @@ class Geospatial(ABC):
 
     def __init__(
         self,
-        location_type: LocationType,
+        location_type: str | None,
         name: str | None,
         identifier: int | None,
     ) -> None:
-        self.location_type = location_type
+        self.location_type = location_type if location_type is not None else "UNKNOWN"
         self.name = name
         self.identifier = identifier if identifier is not None else uuid4().int % 2**63
 
@@ -111,7 +109,6 @@ class Geospatial(ABC):
                 Feature(
                     geometry=self,
                     id=self.identifier,
-                    properties=LOCATION_STYLES[self.location_type],
                 ),
                 indent=indent,
                 **kwargs,
@@ -137,9 +134,9 @@ class Geospatial(ABC):
             >>> PolarLocation(0, 0, name="", identifier=12)._repr_extras
             ', name="", identifier=12'
             >>> PolarLocation(
-            ...    0, 0, location_type=LocationType.WATER_VEHICLE, identifier=12
+            ...    0, 0, location_type="water_vehicle", identifier=12
             ... )._repr_extras
-            ', location_type=LocationType.WATER_VEHICLE, identifier=12'
+            ', location_type=water_vehicle, identifier=12'
 
             The class :class:`promis.geo.location.PolarLocation` was only chosen as an example.
 
@@ -149,8 +146,8 @@ class Geospatial(ABC):
 
         result = ""
 
-        if self.location_type != LocationType.UNKNOWN:
-            result += f", location_type=LocationType.{self.location_type.name}"
+        if self.location_type != "UNKNOWN":
+            result += f", location_type={self.location_type}"
         if self.name is not None:
             result += f', name="{self.name}"'
         if self.identifier is not None:
