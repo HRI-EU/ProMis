@@ -283,4 +283,8 @@ dist
 
 data/
 .promis_cache/
-examples/*.pkl
+
+examples/**/*.pkl
+examples/**/*.gif
+examples/**/*.png
+examples/**/*.pdf

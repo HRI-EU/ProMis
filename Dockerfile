@@ -12,6 +12,8 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
  && locale-gen
 
 ## Git and pip setup ##
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
 # Get clone of repository
 RUN git clone https://github.com/HRI-EU/ProMis.git
 WORKDIR /ProMis
