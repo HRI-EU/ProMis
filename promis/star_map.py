@@ -228,6 +228,19 @@ class StaRMap:
 
         return relations
 
+    # TODO remove?
+    # def all_relations(self) -> list[Relation]:
+    #     return [
+    #         self.get(relation_type, location_type)
+    #         for relation_type in self.relations
+    #         for location_type in self.relations[relation_type]
+    #     ]
+
+    # TODO remove?
+    # @property
+    # def relation_types(self) -> set[str]:
+    #     return set(self.relations.keys())
+
     def _train_gaussian_process(
         self,
         support: CartesianCollection,

@@ -15,6 +15,7 @@ from multiprocessing import Pool
 # Third Party
 from numpy import array
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
+from rich.progress import track
 
 # ProMis
 from promis.geo import CartesianCollection
@@ -22,8 +23,9 @@ from promis.logic import Solver
 
 from .star_map import StaRMap
 from promis.logic.spatial import Distance, Over, Depth
-from promis.geo import LocationType, PolarLocation, RasterBand, CartesianRasterBand
+from promis.geo import PolarLocation
 from promis.loaders import OsmLoader
+from promis.star_map import StaRMap
 
 
 class ProMis:
@@ -40,7 +42,14 @@ class ProMis:
         self.star_map = star_map
 
     def solve(
-        self, support: CartesianCollection, logic: str, n_jobs: int = None, batch_size: int = 1, check_required_relations=True, method="linear"
+        self,
+        support: CartesianCollection,
+        logic: str,
+        n_jobs: int = None,
+        batch_size: int = 1,
+        check_required_relations=True,
+        method="linear",
+        show_progress: bool = False,
     ) -> CartesianCollection:
         """Solve the given ProMis problem.
 
@@ -52,6 +61,7 @@ class ProMis:
             batch_size: How many pixels to infer at once
             check_required_relations: Only get the relations explicitly mentioned in the logic
             method: Interpolation method, either 'linear' or 'nearest'
+            show_progress: Whether to show a progress bar
 
         Returns:
             The Probabilistic Mission Landscape as well as time to
@@ -68,6 +78,9 @@ class ProMis:
         # For each point in the target CartesianCollection, we need to run a query
         number_of_queries = len(support.data)
         queries = [f"query(landscape(x_{index})).\n" for index in range(number_of_queries)]
+
+        # This is expensive, so we only do it once
+        relations = self.star_map.all_relations()
 
         # We batch up queries into separate programs
         solvers = []
@@ -90,28 +103,36 @@ class ProMis:
             solvers.append(Solver(program))
 
         # Solve in parallel with pool of workers
-        with Pool(n_jobs) as pool:
-            batched_results = pool.map(self.run_inference, solvers)
-
-        # Make result of Pool computation into flat list of probabilities
         flattened_data = []
-        for batch in batched_results:
-            flattened_data.extend(batch)
+        with Pool(n_jobs) as pool:
+            batched_results = pool.imap(
+                self.run_inference,
+                solvers,
+                # chunksize=10 if len(solvers) > 1000 else 1,
+            )
+
+            for batch in track(
+                batched_results,
+                total=len(solvers),
+                description="Inference",
+                disable=not show_progress,
+            ):
+                flattened_data.extend(batch)
 
         # Write results to CartesianCollection and return
         inference_results = deepcopy(target)
         if method == "linear":
             inference_results.data["v0"] = LinearNDInterpolator(
-                support.coordinates(),  array(flattened_data)
+                support.coordinates(), array(flattened_data)
             )(target.coordinates())
         elif method == "nearest":
             inference_results.data["v0"] = NearestNDInterpolator(
-                support.coordinates(),  array(flattened_data)
+                support.coordinates(), array(flattened_data)
             )(target.coordinates())
         else:
             raise ValueError(f"Unsupported interpolation method {method} chosen for ProMis.solve!")
 
-        # Restore prior target of StaRMap            
+        # Restore prior target of StaRMap
         self.star_map.target = target
 
         return inference_results

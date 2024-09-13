@@ -47,6 +47,7 @@ setuptools.setup(
         "dataclasses; python_version < '3.7'",
         "types-dataclasses; python_version < '3.7'",
         "typing-extensions; python_version < '3.8'",
+        "rich",
         #   -> generic scientific
         "numpy",
         "scipy",
