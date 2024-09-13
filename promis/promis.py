@@ -9,8 +9,10 @@
 #
 
 # Standard Library
+from collections.abc import Generator
 from copy import deepcopy
 from multiprocessing import Pool
+from re import finditer
 
 # Third Party
 from numpy import array
@@ -53,6 +55,11 @@ class ProMis:
     ) -> CartesianCollection:
         """Solve the given ProMis problem.
 
+        It searches the provided logic for the used relations and location types and
+        only encodes the necessary information for the inference.
+        It can further parallelize the inference process over multiple workers and batch
+        into fewer solver invocations to speed up computations.
+
         Args:
             support: The points to compute exactly, with the output being interpolated to the same target as
                 the employed StaRMap
@@ -79,8 +86,12 @@ class ProMis:
         number_of_queries = len(support.data)
         queries = [f"query(landscape(x_{index})).\n" for index in range(number_of_queries)]
 
-        # This is expensive, so we only do it once
-        relations = self.star_map.all_relations()
+        # Determine which relations are mentioned in the logic
+        # StaRMap.get() is expensive, so we only do this once
+        relations = [
+            self.star_map.get(relation_type, location_type)
+            for relation_type, location_type in self.mentioned_relations(logic)
+        ]
 
         # We batch up queries into separate programs
         solvers = []
@@ -136,6 +147,39 @@ class ProMis:
         self.star_map.target = target
 
         return inference_results
+
+    def mentioned_relations(self, logic: str) -> Generator[tuple[str, str], None, None]:
+        """Determine which relations are mentioned in the logic.
+
+        Args:
+            logic: The probabilistic logic to search for relations
+
+        Yields:
+            A tuple of all nessesary combinations of the relation and location types as strings
+        """
+
+        for name, arity in self.star_map.relation_arities.items():
+            realtes_to = ",".join([r"\s*((?:'\w*')|(?:\w+))\s*"] * (arity - 1))
+
+            # Prepend comma to first element if not empty
+            if realtes_to:
+                realtes_to = "," + realtes_to
+
+            for match in finditer(rf"({name})\(X{realtes_to}\)", logic):
+                name = match.group(1)
+                if name == "landscape":
+                    continue  # Ignore landscape relation since it is not part of the StaRMap
+
+                match arity:
+                    case 1:
+                        yield name, None
+                    case 2:
+                        location_type = match.group(2)
+                        if location_type[0] in "'\"":  # Remove quotes
+                            location_type = location_type[1:-1]
+                        yield name, location_type
+                    case _:
+                        raise Exception(f"Only arity 1 and 2 are supported, but got {arity}")
 
     @staticmethod
     def run_inference(solver):

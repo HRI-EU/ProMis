@@ -31,3 +31,7 @@ class Over(Relation):
     @staticmethod
     def empty_map_parameters() -> list[float]:
         return [0.0, 0.0]
+
+    @staticmethod
+    def arity() -> int:
+        return 2

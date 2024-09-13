@@ -67,6 +67,10 @@ class Depth(ScalarRelation):
         variance = full_like(mean, uniform_variance)
         return array([mean, variance])
 
+    @staticmethod
+    def arity() -> int:
+        return 1
+
     def plot(self, resolution: tuple[int, int], value_index: int = 0, axis=None, **kwargs) -> None:
         if axis is None:
             axis = plt

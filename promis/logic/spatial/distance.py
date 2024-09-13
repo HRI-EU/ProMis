@@ -78,3 +78,7 @@ class Distance(Relation):  # TODO make ScalarRelation
     @staticmethod
     def empty_map_parameters() -> list[float]:
         return [1000.0, 0.0]
+
+    @staticmethod
+    def arity() -> int:
+        return 2

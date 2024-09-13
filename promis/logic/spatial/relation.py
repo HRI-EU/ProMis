@@ -123,6 +123,11 @@ class Relation(ABC):
 
         pass
 
+    @staticmethod
+    @abstractmethod
+    def arity() -> int:
+        """Return the arity of the relation."""
+
     @classmethod
     def compute_parameters(cls, location: CartesianLocation, r_trees: list[STRtree]) -> array:
         """Compute the parameters of this Relation type for a specific location and set of maps.
