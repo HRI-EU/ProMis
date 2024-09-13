@@ -41,7 +41,7 @@ from warnings import catch_warnings, simplefilter, warn
 # Third Party
 from numpy import array
 from shapely import intersection
-from shapely.geometry import LineString, MultiPolygon, Point, Polygon
+from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, Polygon
 
 # ProMis
 from promis.geo import (
@@ -52,6 +52,7 @@ from promis.geo import (
     Geospatial,
     PolarLocation,
     PolarPolygon,
+    PolarRoute,
 )
 from promis.loaders.spatial_loader import SpatialLoader
 
@@ -106,7 +107,7 @@ class S57ChartHandler:
             raise ImportError('the "osgeo" package must be installed for this handler to function')
 
     #: This maps layer names to the corresponding parameters for S57ChartHandler._create_obstacle(...)
-    #: These are not all objects but merely the ones which are trivial to map.
+    #: These are not all possible objects but merely the ones which are trivial to read out.
     _SIMPLE_MAPPINGS: Mapping[str, tuple[str, str]] = {
         "LNDARE": ("land", "Landmass"),
         #
@@ -128,9 +129,17 @@ class S57ChartHandler:
         "FLODOC": ("obstruction", "Floating Dock"),
         "DYKCON": ("obstruction", "Dyke/Levee"),
         #
-        "DWRTPT": ("water route", "Deep Water Way"),  # primary
-        # "DWRTCL": ("water route", "Deep Water Way (Centerline)"),  # primary
-        "FAIRWY": ("water route", "Fairway"),  # secondary
+        "DWRTPT": ("water_route", "Deep Water Way"),  # primary
+        # "DWRTCL": ("water_route", "Deep Water Way (Centerline)"),  # primary
+        "FAIRWY": ("water_route", "Fairway"),  # secondary
+        #
+        "TSELNE": ("TSELNE", "TSELNE"),
+        "TSEZNE": ("TSEZNE", "TSEZNE"),
+        "TSSBND": ("TSSBND", "TSSBND"),
+        "TSSLPT": ("TSSLPT", "TSSLPT"),
+        "NAVLNE": ("NAVLNE", "NAVLNE"),
+        "RECTRC": ("RECTRC", "RECTRC"),
+        "RCTLPT": ("RCTLPT", "RCTLPT"),
         #
         "ACHARE": ("anchorage", "Anchorage Area"),
         # In parctice, one would also want to parse ACHBRT (single ship anchorage) with the corresponding radius
@@ -239,6 +248,8 @@ class S57ChartHandler:
         Returns:
             (1) A location or polygon that represents an obstacle
             (2) A (not necessarily unique) feature ID (32 bit) for that obstacle; but unique per chart file
+
+        TODO: the feature ID is not unique across even in one chart file since we support multi-part geometries
         """
 
         # This ID is guaranteed to be unique within the chart file and composed of AGEN, FIDN, and FIDS
@@ -266,35 +277,57 @@ class S57ChartHandler:
         geometry = feature.GetGeometryRef()
         geometry_type = geometry.GetGeometryType()
 
-        if geometry_type == ogr.wkbPoint:
-            point = PolarLocation(
-                latitude=geometry.GetY(),
-                longitude=geometry.GetX(),
-                name=name,
-                location_type=location_type,
-            )
-            yield point, feature_id
+        match geometry_type:
+            case ogr.wkbPoint:
+                point = PolarLocation(
+                    latitude=geometry.GetY(),
+                    longitude=geometry.GetX(),
+                    name=name,
+                    location_type=location_type,
+                )
+                yield point, feature_id
 
-        elif geometry_type == ogr.wkbLineString:
-            # Ignore this feature as there are currently no feature being extracted that are
-            # LineStrings and relevant for navigation
-            # TODO(Someone): One should verify that this is okay; See Pyrste #125
-            warn(f"Ignoring LineString geometry in chart: {name}")
+            case ogr.wkbLineString:
+                points = [
+                    PolarLocation(latitude=lat, longitude=lon) for lon, lat in geometry.GetPoints()
+                ]
+                yield PolarRoute(points, name=name, location_type=location_type), feature_id
 
-        elif geometry_type == ogr.wkbPolygon:
-            # TODO(Felix): We throw away the inner rings (i.e. the holes); although
-            # we could now use them
-            outer_ring = geometry.GetGeometryRef(0)
-            points = [
-                PolarLocation(latitude=lat, longitude=lon) for lon, lat in outer_ring.GetPoints()
-            ]
-            yield PolarPolygon(points, name=name, location_type=location_type), feature_id
+            case ogr.wkbMultiLineString:
+                for i in range(geometry.GetGeometryCount()):
+                    points = [
+                        PolarLocation(latitude=lat, longitude=lon)
+                        for lon, lat in geometry.GetGeometryRef(i).GetPoints()
+                    ]
+                    yield PolarRoute(points, name=name, location_type=location_type), feature_id
 
-        else:
-            # Apparently, no other geometries appear in charts
-            raise NotImplementedError(
-                f"Cannot handle geometry type {ogr.GeometryTypeToName(geometry_type)}"
-            )
+            case ogr.wkbPolygon:
+                outer_ring = geometry.GetGeometryRef(0)
+                outer_points = [
+                    PolarLocation(latitude=lat, longitude=lon)
+                    for lon, lat in outer_ring.GetPoints()
+                ]
+                inner_rings = [
+                    [PolarLocation(latitude=lat, longitude=lon) for lon, lat in ring.GetPoints()]
+                    for ring in (
+                        geometry.GetGeometryRef(i) for i in range(1, geometry.GetGeometryCount())
+                    )
+                ]
+                yield (
+                    PolarPolygon(
+                        locations=outer_points,
+                        holes=inner_rings,
+                        name=name,
+                        location_type=location_type,
+                    ),
+                    feature_id,
+                )
+
+            case _:
+                # Apparently, no other geometries appear in charts
+                raise NotImplementedError(
+                    f"Cannot handle geometry type {ogr.GeometryTypeToName(geometry_type)}"
+                )
 
 
 class NauticalChartLoader(SpatialLoader):
@@ -333,36 +366,40 @@ class NauticalChartLoader(SpatialLoader):
             """
             reference = copy_metadata_from or CartesianLocation(0, 0)  # for defaults
 
-            if isinstance(shapely_geometry, Point):
-                yield CartesianLocation(
-                    east=shapely_geometry.x,
-                    north=shapely_geometry.y,
-                    name=reference.name,
-                    location_type=reference.location_type,
-                    identifier=reference.identifier,
-                )
-            elif isinstance(shapely_geometry, LineString):
-                yield CartesianRoute.from_numpy(
-                    array(shapely_geometry.coords).T,
-                    name=reference.name,
-                    location_type=reference.location_type,
-                    identifier=reference.identifier,
-                )
-            elif isinstance(shapely_geometry, Polygon):
-                yield CartesianPolygon.from_numpy(
-                    array(shapely_geometry.exterior.coords).T,
-                    holes=[array(ring.coords).T for ring in shapely_geometry.interiors],
-                    name=reference.name,
-                    location_type=reference.location_type,
-                    identifier=reference.identifier,
-                )
-            elif isinstance(shapely_geometry, MultiPolygon):
-                for polygon in shapely_geometry.geoms:
-                    yield from from_shapely(polygon, reference)
-            else:
-                raise NotImplementedError(
-                    f"Cannot handle geometry type {shapely_geometry.geom_type}"
-                )
+            match shapely_geometry:
+                case Point(x=x, y=y):
+                    yield CartesianLocation(
+                        east=x,
+                        north=y,
+                        name=reference.name,
+                        location_type=reference.location_type,
+                        identifier=reference.identifier,
+                    )
+                case LineString(coords=coords):
+                    yield CartesianRoute.from_numpy(
+                        array(coords),
+                        name=reference.name,
+                        location_type=reference.location_type,
+                        identifier=reference.identifier,
+                    )
+                case MultiLineString(geoms=geoms):
+                    for line in geoms:
+                        yield from from_shapely(line, reference)
+                case Polygon(exterior=exterior, interiors=interiors):
+                    yield CartesianPolygon.from_numpy(
+                        array(exterior.coords).T,
+                        holes=[array(ring.coords).T for ring in interiors],
+                        name=reference.name,
+                        location_type=reference.location_type,
+                        identifier=reference.identifier,
+                    )
+                case MultiPolygon(geoms=geoms):
+                    for polygon in geoms:
+                        yield from from_shapely(polygon, reference)
+                case _:
+                    raise NotImplementedError(
+                        f"Cannot handle geometry type {shapely_geometry.geom_type}"
+                    )
 
         def generate() -> Generator[PolarChartGeometry, None, None]:
             # TODO: This is quite slow and could easily be parallelized
