@@ -428,7 +428,7 @@ class ParticleFilter:
                         **kwargs,
                     )
                 ),
-                0,
+                1e-6,
                 np.inf,
             )
         else:
@@ -445,6 +445,7 @@ class ParticleFilter:
             weights *= internal_weights
 
         # normalise weights to resampling probabilities
+        self.weights_unnormalized = weights
         self.weight_normalisation = np.sum(weights)
         self.weights = weights / self.weight_normalisation
 

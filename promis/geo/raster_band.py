@@ -14,9 +14,10 @@ from collections import defaultdict
 from collections.abc import Callable
 from io import BytesIO
 from itertools import product
+from typing import Any
 
 # Third Party
-from numpy import array, concatenate, linspace, meshgrid, ndarray, ravel, vstack, zeros, asanyarray
+from numpy import array, concatenate, linspace, meshgrid, ravel, vstack, zeros
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -25,6 +26,7 @@ from numpy import array, float32, ndarray, sum, uint8, vstack, zeros
 from PIL.Image import Image, fromarray
 from PIL.Image import open as open_image
 from sklearn.preprocessing import MinMaxScaler
+from scipy.interpolate import RegularGridInterpolator
 
 # ProMis
 from promis.geo import (
@@ -291,6 +293,33 @@ class RasterBand(ABC):
             north=-((self.pixel_height / 2) + index[1] * self.pixel_height) + self.center_y,
         )
         self.data = DataFrame(raster_entries, columns=self.data.columns)
+
+    def get_interpolator(self, method: str = "linear") -> RegularGridInterpolator:
+        """Get an interpolator for the raster band.
+
+        Args:
+            method: The interpolation method to use
+
+        Returns:
+            A callable interpolator function
+        """
+
+        # Get coordinates
+        all_coordinates = self.coordinates().reshape(*self.resolution, 2)
+        x = all_coordinates[:, 0, 0]
+        y = all_coordinates[0, :, 1]
+
+        # Get values
+        values = self.values().reshape(*self.resolution, self.dimensions)
+
+        # Create interpolator
+        return RegularGridInterpolator(
+            (x, y),
+            values,
+            method=method,
+            bounds_error=False,
+            fill_value=None,
+        )
 
 
 class PolarRasterBand(RasterBand, PolarCollection):

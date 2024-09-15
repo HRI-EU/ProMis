@@ -145,9 +145,12 @@ class StaRMap:
 
     @target.setter
     def target(self, target: CartesianCollection) -> None:
-        # Validate that target and UAM have the same origin
-        if target.origin != self.uam.origin:
-            raise ValueError("StaRMap target and UAM must have the same origin")
+        # Validate that target and UAM have the same origin coordinates
+        if any(target.origin.to_numpy() != self.uam.origin.to_numpy()):
+            raise ValueError(
+                "StaRMap target and UAM must have the same origin but were: "
+                f"{target.origin} and {self.uam.origin}"
+            )
 
         # Actually store the target
         self._target = target

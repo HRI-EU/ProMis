@@ -55,6 +55,7 @@ class ProMis:
         check_required_relations=True,
         method="linear",
         show_progress: bool = False,
+        print_first: bool = False,
     ) -> CartesianCollection:
         """Solve the given ProMis problem.
 
@@ -72,6 +73,7 @@ class ProMis:
             check_required_relations: Only get the relations explicitly mentioned in the logic
             method: Interpolation method, either 'linear' or 'nearest'
             show_progress: Whether to show a progress bar
+            print_first: Whether to print the first program to stdout
 
         Returns:
             The Probabilistic Mission Landscape as well as time to
@@ -116,8 +118,8 @@ class ProMis:
             # Add program to collection
             solvers.append(Solver(program))
 
-            if index == 0:
-                print(program)  # TODO: Remove
+            if print_first and index == 0:
+                print(program)
 
         # Solve in parallel with pool of workers
         flattened_data = []
