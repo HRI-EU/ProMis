@@ -58,7 +58,7 @@ class Depth(ScalarRelation):
         depth_values = array(list(map(feature_to_depth, data_map.features)))
         r_tree = data_map.to_rtree()
 
-        # Indices of the nearest features
+        # Indices of the nearest features (this will raise an error if no features are found)
         all_nearest = r_tree.nearest(
             [location.geometry for location in support.to_cartesian_locations()]
         )
@@ -78,7 +78,7 @@ class Depth(ScalarRelation):
         color = self.parameters.values()[:, value_index].reshape(resolution).T
         # Use a diverging colormap with sea level (depth 0.0) as the center point
         axis.imshow(
-            color.T, norm=CenteredNorm(vcenter=0.0), cmap="BrBG_r", origin="lower", **kwargs
+            color, norm=CenteredNorm(vcenter=0.0), cmap="BrBG_r", origin="lower", **kwargs
         )
         axis.colorbar()
 

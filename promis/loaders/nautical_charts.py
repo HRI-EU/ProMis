@@ -122,27 +122,29 @@ class S57ChartHandler:
         "OFSPLF": ("obstruction", "Platform"),
         "OSPARE": ("obstruction", "Production Area/Wind farm"),
         "PILPNT": ("obstruction", "Post"),
-        "MIPARE": ("obstruction", "Military Exercise Area"),
-        "DMPGRD": ("obstruction", "Dumping Ground"),
+        # "MIPARE": ("obstruction", "Military Exercise Area"),
+        # "DMPGRD": ("obstruction", "Dumping Ground"),
         "DOCARE": ("obstruction", "Dock Area"),
         "DRYDOC": ("obstruction", "Dry Dock"),
         "FLODOC": ("obstruction", "Floating Dock"),
         "DYKCON": ("obstruction", "Dyke/Levee"),
         #
-        "DWRTPT": ("water_route", "Deep Water Way"),  # primary
-        # "DWRTCL": ("water_route", "Deep Water Way (Centerline)"),  # primary
-        "FAIRWY": ("water_route", "Fairway"),  # secondary
+        "DWRTCL": ("water_route", "Deep Water Centerline"),
+        "DWRTPT": ("water_route", "Deep Water Way"),
+        "FAIRWY": ("water_route", "Fairway"),
         #
-        "TSELNE": ("TSELNE", "TSELNE"),
-        "TSEZNE": ("TSEZNE", "TSEZNE"),
-        "TSSBND": ("TSSBND", "TSSBND"),
-        "TSSLPT": ("TSSLPT", "TSSLPT"),
-        "NAVLNE": ("NAVLNE", "NAVLNE"),
-        "RECTRC": ("RECTRC", "RECTRC"),
-        "RCTLPT": ("RCTLPT", "RCTLPT"),
+        "HRBARE": ("harbor", "Harbor area (administrative)"),
         #
-        "ACHARE": ("anchorage", "Anchorage Area"),
-        # In parctice, one would also want to parse ACHBRT (single ship anchorage) with the corresponding radius
+        # "TSELNE": ("TSELNE", "TSELNE"),
+        # "TSEZNE": ("TSEZNE", "TSEZNE"),
+        # "TSSBND": ("TSSBND", "TSSBND"),
+        # "TSSLPT": ("TSSLPT", "TSSLPT"),
+        "RECTRC": ("water_route", "RECTRC"),
+        "RCTLPT": ("water_route", "RCTLPT"),
+        "RCRTCL": ("water_route", "RCRTCL"),
+        #
+        "ACHARE": ("anchorage", "Anchorage area"),
+        "ACHBRT": ("anchorage", "Anchor berth (single)"),
     }
 
     @staticmethod

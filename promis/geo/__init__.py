@@ -12,7 +12,7 @@
 from typing import TypeAlias
 
 # ProMis
-from promis.geo.collection import CartesianCollection, PolarCollection
+from promis.geo.collection import CartesianCollection, Collection, PolarCollection
 from promis.geo.geospatial import Geospatial
 from promis.geo.helpers import Direction
 from promis.geo.location import CartesianLocation, PolarLocation
@@ -28,6 +28,7 @@ PolarGeometry: TypeAlias = PolarLocation | PolarMap | PolarPolygon | PolarRoute
 
 __all__ = [
     "CartesianCollection",
+    "Collection",
     "CartesianGeometry",
     "CartesianLocation",
     "CartesianMap",

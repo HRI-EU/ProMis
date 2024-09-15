@@ -16,7 +16,7 @@ from io import BytesIO
 from itertools import product
 
 # Third Party
-from numpy import array, concatenate, linspace, meshgrid, ravel, vstack, zeros
+from numpy import array, concatenate, linspace, meshgrid, ndarray, ravel, vstack, zeros, asanyarray
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure

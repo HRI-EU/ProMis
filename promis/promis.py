@@ -9,10 +9,11 @@
 #
 
 # Standard Library
-from collections.abc import Generator
 from copy import deepcopy
 from multiprocessing import Pool
 from re import finditer
+from functools import cached_property
+from pickle import dump, load
 
 # Third Party
 from numpy import array
@@ -38,10 +39,12 @@ class ProMis:
 
         Args:
             star_map: The statistical relational map holding the parameters for ProMis
+            logic: The constraints of the landscape(X) predicate, including its definition
         """
 
         # Set parameters
         self.star_map = star_map
+        self.logic = logic
 
     def solve(
         self,
@@ -90,7 +93,7 @@ class ProMis:
         # StaRMap.get() is expensive, so we only do this once
         relations = [
             self.star_map.get(relation_type, location_type)
-            for relation_type, location_type in self.mentioned_relations(logic)
+            for relation_type, location_type in self.mentioned_relations
         ]
 
         # We batch up queries into separate programs
@@ -100,7 +103,7 @@ class ProMis:
             batch = range(index, index + batch_size)
 
             # Write the background knowledge, queries and parameters to the program
-            program = logic + "\n"
+            program = self.logic + "\n"
             for batch_index in batch:
                 if batch_index >= number_of_queries:
                     break
@@ -112,6 +115,9 @@ class ProMis:
 
             # Add program to collection
             solvers.append(Solver(program))
+
+            if index == 0:
+                print(program)  # TODO: Remove
 
         # Solve in parallel with pool of workers
         flattened_data = []
@@ -148,7 +154,8 @@ class ProMis:
 
         return inference_results
 
-    def mentioned_relations(self, logic: str) -> Generator[tuple[str, str], None, None]:
+    @cached_property
+    def mentioned_relations(self) -> list[tuple[str, str | None]]:
         """Determine which relations are mentioned in the logic.
 
         Args:
@@ -158,6 +165,8 @@ class ProMis:
             A tuple of all nessesary combinations of the relation and location types as strings
         """
 
+        result: list[tuple[str, str | None]] = []
+
         for name, arity in self.star_map.relation_arities.items():
             realtes_to = ",".join([r"\s*((?:'\w*')|(?:\w+))\s*"] * (arity - 1))
 
@@ -165,22 +174,34 @@ class ProMis:
             if realtes_to:
                 realtes_to = "," + realtes_to
 
-            for match in finditer(rf"({name})\(X{realtes_to}\)", logic):
+            for match in finditer(rf"({name})\(X{realtes_to}\)", self.logic):
                 name = match.group(1)
                 if name == "landscape":
                     continue  # Ignore landscape relation since it is not part of the StaRMap
 
                 match arity:
                     case 1:
-                        yield name, None
+                        result.append((name, None))
                     case 2:
                         location_type = match.group(2)
                         if location_type[0] in "'\"":  # Remove quotes
                             location_type = location_type[1:-1]
-                        yield name, location_type
+                        result.append((name, location_type))
                     case _:
                         raise Exception(f"Only arity 1 and 2 are supported, but got {arity}")
+
+        return result
 
     @staticmethod
     def run_inference(solver):
         return solver.inference()
+
+    # TODO check if still needed
+    # @staticmethod
+    # def load(path) -> "ProMis":
+    #     with open(path, "rb") as file:
+    #         return load(file)
+
+    # def save(self, path):
+    #     with open(path, "wb") as file:
+    #         dump(self, file)
