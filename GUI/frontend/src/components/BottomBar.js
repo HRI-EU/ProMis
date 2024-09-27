@@ -3,6 +3,7 @@ import "./BottomBar.css";
 import hljs from "highlight.js";
 import "highlight.js/styles/atom-one-dark.css";
 import { C } from "../managers/Core";
+import LocationTypeSetting from "./LocationTypeSetting";
 
 //MUI elements
 import Box from "@mui/material/Box";
@@ -27,6 +28,10 @@ import PlayCircleIcon from "@mui/icons-material/PlayCircleOutline";
 import StopCircleIcon from "@mui/icons-material/StopCircleOutlined";
 import FileUploadIcon from "@mui/icons-material/FileUploadOutlined";
 import CloseIcon from "@mui/icons-material/CloseRounded";
+import SettingsFilledIcon from "@mui/icons-material/Settings";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import { Select } from "@mui/material";
 
 const darkTheme = createTheme({
@@ -48,6 +53,8 @@ export default class BottomBar extends React.Component {
       dimensionHeight: 1024,
       resolutionWidth: 100,
       resolutionHeight: 100,
+      runningParamsToggled: false,
+      locationTypeToggled: true,
     };
   }
 
@@ -58,6 +65,7 @@ export default class BottomBar extends React.Component {
 
   // Create a reference to the hidden file input element
   hiddenFileInput = React.createRef(null);
+
 
   // to handle the user-selected file
   handleChange = (event) => {
@@ -124,16 +132,24 @@ export default class BottomBar extends React.Component {
   updateEditor = (e) => {
     // update the source code
     C().sourceMan.importSource(e.target.value);
-    // sync scrolling
-    //this.snycScroll();
   }
-  
-  snycScroll = () => {
-    const editing = document.getElementById("editing");
-    const highlighting = document.getElementById("highlighting");
-    const codeBlock = document.getElementById("codeBlock");
-    highlighting.scrollTop = editing.scrollTop;
-    codeBlock.scrollLeft = editing.scrollLeft;
+
+  toggleRunningParams = () => {
+    // if the location type setting is toggled, close it
+    if (this.state.locationTypeToggled) {
+      this.setState({ locationTypeToggled: false });
+    }
+    // toggle the running parameters
+    this.setState({ runningParamsToggled: !this.state.runningParamsToggled });
+  }
+
+  toggleLocationType = () => {
+    // if the running parameters is toggled, close it
+    if (this.state.runningParamsToggled) {
+      this.setState({ runningParamsToggled: false });
+    }
+    // toggle the location type setting
+    this.setState({ locationTypeToggled: !this.state.locationTypeToggled });
   }
 
   editorValue = () => {
@@ -187,6 +203,117 @@ export default class BottomBar extends React.Component {
     // recenter map
     C().mapMan.recenterMap(latLon);
   }
+
+  runningParams = () => (
+    <Grid
+      container
+      spacing={0}
+      direction="row"
+      alignItems="center"
+      justifyContent="start"
+      m={0}
+      style={{ marginLeft: "32px" }}
+      sx={{ display: "flex" }}
+    >
+      <ThemeProvider theme={darkTheme}>
+        <FormControl sx={{ m: 1, minWidth: 120}} size="small">
+          <InputLabel id="demo-simple-select-helper-label"
+            style={{ color: "#ffffff" }}
+          >Origin</InputLabel>
+          <Select
+            labelId="demo-simple-select-helper-label"
+            id="demo-simple-select-helper"
+            label="Origin"
+            variant="outlined"
+            value={C().sourceMan.origin}
+            onChange={this.handleOriginChange}
+          >
+            {this.createSelectItems()}
+          </Select>
+        </FormControl>
+      </ThemeProvider>
+      <ThemeProvider theme={darkTheme}>
+        <Grid
+          spacing={0}
+          direction="row"
+          alignItems="center"
+          justifyContent="start"
+          m={0}
+          sx={{ display: "flex",
+            marginLeft: "20px",
+          }}
+        >
+          <div
+            style={{
+              marginRight: "10px",
+              color: "#ffffff",
+            }}
+          >Dimensions:</div>
+          <TextField type="number" size="small" label="width" variant="outlined" 
+            value={this.state.dimensionWidth}
+            onChange={(e) => this.setState({ dimensionWidth: e.target.value })}
+            sx={{
+              width: this.inputSize
+            }}
+          />
+          <TextField type="number" size="small" label="height" variant="outlined"
+            value={this.state.dimensionHeight}
+            onChange={(e) => this.setState({ dimensionHeight: e.target.value })}
+            sx={{
+              width: this.inputSize
+            }}
+          />
+          <div
+            style={{
+              marginLeft: "2px",
+              color: "#ffffff",
+            }}
+          >m²</div>
+        </Grid>
+      </ThemeProvider>
+      <ThemeProvider theme={darkTheme}>
+        <Grid
+          spacing={0}
+          direction="row"
+          alignItems="center"
+          justifyContent="start"
+          m={0}
+          sx={{ display: "flex" ,
+            marginLeft: "20px",
+          }}
+        >
+          <div
+            style={{
+              marginRight: "10px",
+              color: "#ffffff",
+            }}
+          >Resolutions:</div>
+          <TextField type="number" size="small" variant="outlined" 
+            value={this.state.resolutionWidth}
+            onChange={(e) => this.setState({ resolutionWidth: e.target.value })}
+            sx={{
+              width: this.inputSize
+            }}
+          />
+          <TextField type="number" size="small" variant="outlined"
+            value={this.state.resolutionHeight}
+            onChange={(e) => this.setState({ resolutionHeight: e.target.value })}
+            sx={{
+              width: this.inputSize
+            }}
+          />
+          <div
+            style={{
+              marginLeft: "2px",
+              color: "#ffffff",
+            }}
+          >px</div>
+        </Grid>
+      </ThemeProvider>
+    </Grid>
+  )
+
+
   // panel that will appear when the bottom bar is clicked
   list = () => (
     <Box
@@ -237,7 +364,7 @@ export default class BottomBar extends React.Component {
             <ExpandMoreRounded />
           </Button>
         </Grid>
-        
+
         <Grid
           container
           spacing={0}
@@ -245,123 +372,60 @@ export default class BottomBar extends React.Component {
           alignItems="center"
           justifyContent="start"
           m={0}
-          style={{ marginLeft: "32px" }}
-          sx={{ display: "flex" }}
+          style={{ marginLeft: "0px" }}
         >
-          <ThemeProvider theme={darkTheme}>
-            <FormControl sx={{ m: 1, minWidth: 120}} size="small">
-              <InputLabel id="demo-simple-select-helper-label"
-                style={{ color: "#ffffff" }}
-              >Origin</InputLabel>
-              <Select
-                labelId="demo-simple-select-helper-label"
-                id="demo-simple-select-helper"
-                label="Origin"
-                variant="outlined"
-                value={C().sourceMan.origin}
-                onChange={this.handleOriginChange}
-              >
-                {this.createSelectItems()}
-              </Select>
-            </FormControl>
-          </ThemeProvider>
-          <ThemeProvider theme={darkTheme}>
-            <FormControl sx={{ m: 1, minWidth: 120}} size="small">
-              <InputLabel id="demo-simple-select-helper-label"
-                style={{ color: "#ffffff" }}
-              >Start</InputLabel>
-              <Select
-                labelId="demo-simple-select-helper-label"
-                id="demo-simple-select-helper"
-                label="Origin"
-                variant="outlined"
-                value={C().sourceMan.start}
-                onChange={(e) => C().sourceMan.updateStart(e.target.value)}
-              >
-                {this.createSelectItems()}
-              </Select>
-            </FormControl>
-          </ThemeProvider>
-          <ThemeProvider theme={darkTheme}>
-            <Grid
-              spacing={0}
-              direction="row"
-              alignItems="center"
-              justifyContent="start"
-              m={0}
-              sx={{ display: "flex",
-                marginLeft: "20px",
-              }}
-            >
-              <div
-                style={{
-                  marginRight: "10px",
-                  color: "#ffffff",
-                }}
-              >Dimensions:</div>
-              <TextField type="number" size="small" label="width" variant="outlined" 
-                value={this.state.dimensionWidth}
-                onChange={(e) => this.setState({ dimensionWidth: e.target.value })}
-                sx={{
-                  width: this.inputSize
-                }}
-              />
-              <TextField type="number" size="small" label="height" variant="outlined"
-                value={this.state.dimensionHeight}
-                onChange={(e) => this.setState({ dimensionHeight: e.target.value })}
-                sx={{
-                  width: this.inputSize
-                }}
-              />
-              <div
-                style={{
-                  marginLeft: "2px",
-                  color: "#ffffff",
-                }}
-              >m²</div>
-            </Grid>
-          </ThemeProvider>
-          <ThemeProvider theme={darkTheme}>
-            <Grid
-              spacing={0}
-              direction="row"
-              alignItems="center"
-              justifyContent="start"
-              m={0}
-              sx={{ display: "flex" ,
-                marginLeft: "20px",
-              }}
-            >
-              <div
-                style={{
-                  marginRight: "10px",
-                  color: "#ffffff",
-                }}
-              >Resolutions:</div>
-              <TextField type="number" size="small" variant="outlined" 
-                value={this.state.resolutionWidth}
-                onChange={(e) => this.setState({ resolutionWidth: e.target.value })}
-                sx={{
-                  width: this.inputSize
-                }}
-              />
-              <TextField type="number" size="small" variant="outlined"
-                value={this.state.resolutionHeight}
-                onChange={(e) => this.setState({ resolutionHeight: e.target.value })}
-                sx={{
-                  width: this.inputSize
-                }}
-              />
-              <div
-                style={{
-                  marginLeft: "2px",
-                  color: "#ffffff",
-                }}
-              >px</div>
-            </Grid>
-          </ThemeProvider>
-        </Grid>
+          <IconButton
+            onClick={() => {
+              this.toggleRunningParams();
+            }}
+            style={{ color: "#eeeeee", fontSize: 12, marginLeft: "32px" }}
+            aria-label="Open running param menu"
+          >
+            {this.state.runningParamsToggled ? (
+              <SettingsFilledIcon />
+            ) : (
+              <SettingsOutlinedIcon />
+            )}
+          </IconButton>
 
+          <IconButton
+            onClick={() => {
+              this.toggleLocationType();
+            }}
+            style={{ color: "#eeeeee", fontSize: 12 }}
+            aria-label="Open location type menu"
+          >
+            {this.state.locationTypeToggled ? (
+              <ListAltOutlinedIcon />
+            ) : (
+              <FormatListBulletedIcon />
+            )}
+          </IconButton>
+        </Grid>
+        
+        {this.state.runningParamsToggled ? this.runningParams() : null}
+        
+        {
+          this.state.locationTypeToggled ?
+            <Grid
+              container
+              spacing={0}
+              direction="row"
+              alignItems="center"
+              justifyContent="start"
+              m={0}
+              sx={{ 
+                width: "100%",
+                display: "flex",
+                paddingLeft: "32px",
+                paddingRight: "32px",
+               }}
+            >
+              <ThemeProvider theme={darkTheme}>
+                <LocationTypeSetting />
+              </ThemeProvider>
+            </Grid> : null
+        }
 
         <Grid
           container
@@ -478,6 +542,8 @@ export default class BottomBar extends React.Component {
           sx={{ 
             display: "flex",
             marginTop: "12px",
+            paddingLeft: "32px",
+            paddingRight: "32px",
           }}
         >
           {C().sourceMan.edit ? 
@@ -488,7 +554,7 @@ export default class BottomBar extends React.Component {
               style={{
                 height: "300px",
                 color: "#ffffff",
-                padding: "16px",
+                paddingLeft: "16px",
               }}
             >
             </textarea>

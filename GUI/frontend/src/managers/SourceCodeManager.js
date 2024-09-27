@@ -10,6 +10,7 @@ class SourceCodeManager {
     this.origin = "";
     this.start = "";
     this.edit = false;
+    this.locationTypes = [];
   }
 
   //Toggle the running state of the source code
@@ -17,12 +18,20 @@ class SourceCodeManager {
     if (!this.hasSource) return;
     if (this.running) return;
     this.running = !this.running;
+    console.log(this.locationTypes);
+    // process location types to the form that the backend expects
+    let locationTypes = {};
+    for (const locationType of this.locationTypes) {
+      locationTypes[locationType.locationType] = "['" + locationType.key + "' = '" + locationType.value + "']";
+    }
+
     const originLatLong = C().mapMan.latlonDroneFromMarkerName(this.origin);
     const body = {
       source: this.source,
       origin: [originLatLong.lat, originLatLong.lng],
       dimensions: [dimensionWidth, dimensionHeight],
-      resolutions: [resolutionWidth, resolutionHeight]
+      resolutions: [resolutionWidth, resolutionHeight],
+      location_types: locationTypes,
     };
     if (this.start !== "") {
       const startLatLong = C().mapMan.latlonDroneFromMarkerName(this.start);
@@ -30,7 +39,7 @@ class SourceCodeManager {
     }
     if (this.running && this.hasSource) {
       //Run the source code
-      const url = "http://localhost:8000/run";
+      const url = "http://localhost:8000/runpromis";
       fetch(url, {
         method: "POST",
         body: JSON.stringify(body),

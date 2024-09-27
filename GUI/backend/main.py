@@ -1,13 +1,12 @@
-import matplotlib.pyplot as plt
-from numpy import eye, unravel_index
-import os
+from numpy import eye
 import re
 from typing import Set
 
-from promis import ProMis
-from promis.geo import LocationType, PolarLocation, CartesianLocation
+from promis import ProMis, StaRMap
+from promis.geo import PolarLocation, CartesianLocation, CartesianRasterBand
+from promis.loaders import OsmLoader
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -17,6 +16,7 @@ class Item(BaseModel):
     start: tuple[float, float] = None
     dimensions: tuple[int, int]
     resolutions: tuple[int, int]
+    location_types: dict[str, str]
 
 
 app = FastAPI()
@@ -42,62 +42,62 @@ def find_necessary_type(source: str) -> Set[str]:
     location_types = [match[2] for match in maches]
     return set(location_types)
 
-@app.post("/run")
-def run(req: Item):
-    # ProMis Parameters
-    spatial_samples = 50          # How many maps to generate to compute statistics
-    dimensions = req.dimensions  # Meters
-    resolution = req.resolutions        # Pixels
-    model = req.source
-    cache = "./cache"            # Where to cache computed data
-    print(f"origin latlong: {req.origin[0]}, {req.origin[1]}")
-    if (req.start is not None):
-        print(f"start latlong: {req.start[0]}, {req.start[1]}")
-    
-    # find type mentioned in the model
-    set_of_types = find_necessary_type(model)
-    types = [  
-        location_type for location_type in LocationType if location_type.name.lower() in set_of_types
-    ]
-    tu_darmstadt = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
+@app.post("/runpromis")
+def run_new(req: Item):
+    # We center a 1km^2 mission landscape over TU Darmstadt
+    mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
+    dimensions = req.dimensions
+    width, height = dimensions
 
-    # Setup engine and compute distributional clauses
-    pmd = ProMis(tu_darmstadt, dimensions, resolution, types, spatial_samples)
+    # We load geographic features from OpenStreetMap using a range of filters
+    location_types = req.location_types
 
-    # Set parameters that are unrelated to the loaded map data
-    # Here, we imagine the operator to be situated at the center of the mission area
-    pmd.add_feature(CartesianLocation(0.0, 0.0, location_type=LocationType.OPERATOR))
+    osm_loader = OsmLoader(mission_center, dimensions)
+    for name, osm_filter in location_types.items():
+        osm_loader.load_routes(osm_filter, name)
+        osm_loader.load_polygons(osm_filter, name)
 
-    # Set start when is it present
-    if (req.start is not None):
-        pmd.map = pmd.map.to_polar()
-        pmd.add_feature(PolarLocation(latitude=req.start[0], longitude=req.start[1], location_type=LocationType.START))
-        pmd.map = pmd.map.to_cartesian()
-        extension = (
-                f"{pmd.map.width}_{pmd.map.height}_"
-                + f"{pmd.resolution[0]}_{pmd.resolution[1]}_"
-                + f"{pmd.map.origin.latitude}_{pmd.map.origin.longitude}_"
-                + f"{pmd.number_of_random_maps}_"
-                + f"{LocationType.START.name.lower()}"
-            )
-        # check if start cache exist and delete if it is
-        startFileName = f"{cache}/distance_{extension}.pkl"
-        if (os.path.exists(startFileName)):
-            os.remove(startFileName)
+    # We now convert the data into an Uncertainty Annotated Map
+    uam = osm_loader.to_cartesian_map()
 
-    # Compute distributional clauses with uncertainty
-    pmd.compute_distributions(4 * eye(2), cache)
+    # We can add extra information, e.g., from background knowledge or other sensors
+    # Here, we place the drone operator at the center of the map
+    uam.features.append(CartesianLocation(0, 0, location_type="operator"))
 
-    # Generate landscape
-    landscape, program_time, compile_time, inference_time = pmd.generate(logic=model, n_jobs=8)
+    # Annotate the same level of uncertainty on all features
+    uam.apply_covariance(10.0 * eye(2))
 
-    # Show result
-    print(f"Generated Probabilistic Mission Landscape.")
-    print(f">> Building the program took {program_time}s.")
-    print(f">> Compilation took {compile_time}s.")
-    print(f">> Inference took {inference_time}s.")
+    # We create a statistical relational map (StaR Map) to represent the 
+    # stochastic relationships in the environment, computing a raster of 1000 x 1000 points
+    # using linear interpolation of a sample set
+    target_resolution = req.resolutions
+    target = CartesianRasterBand(mission_center, target_resolution, width, height)
+    star_map = StaRMap(target, uam, list(location_types.keys()) + ["operator"], "linear")
+
+    # The sample points for which the relations will be computed directly
+    support_resolution = (50, 50)
+    support = CartesianRasterBand(mission_center, support_resolution, width, height)
+
+    # We now compute the Distance and Over relationships for the selected points
+    # For this, we take 25 random samples from generated/possible map variations
+    star_map.add_support_points(support, 25)
+
+    # In ProMis, we define the constraints of the mission 
+    # as hybrid probabilistic first-order logic program
+    logic = req.source
+
+    # Solve mission constraints using StaRMap parameters and multiprocessing
+    promis = ProMis(star_map)
+    landscape = promis.solve(logic, n_jobs=4, batch_size=15)
+
+    polar_pml = landscape.to_polar()
     data = []
-    for i, location in enumerate(landscape.polar_locations.values()):
-        index = unravel_index(i, resolution)
-        data.append([location.latitude, location.longitude, landscape.data[index]])
+    longlats = polar_pml.coordinates()
+    values = polar_pml.values()
+    columns = polar_pml._polar_columns()
+    for i, longlat in enumerate(longlats):
+        long = longlat[0] if columns[0] == 'longitude' else longlat[1]
+        lat = longlat[1] if columns[1] == 'latitude' else longlat[0]
+        val = values[i][0]
+        data.append([lat, long, val])
     return data
