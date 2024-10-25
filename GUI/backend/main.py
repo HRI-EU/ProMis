@@ -96,10 +96,10 @@ def run_new(req: Item):
     # using linear interpolation of a sample set
     target_resolution = req.resolutions
     target = CartesianRasterBand(mission_center, target_resolution, width, height)
-    star_map = StaRMap(target, uam, list(location_types.keys()) + ["operator"], "linear")
+    star_map = StaRMap(target, uam, list(location_types.keys()), "linear")
 
     # The sample points for which the relations will be computed directly
-    support_resolution = (50, 50)
+    support_resolution = target_resolution
     support = CartesianRasterBand(mission_center, support_resolution, width, height)
 
     # We now compute the Distance and Over relationships for the selected points
