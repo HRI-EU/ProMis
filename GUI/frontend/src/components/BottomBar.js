@@ -4,6 +4,7 @@ import hljs from "highlight.js";
 import "highlight.js/styles/atom-one-dark.css";
 import { C } from "../managers/Core";
 import LocationTypeSetting from "./LocationTypeSetting";
+import { randomId } from "../utils/Utility.js";
 
 //MUI elements
 import Box from "@mui/material/Box";
@@ -40,6 +41,29 @@ const darkTheme = createTheme({
   },
 });
 
+const initialRows = [
+  {
+    id: randomId(),
+    locationType: "primary_road",
+    filter: "['highway' = 'primary']",
+  },
+  {
+    id: randomId(),
+    locationType: "secondary_road",
+    filter: "['highway' = 'secondary']",
+  },
+  {
+    id: randomId(),
+    locationType: "tertiary_road",
+    filter: "['highway' = 'tertiary']",
+  },
+  {
+    id: randomId(),
+    locationType: "park",
+    filter: "['leisure' = 'park']",
+  },
+];
+
 export default class BottomBar extends React.Component {
   constructor() {
     super();
@@ -53,8 +77,8 @@ export default class BottomBar extends React.Component {
       dimensionHeight: 1024,
       resolutionWidth: 100,
       resolutionHeight: 100,
-      runningParamsToggled: false,
-      locationTypeToggled: true,
+      runningParamsToggled: true,
+      locationTypeToggled: false,
     };
   }
 
@@ -85,6 +109,7 @@ export default class BottomBar extends React.Component {
     if (this.hiddenFileInput.current) {
       this.hiddenFileInput.current.setAttribute("onclick", "this.value=null;");
     }
+    C().sourceMan.locationTypes = initialRows;
   }
 
   // Highlight the code when the component updates
@@ -180,12 +205,7 @@ export default class BottomBar extends React.Component {
 
   createSelectItems = () => {
     let items = [];
-    items.push(
-      <MenuItem key={0} value={""}>
-        None
-      </MenuItem>
-    );
-    const markers = C().mapMan.listDroneMarkers();
+    const markers = C().mapMan.listMarkers();
     for (let i = 0; i < markers.length; i++) {
       items.push(
         <MenuItem key={i + 1} value={markers[i].feature.properties["name"]}>
@@ -199,7 +219,7 @@ export default class BottomBar extends React.Component {
   handleOriginChange = (event) => {
     C().sourceMan.updateOrigin(event.target.value);
     // get marker with this origin name
-    const latLon = C().mapMan.latlonDroneFromMarkerName(event.target.value);
+    const latLon = C().mapMan.latlonFromMarkerName(event.target.value);
     // recenter map
     C().mapMan.recenterMap(latLon);
   }
@@ -422,7 +442,9 @@ export default class BottomBar extends React.Component {
                }}
             >
               <ThemeProvider theme={darkTheme}>
-                <LocationTypeSetting />
+                <LocationTypeSetting 
+                  initialRows={C().sourceMan.locationTypes}
+                />
               </ThemeProvider>
             </Grid> : null
         }
@@ -552,7 +574,7 @@ export default class BottomBar extends React.Component {
               onChange={(e) => this.updateEditor(e)}
               onKeyDown={(e) => this.checkTab(e.target, e)}
               style={{
-                height: "300px",
+                height: "200px",
                 color: "#ffffff",
                 paddingLeft: "16px",
               }}

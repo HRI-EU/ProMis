@@ -18,7 +18,7 @@ WORKDIR /ProMis
 
 # Install separate pip dependencies
 RUN pip install numpy==1.26.4 pyro-ppl graphviz
-RUN pip install --upgrade --force-reinstall --no-deps --no-binary :all: pysdd
+RUN pip install pysdd
 
 # Clone and install Problog with distributional clauses
 # This contains bugfixes that are not part of the official release yet
@@ -33,8 +33,7 @@ RUN pip install .
 
 WORKDIR /backend
 
-COPY main.py /backend/
-RUN mkdir cache
+COPY ./ /backend/
 
 RUN pip install "fastapi[standard]"
 

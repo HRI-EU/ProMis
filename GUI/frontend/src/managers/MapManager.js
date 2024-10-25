@@ -2,6 +2,7 @@ import L from "leaflet";
 import "leaflet.heat";
 
 import ColorHelper from "../utils/ColorHelper.js";
+import { updateConfig } from "../utils/Utility.js";
 
 import { C } from "./Core.js";
 
@@ -25,6 +26,25 @@ class MapManager {
     this.initWeather = false;
     this.initToolbar = false;
     this.dynamicFeatureGroup = null;
+    this.icons = {};
+    this.nameNumber = 1;
+  }
+
+  // get markers from map
+  getMarkers() {
+    // marker of type {name: string, latlng: [lat, lon], shape: string}
+    let markers = [];
+    if (!this.dynamicFeatureGroup) {
+      return markers;
+    } 
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      markers.push({
+        name: layer.feature.properties["name"],
+        latlng: [layer.getLatLng().lat, layer.getLatLng().lng],
+        shape: layer.feature.properties["shape"],
+      });
+    });
+    return markers;
   }
 
   //Called by map hook to set map reference
@@ -39,7 +59,7 @@ class MapManager {
   _initMap() {
     this.moveTo([49.8728, 8.6512]);
     this._initToolbar();
-    this._initWeatherLayer();
+    //this._initWeatherLayer();
   }
 
   /**
@@ -68,35 +88,45 @@ class MapManager {
       layerGroup: dynamicFeatureGroup,
     });
     this.dynamicFeatureGroup = dynamicFeatureGroup;
-    let nameNumber = 1;
 
     // add leaflet.pm controls to the map
     this.map.pm.addControls(options);
     this.map.on("pm:create", function (e) {
       // update origin from source when the first drone marker is created
-      const markerName = "Marker " + nameNumber++;
+      const markerName = "Marker " + C().mapMan.nameNumber++;
       // add properties to the marker
-      e.layer.feature = e.layer.feature || {};
-      e.layer.feature.type = "Feature";
-      e.layer.feature.properties = e.layer.feature.properties || {};
-      e.layer.feature.properties["shape"] = e.shape;
-      e.layer.feature.properties["name"] = markerName;
-      console.log("e.name", markerName);
-      const firstDroneMarker = dynamicFeatureGroup.getLayers().find((layer) => {
-        return layer.feature.properties["shape"] === "droneMarker";
+      MapManager._initMarkerLayer(e.layer, markerName, e.shape);
+      // listen to the edit event to update the configuration data on the backend
+      e.layer.on("pm:edit", function () {
+        updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+        console.log(C().mapMan.getMarkers());
+        console.log("marker edited now");
       });
-      if (firstDroneMarker) {
-        C().sourceMan.updateOrigin(firstDroneMarker.feature.properties["name"]);
-      }
+
+      // update bottombar
+      C().updateBottomBar();
+
+      // update the configuration data on the backend
+      updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
     });
-    this.map.on("pm:remove", function () {
-      // update origin from source when a drone marker is removed
-      const firstDroneMarker = dynamicFeatureGroup.getLayers().find((layer) => {
-        return layer.feature.properties["shape"] === "droneMarker";
-      });
-      if (firstDroneMarker) {
-        C().sourceMan.updateOrigin(firstDroneMarker.feature.properties["name"]);
+    this.map.on("pm:remove", function (e) {
+      // update origin from source when the removed drone marker is the origin
+      if (e.layer.feature.properties["name"] === C().sourceMan.origin) {
+        // find the first marker and set it as the new origin
+        const markers = C().mapMan.listMarkers();
+        if (markers.length > 0) {
+          C().sourceMan.updateOrigin(markers[0].feature.properties["name"]);
+        } else {
+          C().sourceMan.updateOrigin("");
+        }
       }
+      else {
+        // update bottombar
+        C().updateBottomBar();
+      }
+      
+      // update the configuration data on the backend
+      updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
     });
 
     var droneIcon = L.icon({
@@ -106,12 +136,16 @@ class MapManager {
       iconUrl: drone,
     });
 
+    this.icons["droneMarker"] = droneIcon;
+
     var landingSiteIcon = L.icon({
       shadowUrl: null,
       iconAnchor: new L.Point(12, 12),
       iconSize: new L.Point(24, 24),
       iconUrl: landingSite,
     });
+
+    this.icons["landingSiteMarker"] = landingSiteIcon;
 
     var landingSiteMarker = this.map.pm.Toolbar.copyDrawControl("drawMarker", {
       name: "landingSiteMarker",
@@ -212,6 +246,14 @@ class MapManager {
         .addTo(this.map);
       this.initWeather = true;
     }
+  }
+
+  static _initMarkerLayer(layer, name, shape) {
+    layer.feature = layer.feature || {};
+    layer.feature.type = "Feature";
+    layer.feature.properties = layer.feature.properties || {};
+    layer.feature.properties["shape"] = shape;
+    layer.feature.properties["name"] = name;
   }
 
   /**
@@ -497,6 +539,14 @@ class MapManager {
       });
     });
   }
+
+  listMarkers() {
+    let markers = [];
+    if (!this.dynamicFeatureGroup) {
+      return markers;
+    }
+    return this.dynamicFeatureGroup.getLayers();
+  }
   
   listDroneMarkers() {
     let droneMarkers = [];
@@ -521,10 +571,51 @@ class MapManager {
     return null;
   }
 
+  latlonFromMarkerName(markerName) {
+    let droneMarkers = this.listMarkers();
+    for (let i = 0; i < droneMarkers.length; i++) {
+      if (droneMarkers[i].feature.properties["name"] === markerName) {
+        return droneMarkers[i].getLatLng();
+      }
+    }
+    return null;
+  }
+
 
   recenterMap(latLong){
     console.log("recenterMap: ", latLong);
     this.map.setView(latLong);
+  }
+
+  // import all marker from json config file
+  importMarkers(markers) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    // add markers
+    markers.forEach((marker) => {
+      // if marker is present, ignore it
+      if (this.dynamicFeatureGroup.getLayers().find((layer) => {
+        return layer.feature.properties["name"] === marker.name;
+      })) {
+        return;
+      }
+
+      const markerName = marker.name;
+      const markerPosition = marker.latlng;
+      const markerShape = marker.shape;
+      const markerLayer = new L.marker(markerPosition, { icon: this.icons[markerShape] });
+      markerLayer.on("pm:edit", function() {
+        // update the configuration data on the backend
+        updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+        console.log("marker edited");
+      });
+      MapManager._initMarkerLayer(markerLayer, markerName, markerShape);
+      this.dynamicFeatureGroup.addLayer(markerLayer);
+
+      // update number of markers to avoid name conflicts
+      this.nameNumber = Math.max(this.nameNumber, parseInt(markerName.split(" ")[1]) + 1);
+    });
   }
 }
 

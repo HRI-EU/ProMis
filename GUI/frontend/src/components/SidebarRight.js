@@ -4,6 +4,7 @@ import CSVFileReader from "./CSVFileReader.js";
 import { styled } from "@mui/material/styles";
 import { C } from "../managers/Core.js";
 import { RenderMode } from "../managers/MapManager.js";
+import { updateConfig } from "../utils/Utility.js";
 
 //Local
 import "./SidebarRight.css";
@@ -343,6 +344,7 @@ class SidebarRightItem extends React.Component {
   // delete the layer
   onDeleteLayer = (layerId) => {
     C().layerMan.deleteLayer(layerId);
+    updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
   };
 
   /**

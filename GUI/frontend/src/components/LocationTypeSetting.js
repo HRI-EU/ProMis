@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { C } from '../managers/Core';
+import { randomId } from '../utils/Utility.js';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
@@ -15,39 +16,6 @@ import {
   GridRowEditStopReasons,
 } from '@mui/x-data-grid';
 import PropTypes from "prop-types";
-
-function randomId() {
-    var array = new Uint32Array(1);
-    window.crypto.getRandomValues(array);
-    return array[0];
-}
-
-const initialRows = [
-  {
-    id: randomId(),
-    locationType: "primary_road",
-    key: "highway",
-    value: "primary",
-  },
-  {
-    id: randomId(),
-    locationType: "secondary_road",
-    key: "highway",
-    value: "secondary",
-  },
-  {
-    id: randomId(),
-    locationType: "tertiary_road",
-    key: "highway",
-    value: "tertiary",
-  },
-  {
-    id: randomId(),
-    locationType: "park",
-    key: "leisure",
-    value: "park",
-  },
-];
 
 
 function EditToolbar(props) {
@@ -76,9 +44,13 @@ function EditToolbar(props) {
   );
 }
 
-export default function LocationTypeSetting() {
+export default function LocationTypeSetting({ initialRows }) {
   const [rows, setRows] = React.useState(initialRows);
   const [rowModesModel, setRowModesModel] = React.useState({});
+
+  LocationTypeSetting.propTypes = {
+    initialRows: PropTypes.array.isRequired,
+  };
 
   React.useEffect(() => {
     C().sourceMan.locationTypes = rows;
@@ -127,8 +99,7 @@ export default function LocationTypeSetting() {
 
   const columns = [
     { field: 'locationType', headerName: 'Location Type', width: 180, editable: true },
-    { field: 'key', headerName: 'Key', width: 180, editable: true },
-    { field: 'value', headerName: 'Value', width: 180, editable: true },
+    { field: 'filter', headerName: 'Osm Filter', width: 360, editable: true },
     {
       field: 'actions',
       type: 'actions',

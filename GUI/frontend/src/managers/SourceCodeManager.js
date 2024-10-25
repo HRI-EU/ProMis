@@ -8,24 +8,42 @@ class SourceCodeManager {
     this.success = true;
     this.closed = true;
     this.origin = "";
-    this.start = "";
     this.edit = false;
     this.locationTypes = [];
   }
 
   //Toggle the running state of the source code
   toggleRun(dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight) {
-    if (!this.hasSource) return;
-    if (this.running) return;
+    if (!this.hasSource){
+      console.log("No source code!!!");
+      return;
+    }
+    // check if origin is set
+    if (this.origin === ""){
+      console.log("No origin set!!!");
+      return;
+    }
+    if (this.running){
+      console.log("Already running!!!");
+      return;
+    }
     this.running = !this.running;
-    console.log(this.locationTypes);
+    // sort the location types by location type
+    const sortedTypes = [...this.locationTypes].sort((a, b) => (a.locationType > b.locationType) ? 1 : -1);
+
     // process location types to the form that the backend expects
     let locationTypes = {};
-    for (const locationType of this.locationTypes) {
-      locationTypes[locationType.locationType] = "['" + locationType.key + "' = '" + locationType.value + "']";
+    for (const locationType of sortedTypes) {
+      //check if location type exists in the locationTypes array
+      if (locationTypes[locationType.locationType] !== undefined) {
+        locationTypes[locationType.locationType] += locationType.filter;
+        console.log(locationTypes[locationType.locationType]);
+        continue;
+      }
+      locationTypes[locationType.locationType] = locationType.filter;
     }
 
-    const originLatLong = C().mapMan.latlonDroneFromMarkerName(this.origin);
+    const originLatLong = C().mapMan.latlonFromMarkerName(this.origin);
     const body = {
       source: this.source,
       origin: [originLatLong.lat, originLatLong.lng],
@@ -33,10 +51,6 @@ class SourceCodeManager {
       resolutions: [resolutionWidth, resolutionHeight],
       location_types: locationTypes,
     };
-    if (this.start !== "") {
-      const startLatLong = C().mapMan.latlonDroneFromMarkerName(this.start);
-      body["start"] = [startLatLong.lat, startLatLong.lng];
-    }
     if (this.running && this.hasSource) {
       //Run the source code
       const url = "http://localhost:8000/runpromis";
@@ -78,11 +92,6 @@ class SourceCodeManager {
 
   updateOrigin(origin) {
     this.origin = origin;
-    C().updateBottomBar();
-  }
-
-  updateStart(start) {
-    this.start = start;
     C().updateBottomBar();
   }
 

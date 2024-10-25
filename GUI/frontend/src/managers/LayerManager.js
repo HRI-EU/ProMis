@@ -1,6 +1,7 @@
 import Layer from "../models/Layer.js";
 import { C } from "./Core.js";
 import { RenderMode } from "./MapManager.js";
+import { updateConfig } from "../utils/Utility.js";
 
 class LayerManager {
   constructor() {
@@ -19,6 +20,8 @@ class LayerManager {
   importAllLayers(layers) {
     for (let i = 0; i < layers.length; i++) {
       layers[i].renderMode = RenderMode.HeatmapRect;
+      layers[i].markerLayer = null;
+      layers[i].leafletOverlays = [];
     }
     this.layers = layers;
     C().updateSidebarRight();
@@ -36,6 +39,7 @@ class LayerManager {
     this.layers.push(layer);
     C().updateSidebarRight();
     C().mapMan.refreshMap();
+    updateConfig(this.layers, C().mapMan.getMarkers());
   }
 
   /**

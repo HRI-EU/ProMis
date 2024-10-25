@@ -65,9 +65,10 @@ export default class Layer {
     this.markerLayer = null;
     this.leafletOverlays = [];
 
+    /* not used 
     this.colorMenuLatestSelection = null;
     this.colorMenuHueSlider = 0;
-
+    */
     this.isEnable = true;
   }
 
@@ -76,7 +77,7 @@ export default class Layer {
    *
    * @param {number} id
    * @param {number[][3]} data row of [lat, lng, probability] array
-   * @param {number} hue color hur from 0 to 360
+   * @param {number} hue color hue from 0 to 360
    * @param {string} name name of the layer
    * @param {number} radius radius of the marker
    * @returns

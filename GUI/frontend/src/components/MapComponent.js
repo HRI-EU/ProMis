@@ -12,13 +12,14 @@ import { Container } from "react-bootstrap";
 
 import { C } from "../managers/Core.js";
 import "./MapComponent.css";
+import { getConfig } from "../utils/Utility.js";
 
 //UI
 import SidebarRight from "./SidebarRight.js";
 import SidebarLeft from "./SidebarLeft.js";
 import BottomBar from "./BottomBar.js";
 
-import WeatherInfoBox from "./WeatherInfoBox.js";
+//import WeatherInfoBox from "./WeatherInfoBox.js";
 
 function MapComponent() {
   const mapRef = useRef();
@@ -49,6 +50,15 @@ function MapComponent() {
   function MapHook() {
     const map = useMap();
     C().mapMan.setMap(map);
+    // Load the configuration data from the backend
+    getConfig().then((config) => {
+      if (config !== null) {
+        const layers = config.layers;
+        const markers = config.markers;
+        C().layerMan.importAllLayers(layers);
+        C().mapMan.importMarkers(markers);
+      }
+    });
     return null;
   }
 
@@ -78,7 +88,7 @@ function MapComponent() {
       </MapContainer>
 
       <SidebarRight />
-      <WeatherInfoBox />
+      {/* <WeatherInfoBox /> */}
     </Container>
   );
 }

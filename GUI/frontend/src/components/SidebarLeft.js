@@ -370,7 +370,7 @@ export default function SidebarLeft() {
     <div
       style={{
         position: "absolute",
-        top: 12,
+        top: 20,
         left: 12,
       }}
     >
@@ -381,6 +381,7 @@ export default function SidebarLeft() {
           color: "#ffffff",
           backgroundColor: "#0D0F21",
         }}
+        size="small"
       >
         <MenuIcon />
       </Fab>

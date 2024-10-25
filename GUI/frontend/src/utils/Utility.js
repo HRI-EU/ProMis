@@ -47,3 +47,76 @@ export function toRadians(degrees) {
 export function findMaxProb(markers) {
   return Math.max(...markers.map((marker) => marker.probability));
 }
+
+export function randomId() {
+  var array = new Uint32Array(1);
+  window.crypto.getRandomValues(array);
+  return array[0];
+}
+
+// function to get configuration json data from backend
+export async function getConfig() {
+  const url = "http://localhost:8000/config";
+  // fetch configuration data from backend, convert to json, handle errors
+  let config = null;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to fetch configuration data");
+    }
+
+    const json = await response.json();
+    config = json;
+  } catch (error) {
+    console.error(error.message);
+  }
+  return config;
+}
+
+function prepareLayers(layers){
+  layers.forEach((layer) => {
+    layer.markerLayer = null;
+    layer.leafletOverlays = [];
+  });
+}
+
+function revertLayers(layers, markerLayers, leafletOverlays){
+  // add markerLayer back to layers
+  layers.forEach((layer, index) => {
+    layer.markerLayer = markerLayers[index];
+    layer.leafletOverlays = leafletOverlays[index];
+  });
+}
+
+// function to update the configuration data on the backend
+export async function updateConfig(layers, markers) {
+  const url = "http://localhost:8000/config";
+  // prepare layers for serialization
+  const markerLayers = layers.map((layer) => layer.markerLayer);
+  const leafletOverlays = layers.map((layer) => layer.leafletOverlays);
+  prepareLayers(layers);
+  // create the configuration data
+  const config = {
+    layers: layers,
+    markers: markers,
+  };
+  // send the updated configuration data to the backend
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(config, null, 2),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update configuration data");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+
+  // revert layers back to original state
+  revertLayers(layers, markerLayers, leafletOverlays);
+}
