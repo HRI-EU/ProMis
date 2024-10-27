@@ -15,8 +15,16 @@ To this end, ProMis gives high-level, easy-to-understand, and adaptable control 
 
 Using ProMis, scalar fields of the probability of adhering to the agent's constitution across its state-space are obtained.
 These can then be utilized for tasks such as path planning, automated clearance granting, explaining the impact of and optimizing mission parameters.
+For instance, the following shows ProMis being applied in a diverse set of scenarios, with a high probability of satisfying all flight restrictions being shown in blue, a low-probability being shown in red, and unsuitable spaces being transparent. 
 
-Please consult the following publications for an in-depth discussion of the methods implemented in this repository.
+<p align="center">
+  <img src="https://github.com/HRI-EU/ProMis/blob/main/landscapes.png"/>
+</p>
+
+An example for using the API is available [here](https://github.com/HRI-EU/ProMis/blob/main/examples/promis.ipynb).
+Installation instructions and information on how to use ProMis own GUI can be found below.
+
+Please consult and cite the following publications for an in-depth discussion of the methods implemented in this repository.
 - [Mission Design for Unmanned Aerial Vehicles using Hybrid Probabilistic Logic Programs](https://arxiv.org/abs/2406.03454).
   Simon Kohaut, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
   In 26th IEEE International Intelligent Transportation Systems Conference (ITSC).
@@ -77,14 +85,14 @@ ProMis comes with a GUI that provides an interactive interface to its features.
 To employ the GUI, make sure that you have installed ProMis according to the instructions above.
 Then, first run the following commands to start the backend.
 
-```
+```bash
 cd gui/backend
 fastapi run main.py
 ```
 
 Afterwards, you can start the frontend using `npm (Node.js)` with the following commands.
 
-```
+```bash
 cd gui/frontend
 npm install      # Only once or if changes where made
 npm run start
@@ -92,7 +100,7 @@ npm run start
 
 We also provide Dockerfiles for backend and frontend for an automated setup:
 
-```
+```bash
 cd gui
 docker compose up
 ```
