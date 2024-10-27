@@ -1,0 +1,7 @@
+# Ignore artifacts:
+build
+coverage
+
+rhill-voronoi-core.min.js
+
+src/lib/*

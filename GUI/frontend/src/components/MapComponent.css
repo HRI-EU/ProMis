@@ -1,0 +1,25 @@
+/* MapComponent.css */
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex; /* Use flex to arrange the map and sidebar horizontally */
+}
+
+.drone-icon {
+  background-image: url(../assets/icons/Drone.svg);
+}
+
+.landing-site-icon {
+  background-image: url(../assets/icons/landing-pad-marker.png);
+}
+
+.stylePopup .leaflet-popup-content-wrapper,
+.stylePopup .leaflet-popup-tip {
+  color: #ffffff;
+  background-color: #0d0f21;
+}
+
+.leaflet-control-layers-overlays {
+  text-align: left;
+}
