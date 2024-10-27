@@ -116,7 +116,7 @@ Afterwards, you can click the `Run` button and wait for the mission landscape to
 
 The following shows an example of entering the simple model `landscape(X) :- distance(X, building) > 10; distance(X, primary_road) < 5.`:
 <p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/gui_example.png" width=512/>
+  <img src="https://github.com/HRI-EU/ProMis/blob/main/gui_example.png"/>
 </p>
 
 For more detailed information, consult the GUI's own [README](https://github.com/HRI-EU/ProMis/blob/main/gui/README.md).
