@@ -110,6 +110,7 @@ The following shows an example of entering the simple model `landscape(X) :- dis
 <p align="center">
   <img src="https://github.com/HRI-EU/ProMis/blob/main/gui_example.png" width=512/>
 </p>
+
 For more detailed information, consult the GUI's own [README](https://github.com/HRI-EU/ProMis/blob/main/gui/README.md).
 
 ## Documentation
