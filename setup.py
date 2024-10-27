@@ -61,7 +61,10 @@ setuptools.setup(
         "overpy",
         #   -> probabilistic logic and modelling
         "pyro-ppl",
+        "pysdd",
         #   -> plotting and visualization
+        "fastapi[standard]",
+        "graphviz",
         "seaborn",
         # => testing and code quality
         #   -> static code analysis
