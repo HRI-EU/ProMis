@@ -203,6 +203,9 @@ export default class SidebarRight extends React.Component {
   render() {
     //Update reference
     C().addRefSidebarRight(this.updateUI);
+    C().addToggleDrawerRight(() => {
+      this.setState({ right: true });
+    });
 
     return (
       <div

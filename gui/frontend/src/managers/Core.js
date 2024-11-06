@@ -6,6 +6,7 @@ class Core {
   //References for UI element update callbacks
   refSidebarRight = null;
   refBottomBar = null;
+  toggleDrawerRight = null;
 
   //Creates new Core if never called before, otherwise return instance (Singleton)
   constructor() {
@@ -42,6 +43,10 @@ class Core {
     this.refBottomBar = updateCallback;
   }
 
+  addToggleDrawerRight(toggleCallback) {
+    this.toggleDrawerRight = toggleCallback;
+  }
+
   //Call to trigger full ui refresh
   updateFullUI() {
     this.updateSidebarRight();
@@ -52,6 +57,12 @@ class Core {
   updateSidebarRight() {
     if (this.refSidebarRight != null) {
       this.refSidebarRight();
+    }
+  }
+
+  toggleDrawerSidebarRight() {
+    if (this.toggleDrawerRight != null) {
+      this.toggleDrawerRight();
     }
   }
 

@@ -72,6 +72,7 @@ class SourceCodeManager {
           this.running = false;
           this.success = true;
           this.closed = false;
+          C().toggleDrawerSidebarRight();
           C().updateBottomBar();
         })
         .catch((error) => {
