@@ -12,6 +12,9 @@ class LayerManager {
   //Toggle all layers visibility
   toggleAllLayers() {
     this.hideAllLayers = !this.hideAllLayers;
+    this.layers.forEach((layer) => {
+      layer.visible = !this.hideAllLayers;
+    });
     C().updateSidebarRight();
     C().mapMan.refreshMap();
   }
@@ -24,6 +27,8 @@ class LayerManager {
       layers[i].leafletOverlays = [];
     }
     this.layers = layers;
+    // check if all layers are hidden
+    this.hideAllLayers = this.layers.every((layer) => !layer.visible);
     C().updateSidebarRight();
     C().mapMan.refreshMap();
   }
@@ -49,6 +54,7 @@ class LayerManager {
     this.layers = [];
     C().updateSidebarRight();
     C().mapMan.refreshMap();
+    updateConfig(this.layers, C().mapMan.getMarkers());
   }
 
   //Delete layer with this layerId
@@ -56,14 +62,31 @@ class LayerManager {
     this.layers = this.layers.filter((layer) => layer.id !== layerId);
     C().updateSidebarRight();
     C().mapMan.refreshMap();
+    updateConfig(this.layers, C().mapMan.getMarkers());
+  }
+
+  //Change layer name
+  toggleEditName(layerId, layerName) {
+    var pos = LayerManager.findLayerPos(this.layers, layerId);
+    this.layers[pos].editName = !this.layers[pos].editName;
+    this.layers[pos].name = layerName;
+    C().updateSidebarRight();
+    updateConfig(this.layers, C().mapMan.getMarkers());
   }
 
   //Toggle layer visibility
   changeLayerVisibility(layerId, visible) {
+    if (visible) {
+      this.hideAllLayers = false;
+    }
+    if (!visible && this.layers.every((layer) => (layer.id == layerId) || !layer.visible)) {
+      this.hideAllLayers = true;
+    }
     var pos = LayerManager.findLayerPos(this.layers, layerId);
     this.layers[pos].visible = visible;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
+    updateConfig(this.layers, C().mapMan.getMarkers());
   }
 
   //Toggle settings menu
@@ -100,6 +123,7 @@ class LayerManager {
     this.layers[pos].opacity = opacity;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
+    updateConfig(this.layers, C().mapMan.getMarkers());
   }
 
   //Change layer render mode
@@ -119,6 +143,7 @@ class LayerManager {
     this.layers[pos].markerDstLng = markerDst[1];
     C().updateSidebarRight();
     C().mapMan.refreshMap();
+    updateConfig(this.layers, C().mapMan.getMarkers());
   }
 
   //Change layer value range
@@ -127,6 +152,7 @@ class LayerManager {
     this.layers[pos].valueRange = valueRange;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
+    updateConfig(this.layers, C().mapMan.getMarkers());
   }
 
   //If within bounds, switch layer with previous in array (moves layer in sidebar upwards)
@@ -147,6 +173,7 @@ class LayerManager {
       //this.layers[pos-1] = lay;
       C().updateSidebarRight();
       C().mapMan.refreshMap();
+      updateConfig(this.layers, C().mapMan.getMarkers());
     }
   }
 
@@ -168,6 +195,7 @@ class LayerManager {
       //this.layers[pos+1] = lay;
       C().updateSidebarRight();
       C().mapMan.refreshMap();
+      updateConfig(this.layers, C().mapMan.getMarkers());
     }
   }
 

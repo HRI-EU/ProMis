@@ -47,6 +47,7 @@ export default class Layer {
     this.visible = true;
     this.settingsMenuExpanded = false;
     this.colorMenuExpanded = false;
+    this.editName = false;
 
     this.hue = typeof hue === "number" ? hue : 0.0; // Float type field
     this.opacity = 0.3;

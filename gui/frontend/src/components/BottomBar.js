@@ -274,8 +274,6 @@ export default class BottomBar extends React.Component {
       </ThemeProvider>
       <ThemeProvider theme={darkTheme}>
         <Grid
-          spacing={0}
-          direction="row"
           alignItems="center"
           justifyContent="start"
           m={0}
@@ -313,8 +311,6 @@ export default class BottomBar extends React.Component {
       </ThemeProvider>
       <ThemeProvider theme={darkTheme}>
         <Grid
-          spacing={0}
-          direction="row"
           alignItems="center"
           justifyContent="start"
           m={0}
