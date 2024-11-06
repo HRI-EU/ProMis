@@ -14,6 +14,11 @@ class SourceCodeManager {
 
   //Toggle the running state of the source code
   toggleRun(dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight) {
+    // close alert if open
+    if (!this.closed){
+      this.closed = true;
+    }
+
     if (!this.hasSource){
       console.log("No source code!!!");
       return;
