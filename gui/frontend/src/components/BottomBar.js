@@ -82,6 +82,9 @@ export default class BottomBar extends React.Component {
     };
   }
 
+  highlightOriginElement = false;
+  highlightSourceElement = false;
+
   inputSize = 80;
 
   // Create a reference to the code element
@@ -142,6 +145,25 @@ export default class BottomBar extends React.Component {
 
   // Toggle the running state of the source code
   toggleRun = () => {
+    if (!C().sourceMan.hasSource) {
+      this.highlightSourceElement = true;
+      this.updateUI();
+      setTimeout(() => {
+        this.highlightSourceElement = false;
+        this.updateUI();
+      }, 1000);
+    }
+    if (C().sourceMan.origin === "") {
+      this.highlightOriginElement = true;
+      // toggle running params to show origin
+      this.setState({ runningParamsToggled: true });
+
+      this.updateUI();
+      setTimeout(() => {
+        this.highlightOriginElement = false;
+        this.updateUI();
+      }, 1000);
+    }
     C().sourceMan.toggleRun(this.state.dimensionWidth, this.state.dimensionHeight, this.state.resolutionWidth, this.state.resolutionHeight);
   };
 
@@ -236,13 +258,11 @@ export default class BottomBar extends React.Component {
       sx={{ display: "flex" }}
     >
       <ThemeProvider theme={darkTheme}>
-        <FormControl sx={{ m: 1, minWidth: 120}} size="small">
-          <InputLabel id="demo-simple-select-helper-label"
+        <FormControl sx={{ m: 1, minWidth: 120}} size="small" error={this.highlightOriginElement}>
+          <InputLabel
             style={{ color: "#ffffff" }}
           >Origin</InputLabel>
           <Select
-            labelId="demo-simple-select-helper-label"
-            id="demo-simple-select-helper"
             label="Origin"
             variant="outlined"
             value={C().sourceMan.origin}
@@ -570,6 +590,7 @@ export default class BottomBar extends React.Component {
         >
           {C().sourceMan.edit ? 
             <textarea id="editing"
+              className={this.highlightSourceElement ? "errorSignal": ""}
               value={this.editorValue()}
               onChange={(e) => this.updateEditor(e)}
               onKeyDown={(e) => this.checkTab(e.target, e)}
@@ -582,6 +603,7 @@ export default class BottomBar extends React.Component {
             </textarea>
             :
             <pre
+              className={this.highlightSourceElement ? "errorSignal": ""}
               id="highlighting"
             >
               <code 
