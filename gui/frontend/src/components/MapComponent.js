@@ -79,10 +79,13 @@ function MapComponent() {
         center={defaultCenter}
         zoom={13}
         zoomSnap={0.2}
+        maxZoom={20}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          maxNativeZoom='19'
+          maxZoom={20}
         />
         <MapHook />
       </MapContainer>
