@@ -185,7 +185,6 @@ export default class SidebarRight extends React.Component {
               fontSize: 12,
             }}
             variant="outlined"
-            textColor="#ffffff"
             startIcon={<AddIcon />}
           >
             <VisuallyHiddenInput type="file" />
@@ -412,7 +411,6 @@ class SidebarRightItem extends React.Component {
                 this.toggleVisibility(layer);
               }}
               style={{ color: "#ffffff", fontSize: 12 }}
-              iconStyle={{ width: "8px", height: "8px" }}
               aria-label="Toggle all layers"
             >
               <Box
@@ -618,7 +616,6 @@ class SidebarRightItem extends React.Component {
                   updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -644,7 +641,6 @@ class SidebarRightItem extends React.Component {
                   updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -671,7 +667,6 @@ class SidebarRightItem extends React.Component {
                   updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -697,7 +692,6 @@ class SidebarRightItem extends React.Component {
                   updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -724,7 +718,6 @@ class SidebarRightItem extends React.Component {
                   updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -754,10 +747,9 @@ class SidebarRightItem extends React.Component {
               }}
             >
               <Slider
-                defaultValue={layer.hue}
                 min={0}
                 max={359}
-                //value={value}
+                value={layer.hue}
                 onChangeCommitted={(event, newValue) => {
                   this.hueSliderChanged(layer.id, newValue);
                   updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
@@ -765,7 +757,6 @@ class SidebarRightItem extends React.Component {
                 onChange={(event, newValue) => {
                   this.hueSliderChanged(layer.id, newValue);
                 }}
-                aria-label="Default"
                 valueLabelDisplay="auto"
                 style={{
                   color: "#ffffff",
@@ -1138,7 +1129,6 @@ class SidebarRightItem extends React.Component {
                   fontSize: 12,
                 }}
                 variant="outlined"
-                textColor="#ffffff"
                 startIcon={<RemoveCircleOutline />}
               >
                 Delete layer
@@ -1159,7 +1149,6 @@ class SidebarRightItem extends React.Component {
                   fontSize: 12,
                 }}
                 variant="outlined"
-                textColor="#ffffff"
                 startIcon={<FileDownloadIcon />}
               >
                 export GeoJSON

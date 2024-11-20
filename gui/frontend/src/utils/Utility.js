@@ -91,13 +91,19 @@ function revertLayers(layers, markerLayers, leafletOverlays){
 // function to update the configuration data on the backend
 export async function updateConfig(layers, markers) {
   const url = "http://localhost:8000/config";
+  
   // prepare layers for serialization
   const markerLayers = layers.map((layer) => layer.markerLayer);
   const leafletOverlays = layers.map((layer) => layer.leafletOverlays);
   prepareLayers(layers);
+
+  const layersCpy = structuredClone(layers);
+
+  // revert layers back to original state
+  revertLayers(layers, markerLayers, leafletOverlays);
   // create the configuration data
   const config = {
-    layers: layers,
+    layers: layersCpy,
     markers: markers,
   };
   // send the updated configuration data to the backend
@@ -116,7 +122,5 @@ export async function updateConfig(layers, markers) {
   } catch (error) {
     console.error(error.message);
   }
-
-  // revert layers back to original state
-  revertLayers(layers, markerLayers, leafletOverlays);
+  
 }

@@ -13,9 +13,9 @@ import landingSite from "../assets/icons/landing-pad-marker.png";
 
 //Marker RenderMode "enum"
 export class RenderMode {
-  static HeatmapRect = () => "HEATMAP_RECT";
-  static HeatmapCircle = () => "HEATMAP_CIRCLE";
-  static Voronoi = () => "VORONOI";
+  static HeatmapRect = "HEATMAP_RECT";
+  static HeatmapCircle = "HEATMAP_CIRCLE";
+  static Voronoi = "VORONOI";
 }
 
 class MapManager {
@@ -83,6 +83,7 @@ class MapManager {
       rotateMode: false, // remove button to toggle rotation mode
     };
 
+
     const dynamicFeatureGroup = L.featureGroup().addTo(this.map);
     this.map.pm.setGlobalOptions({
       layerGroup: dynamicFeatureGroup,
@@ -91,6 +92,7 @@ class MapManager {
 
     // add leaflet.pm controls to the map
     this.map.pm.addControls(options);
+
     this.map.on("pm:create", function (e) {
       // update origin from source when the first drone marker is created
       const markerName = "Marker " + C().mapMan.nameNumber++;
@@ -128,6 +130,7 @@ class MapManager {
       // update the configuration data on the backend
       updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
     });
+
 
     var droneIcon = L.icon({
       shadowUrl: null,

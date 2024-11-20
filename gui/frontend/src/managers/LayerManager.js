@@ -22,7 +22,8 @@ class LayerManager {
   //Import all layers from json file
   importAllLayers(layers) {
     for (let i = 0; i < layers.length; i++) {
-      layers[i].renderMode = RenderMode.HeatmapRect;
+      if (layers[i].renderMode == undefined)
+        layers[i].renderMode = RenderMode.HeatmapRect;
       layers[i].markerLayer = null;
       layers[i].leafletOverlays = [];
     }
@@ -132,6 +133,7 @@ class LayerManager {
     this.layers[pos].renderMode = renderMode;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
+    updateConfig(this.layers, C().mapMan.getMarkers());
   }
 
   //Change layer radius
