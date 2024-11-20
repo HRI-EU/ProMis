@@ -55,6 +55,15 @@ class Map(ABC):
         with open(path, "wb") as file:
             dump(self, file)
 
+    def location_types(self) -> list[str]:
+        """Get all location types contained in this map.
+
+        Returns:
+            A list of all location types contained in this map
+        """
+
+        return list(set([feature.location_type for feature in self.features]))
+
     def is_valid(self) -> bool:
         """Whether this map contains only valid polygonal shapes according to :mod:`shapely`.
 
