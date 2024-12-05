@@ -1,4 +1,5 @@
 import { C } from "./Core.js";
+import { updateConfigLocationTypes } from "../utils/Utility.js";
 
 class SourceCodeManager {
   constructor() {
@@ -121,6 +122,12 @@ class SourceCodeManager {
     this.hasSource = false;
     this.source = "";
     C().updateBottomBar();
+  }
+
+  updateLocationTypes(locationTypes) {
+    this.locationTypes = locationTypes;
+    updateConfigLocationTypes(locationTypes);
+    // TODOS: update polygons and polylines and marker appropriately
   }
 }
 

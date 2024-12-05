@@ -33,6 +33,8 @@ import SettingsFilledIcon from "@mui/icons-material/Settings";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
+import KeyboardIcon from '@mui/icons-material/Keyboard';
+import KeyboardAltOutlinedIcon from '@mui/icons-material/KeyboardAltOutlined';
 import { Select } from "@mui/material";
 
 const darkTheme = createTheme({
@@ -46,21 +48,25 @@ const initialRows = [
     id: randomId(),
     locationType: "primary_road",
     filter: "['highway' = 'primary']",
+    color: "blue",
   },
   {
     id: randomId(),
     locationType: "secondary_road",
     filter: "['highway' = 'secondary']",
+    color: "red",
   },
   {
     id: randomId(),
     locationType: "tertiary_road",
     filter: "['highway' = 'tertiary']",
+    color: "green",
   },
   {
     id: randomId(),
     locationType: "park",
     filter: "['leisure' = 'park']",
+    color: "yellow",
   },
 ];
 
@@ -77,8 +83,9 @@ export default class BottomBar extends React.Component {
       dimensionHeight: 1024,
       resolutionWidth: 100,
       resolutionHeight: 100,
-      runningParamsToggled: true,
+      runningParamsToggled: false,
       locationTypeToggled: false,
+      sourceCodeToggled: true,
     };
   }
 
@@ -146,23 +153,27 @@ export default class BottomBar extends React.Component {
   // Toggle the running state of the source code
   toggleRun = () => {
     if (!C().sourceMan.hasSource) {
+      // toggle source code and hide running params and location type
+      this.setState({ sourceCodeToggled: true, runningParamsToggled: false, locationTypeToggled: false });
       this.highlightSourceElement = true;
       this.updateUI();
       setTimeout(() => {
         this.highlightSourceElement = false;
         this.updateUI();
       }, 1000);
+      return;
     }
     if (C().sourceMan.origin === "") {
       this.highlightOriginElement = true;
       // toggle running params to show origin
-      this.setState({ runningParamsToggled: true });
+      this.setState({ runningParamsToggled: true, locationTypeToggled: false, sourceCodeToggled: false });
 
       this.updateUI();
       setTimeout(() => {
         this.highlightOriginElement = false;
         this.updateUI();
       }, 1000);
+      return;
     }
     C().sourceMan.toggleRun(this.state.dimensionWidth, this.state.dimensionHeight, this.state.resolutionWidth, this.state.resolutionHeight);
   };
@@ -186,6 +197,10 @@ export default class BottomBar extends React.Component {
     if (this.state.locationTypeToggled) {
       this.setState({ locationTypeToggled: false });
     }
+    // if the source code is toggled, close it
+    if (this.state.sourceCodeToggled) {
+      this.setState({ sourceCodeToggled: false });
+    }
     // toggle the running parameters
     this.setState({ runningParamsToggled: !this.state.runningParamsToggled });
   }
@@ -195,9 +210,27 @@ export default class BottomBar extends React.Component {
     if (this.state.runningParamsToggled) {
       this.setState({ runningParamsToggled: false });
     }
+    // if the source code is toggled, close it
+    if (this.state.sourceCodeToggled) {
+      this.setState({ sourceCodeToggled: false });
+    }
     // toggle the location type setting
     this.setState({ locationTypeToggled: !this.state.locationTypeToggled });
   }
+
+  toggleSourceCode = () => {
+    // if the location type setting is toggled, close it
+    if (this.state.locationTypeToggled) {
+      this.setState({ locationTypeToggled: false });
+    }
+    // if the running parameters is toggled, close it
+    if (this.state.runningParamsToggled) {
+      this.setState({ runningParamsToggled: false });
+    }
+    // toggle the source code
+    this.setState({ sourceCodeToggled: !this.state.sourceCodeToggled });
+  }
+
 
   editorValue = () => {
     if (!C().sourceMan.hasSource) {
@@ -401,6 +434,8 @@ export default class BottomBar extends React.Component {
           </Button>
         </Grid>
 
+        
+
         <Grid
           container
           spacing={0}
@@ -412,9 +447,23 @@ export default class BottomBar extends React.Component {
         >
           <IconButton
             onClick={() => {
+              this.toggleSourceCode();
+            }}
+            style={{ color: "#eeeeee", fontSize: 12, marginLeft: "32px"  }}
+            aria-label="Open location type menu"
+          >
+            {this.state.sourceCodeToggled ? (
+              <KeyboardIcon />
+            ) : (
+              <KeyboardAltOutlinedIcon />
+            )}
+          </IconButton>
+
+          <IconButton
+            onClick={() => {
               this.toggleRunningParams();
             }}
-            style={{ color: "#eeeeee", fontSize: 12, marginLeft: "32px" }}
+            style={{ color: "#eeeeee", fontSize: 12}}
             aria-label="Open running param menu"
           >
             {this.state.runningParamsToggled ? (
@@ -437,90 +486,8 @@ export default class BottomBar extends React.Component {
               <FormatListBulletedIcon />
             )}
           </IconButton>
-        </Grid>
-        
-        {this.state.runningParamsToggled ? this.runningParams() : null}
-        
-        {
-          this.state.locationTypeToggled ?
-            <Grid
-              container
-              spacing={0}
-              direction="row"
-              alignItems="center"
-              justifyContent="start"
-              m={0}
-              sx={{ 
-                width: "100%",
-                display: "flex",
-                paddingLeft: "32px",
-                paddingRight: "32px",
-               }}
-            >
-              <ThemeProvider theme={darkTheme}>
-                <LocationTypeSetting 
-                  initialRows={C().sourceMan.locationTypes}
-                />
-              </ThemeProvider>
-            </Grid> : null
-        }
+          
 
-        <Grid
-          container
-          spacing={0}
-          direction="row"
-          alignItems="center"
-          justifyContent="start"
-          m={0}
-          style={{ 
-            marginLeft: "32px" ,
-            marginTop: "10px",
-          }}
-          sx={{ display: "flex" }}
-        >
-          <Chip
-            icon={
-              C().sourceMan.hasSource ? (
-                <CloseIcon style={{ color: "#ffffff" }} />
-              ) : (
-                <FileUploadIcon style={{ color: "#ffffff" }} />
-              )
-            }
-            onClick={this.toggleFile}
-            label={C().sourceMan.hasSource ? "Remove source" : "Import source"}
-            variant="outlined"
-            style={{
-              color: "#ffffff",
-              borderColor: "#7e86bd22",
-              minWidth: "150px",
-            }}
-          />
-          <input
-            type="file"
-            accept=".pl"
-            onChange={this.handleChange}
-            ref={this.hiddenFileInput}
-            style={{ display: "none" }} // Make the file input element invisible
-          />
-
-          <Chip
-            icon={
-              C().sourceMan.running ? (
-                <StopCircleIcon style={{ color: "#ffffff" }} />
-              ) : (
-                <PlayCircleIcon style={{ color: "#ffffff" }} />
-              )
-            }
-            onClick={this.toggleRun}
-            label={C().sourceMan.running ? "Running" : "Run"}
-            variant="outlined"
-            style={{
-              color: "#ffffff",
-              borderColor: "#7e86bd22",
-              minWidth: "80px",
-              marginLeft: "8px",
-            }}
-          />
           <Collapse in={!C().sourceMan.closed}
             collapsedSize={0}
             orientation="horizontal"  
@@ -549,71 +516,169 @@ export default class BottomBar extends React.Component {
               {C().sourceMan.success ? "Success" : "Error"}
             </Alert>
           </Collapse>
+
           <Chip
             icon={
-              C().sourceMan.edit ? (
-                <DoneIcon style={{ color: "#ffffff" }} />
+              C().sourceMan.running ? (
+                <StopCircleIcon style={{ color: "#ffffff" }} />
               ) : (
-                <EditIcon style={{ color: "#ffffff" }} />
+                <PlayCircleIcon style={{ color: "#ffffff" }} />
               )
             }
-            onClick={() => C().sourceMan.toggleEdit()}
-            label={C().sourceMan.edit ? "Done" : "Edit"}
+            onClick={this.toggleRun}
+            label={C().sourceMan.running ? "Running" : "Run"}
             variant="outlined"
             style={{
               color: "#ffffff",
               borderColor: "#7e86bd22",
               minWidth: "80px",
-              marginLeft: "8px",
+              marginLeft: "5px",
             }}
           />
-          
         </Grid>
+        
+        {this.state.runningParamsToggled ? this.runningParams() : null}
+        
+        {
+          this.state.locationTypeToggled ?
+            <Grid
+              container
+              spacing={0}
+              direction="row"
+              alignItems="center"
+              justifyContent="start"
+              m={0}
+              sx={{ 
+                width: "100%",
+                display: "flex",
+                paddingLeft: "32px",
+                paddingRight: "32px",
+               }}
+            >
+              <ThemeProvider theme={darkTheme}>
+                <LocationTypeSetting 
+                  initialRows={C().sourceMan.locationTypes}
+                />
+              </ThemeProvider>
+            </Grid> : null
+        }
 
+        {this.state.sourceCodeToggled ?
         <Grid
-          container
-          spacing={0}
-          direction="column"
-          alignItems="center"
-          justifyContent="start"
-          m={0}
-          sx={{ 
-            display: "flex",
-            marginTop: "12px",
-            paddingLeft: "32px",
-            paddingRight: "32px",
+          style={{
+            width: "100%"
           }}
         >
-          {C().sourceMan.edit ? 
-            <textarea id="editing"
-              className={this.highlightSourceElement ? "errorSignal": ""}
-              value={this.editorValue()}
-              onChange={(e) => this.updateEditor(e)}
-              onKeyDown={(e) => this.checkTab(e.target, e)}
+          
+          <Grid
+            container
+            spacing={0}
+            direction="row"
+            alignItems="center"
+            justifyContent="start"
+            m={0}
+            style={{ 
+              marginLeft: "32px" ,
+              marginTop: "10px",
+            }}
+            sx={{ display: "flex" }}
+          >
+            <Chip
+              icon={
+                C().sourceMan.hasSource ? (
+                  <CloseIcon style={{ color: "#ffffff" }} />
+                ) : (
+                  <FileUploadIcon style={{ color: "#ffffff" }} />
+                )
+              }
+              onClick={this.toggleFile}
+              label={C().sourceMan.hasSource ? "Remove source" : "Import source"}
+              variant="outlined"
               style={{
-                height: "200px",
                 color: "#ffffff",
-                paddingLeft: "16px",
+                borderColor: "#7e86bd22",
+                minWidth: "150px",
               }}
-            >
-            </textarea>
-            :
-            <pre
-              className={this.highlightSourceElement ? "errorSignal": ""}
-              id="highlighting"
-            >
-              <code 
-                id="codeBlock"
-                ref={this.codeRef}
-                className={C().sourceMan.hasSource ? "prolog" : ""}
+            />
+            <input
+              type="file"
+              accept=".pl"
+              onChange={this.handleChange}
+              ref={this.hiddenFileInput}
+              style={{ display: "none" }} // Make the file input element invisible
+            />
+
+            
+            
+            <Chip
+              icon={
+                C().sourceMan.edit ? (
+                  <DoneIcon style={{ color: "#ffffff" }} />
+                ) : (
+                  <EditIcon style={{ color: "#ffffff" }} />
+                )
+              }
+              onClick={() => C().sourceMan.toggleEdit()}
+              label={C().sourceMan.edit ? "Done" : "Edit"}
+              variant="outlined"
+              style={{
+                color: "#ffffff",
+                borderColor: "#7e86bd22",
+                minWidth: "80px",
+                marginLeft: "8px",
+              }}
+            />
+            
+          </Grid>
+
+          <Grid
+            container
+            spacing={0}
+            direction="column"
+            alignItems="center"
+            justifyContent="start"
+            m={0}
+            sx={{ 
+              display: "flex",
+              marginTop: "12px",
+              paddingLeft: "32px",
+              paddingRight: "32px",
+            }}
+          >
+            {C().sourceMan.edit ? 
+              <textarea id="editing"
+                className={this.highlightSourceElement ? "errorSignal": ""}
+                value={this.editorValue()}
+                onChange={(e) => this.updateEditor(e)}
+                onKeyDown={(e) => this.checkTab(e.target, e)}
+                style={{
+                  height: "200px",
+                  color: "#ffffff",
+                  paddingLeft: "16px",
+                }}
               >
-                {C().sourceMan.hasSource
-                  ? C().sourceMan.source
-                  : "No Model"}
-              </code>
-            </pre>
-          }
+              </textarea>
+              :
+              <pre
+                className={this.highlightSourceElement ? "errorSignal": ""}
+                id="highlighting"
+              >
+                <code 
+                  id="codeBlock"
+                  ref={this.codeRef}
+                  className={C().sourceMan.hasSource ? "prolog" : ""}
+                >
+                  {C().sourceMan.hasSource
+                    ? C().sourceMan.source
+                    : "No Model"}
+                </code>
+              </pre>
+            }
+          </Grid>
         </Grid>
+
+        : null
+        }
 
         
       </Grid>

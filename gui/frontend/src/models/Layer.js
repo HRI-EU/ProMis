@@ -126,8 +126,8 @@ export default class Layer {
       }
     });
 
-    console.log("latMinMax ", markersLatMinMax);
-    console.log("lngMinMax ", markersLngMinMax);
+    //console.log("latMinMax ", markersLatMinMax);
+    //console.log("lngMinMax ", markersLngMinMax);
 
     const markerDst = Layer.calcMarkerDst(markers, radius);
     return new Layer(

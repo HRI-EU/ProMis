@@ -2,14 +2,12 @@ import L from "leaflet";
 import "leaflet.heat";
 
 import ColorHelper from "../utils/ColorHelper.js";
-import { updateConfig } from "../utils/Utility.js";
+import { updateConfig, updateConfigPolygons, updateConfigPolylines, updateConfigDynamicLayers } from "../utils/Utility.js";
 
 import { C } from "./Core.js";
+import { getDefaultMarker, getDroneIcon, getLandingPadIcon } from "../utils/getIcons.js";
 
 import { Voronoi } from "../libs/rhill-voronoi-core.min.js";
-// import icons
-import drone from "../assets/icons/drone-new.png";
-import landingSite from "../assets/icons/landing-pad-marker.png";
 
 //Marker RenderMode "enum"
 export class RenderMode {
@@ -21,13 +19,19 @@ export class RenderMode {
 class MapManager {
   pToSatFactor = 5; // the probability will be converted to saturation by multiplying this factor
 
+  static icons = {};
+
   constructor() {
     this.map = null;
     this.initWeather = false;
     this.initToolbar = false;
     this.dynamicFeatureGroup = null;
-    this.icons = {};
+    
     this.nameNumber = 1;
+    this._isinitMarker = false;
+    this._isinitLine = false;
+    this._isinitPolygon = false;
+    this._onClickFunction = new Map();
   }
 
   // get markers from map
@@ -38,14 +42,53 @@ class MapManager {
       return markers;
     } 
     this.dynamicFeatureGroup.eachLayer((layer) => {
-      markers.push({
-        name: layer.feature.properties["name"],
-        latlng: [layer.getLatLng().lat, layer.getLatLng().lng],
-        shape: layer.feature.properties["shape"],
-      });
+      if (layer.options.pane == "markerPane") {
+        markers.push({
+          name: layer.feature.properties["name"],
+          latlng: [layer.getLatLng().lat, layer.getLatLng().lng],
+          shape: layer.feature.properties["shape"],
+          location_type: layer.feature.properties["locationType"],
+          color: layer.feature.properties["color"],
+        });
+      }
     });
     return markers;
   }
+
+  getPolylines() {
+    let polylines = [];
+    if (!this.dynamicFeatureGroup) {
+      return polylines;
+    }
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      if (layer.feature.properties["shape"] === "Line") {
+        polylines.push({
+          latlngs: layer.getLatLngs().map((latlng) => [latlng.lat, latlng.lng]),
+          location_type: layer.feature.properties["locationType"],
+          color: layer.feature.properties["color"],
+        });
+      }
+    });
+    return polylines;
+  }
+
+  getPolygons() {
+    let polygons = [];
+    if (!this.dynamicFeatureGroup) {
+      return polygons;
+    }
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      if (layer.feature.properties["shape"] === "Polygon") {
+        polygons.push({
+          latlngs: layer.getLatLngs()[0].map((latlng) => [latlng.lat, latlng.lng]),
+          location_type: layer.feature.properties["locationType"],
+          color: layer.feature.properties["color"],
+        });
+      }
+    });
+    return polygons;
+  }
+
 
   //Called by map hook to set map reference
   setMap(map) {
@@ -71,12 +114,12 @@ class MapManager {
       position: "topleft", // toolbar position, options are 'topleft', 'topright', 'bottomleft', 'bottomright'
       drawText: false, // remove button to draw text
       drawMarker: false, // remove button to draw markers
-      drawPolygon: false, // remove button to draw a polygon
-      drawPolyline: false, // remove button to draw a polyline
+      drawPolygon: true, // remove button to draw a polygon
+      drawPolyline: true, // remove button to draw a polyline
       drawCircle: false, // remove button to draw a cricle
       drawCircleMarker: false, // remove button to draw a cricleMarker
       drawRectangle: false, // remove button to draw a rectangle
-      cutPolygon: false, // remove a button to cut layers
+      cutPolygon: true, // remove a button to cut layers
       dragMode: true, // adds button to toggle global move mode
       deleteLayer: true, // adds a button to delete layers
       editMode: false, // remove button to toggle global edit mode
@@ -93,62 +136,64 @@ class MapManager {
     // add leaflet.pm controls to the map
     this.map.pm.addControls(options);
 
-    this.map.on("pm:create", function (e) {
-      // update origin from source when the first drone marker is created
-      const markerName = "Marker " + C().mapMan.nameNumber++;
-      // add properties to the marker
-      MapManager._initMarkerLayer(e.layer, markerName, e.shape);
-      // listen to the edit event to update the configuration data on the backend
-      e.layer.on("pm:edit", function () {
-        updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
-        console.log(C().mapMan.getMarkers());
-        console.log("marker edited now");
-      });
-
-      // update bottombar
-      C().updateBottomBar();
-
-      // update the configuration data on the backend
-      updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+    this.map.on("pm:create", function ({ shape, layer }) {
+      if (layer.options.pane == "markerPane") {
+        MapManager._onCreatedMarker(shape, layer);
+      }
+      else if (shape == "Line"){
+        MapManager._onCreatedLine(shape, layer);
+        
+      } else if (shape == "Polygon") {  
+        MapManager._onCreatedPolygon(shape, layer);
+      }
     });
-    this.map.on("pm:remove", function (e) {
-      // update origin from source when the removed drone marker is the origin
-      if (e.layer.feature.properties["name"] === C().sourceMan.origin) {
-        // find the first marker and set it as the new origin
-        const markers = C().mapMan.listMarkers();
-        if (markers.length > 0) {
-          C().sourceMan.updateOrigin(markers[0].feature.properties["name"]);
-        } else {
-          C().sourceMan.updateOrigin("");
+    this.map.on("pm:remove", function ({ shape, layer }) {
+      if (layer.options.pane == "markerPane") {
+        // update origin from source when the removed drone marker is the origin
+        if (layer.feature.properties["name"] === C().sourceMan.origin) {
+          // find the first marker and set it as the new origin
+          const markers = C().mapMan.listMarkers();
+          if (markers.length > 0) {
+            C().sourceMan.updateOrigin(markers[0].feature.properties["name"]);
+          } else {
+            C().sourceMan.updateOrigin("");
+          }
         }
+        else {
+          // update bottombar
+          C().updateBottomBar();
+        }
+        
+        // update the configuration data on the backend
+        updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
       }
-      else {
-        // update bottombar
-        C().updateBottomBar();
+      else if (shape == "Line"){
+        updateConfigPolylines(C().mapMan.getPolylines());
+      } else if (shape == "Polygon") {  
+        updateConfigPolygons(C().mapMan.getPolygons());
       }
-      
-      // update the configuration data on the backend
-      updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
     });
 
+    let defaultIcon = getDefaultMarker();
 
-    var droneIcon = L.icon({
-      shadowUrl: null,
-      iconAnchor: new L.Point(12, 12),
-      iconSize: new L.Point(24, 24),
-      iconUrl: drone,
+    MapManager.icons["defaultMarker"] = getDefaultMarker;
+
+    var defaultMarker = this.map.pm.Toolbar.copyDrawControl("drawMarker", {
+      name: "defaultMarker",
+      title: "Default Marker",
+      className: "leaflet-pm-icon-marker",
+    });
+    defaultMarker.drawInstance.setOptions({
+      markerStyle: { icon: defaultIcon },
     });
 
-    this.icons["droneMarker"] = droneIcon;
+    var droneIcon =  getDroneIcon();
 
-    var landingSiteIcon = L.icon({
-      shadowUrl: null,
-      iconAnchor: new L.Point(12, 12),
-      iconSize: new L.Point(24, 24),
-      iconUrl: landingSite,
-    });
+    MapManager.icons["droneMarker"] = getDroneIcon;
 
-    this.icons["landingSiteMarker"] = landingSiteIcon;
+    var landingSiteIcon = getLandingPadIcon();
+
+    MapManager.icons["landingSiteMarker"] = getLandingPadIcon;
 
     var landingSiteMarker = this.map.pm.Toolbar.copyDrawControl("drawMarker", {
       name: "landingSiteMarker",
@@ -251,12 +296,59 @@ class MapManager {
     }
   }
 
-  static _initMarkerLayer(layer, name, shape) {
+  static _onCreatedMarker(shape, layer) {
+    // update origin from source when the first drone marker is created
+    const markerName = "Marker " + C().mapMan.nameNumber++;
+    //console.log(layer);
+    // add properties to the marker
+    MapManager._initLayerProperties(layer, markerName, shape);
+    // listen to the edit event to update the configuration data on the backend
+    layer.on("pm:edit", function () {
+      updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+      //console.log(C().mapMan.getMarkers());
+      console.log("marker edited now");
+    });
+
+    // update bottombar
+    C().updateBottomBar();
+
+    // update the configuration data on the backend
+    updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+  }
+
+  static _onCreatedLine(shape, layer) {
+    // add properties
+    MapManager._initLayerProperties(layer, "", shape);
+    // listen to the edit event to update the configuration data on the backend
+    layer.on("pm:edit", function () {
+      console.log("line edited")
+      updateConfigPolylines(C().mapMan.getPolylines());
+    });
+    layer.setStyle({ color: "#000000" });
+    // update the configuration data on the backend
+    updateConfigPolylines(C().mapMan.getPolylines());
+  }
+
+  static _onCreatedPolygon(shape, layer) {
+    // add properties
+    MapManager._initLayerProperties(layer, "", shape);
+    // listen to the edit event to update the configuration data on the backend
+    layer.on("pm:edit", function () {
+      updateConfigPolygons(C().mapMan.getPolygons());
+    });
+    layer.setStyle({ color: "#000000" });
+    // update the configuration data on the backend
+    updateConfigPolygons(C().mapMan.getPolygons());
+  }
+
+  static _initLayerProperties(layer, name, shape, locationType = "", color = "#000000") {
     layer.feature = layer.feature || {};
     layer.feature.type = "Feature";
     layer.feature.properties = layer.feature.properties || {};
     layer.feature.properties["shape"] = shape;
     layer.feature.properties["name"] = name;
+    layer.feature.properties["locationType"] = locationType;
+    layer.feature.properties["color"] = color;
   }
 
   /**
@@ -285,13 +377,11 @@ class MapManager {
    * Call to remove all drawn markers of type Rectangle or Circle or Polygon
    */
   removeMarkers() {
-    this.map.eachLayer((layer) => {
-      if (
-        layer instanceof L.Circle ||
-        layer instanceof L.Rectangle ||
-        layer instanceof L.Polygon
-      ) {
-        layer.remove();
+    console.log("removing...Markers");
+    C().layerMan.layers.forEach((layer) => {
+      if (layer.markerLayer) {
+        this.map.removeLayer(layer.markerLayer);
+        layer.markerLayer = null;
       }
     });
   }
@@ -306,8 +396,9 @@ class MapManager {
     C()
       .layerMan.layers.toReversed()
       .map((currentLayer, layerIndex) => {
-        console.log("renderLayers currentLayer: ", currentLayer);
+        //console.log("renderLayers currentLayer: ", currentLayer);
         if (!C().layerMan.hideAllLayers && currentLayer.visible) {
+          console.log("renderLayers currentLayer...");
           const layerGroup = new L.LayerGroup().addTo(this.map);
           let voronoiPolygonDict = null;
           if (currentLayer.renderMode === RenderMode.Voronoi) {
@@ -315,7 +406,7 @@ class MapManager {
               currentLayer,
               layerIndex,
             );
-            console.log("polygons: ", voronoiPolygonDict);
+            //console.log("polygons: ", voronoiPolygonDict);
           }
           const satFactor =
             100 /
@@ -595,31 +686,206 @@ class MapManager {
     if (!this.dynamicFeatureGroup) {
       return;
     }
+    if (this._isinitMarker) {
+      return;
+    }
     // add markers
     markers.forEach((marker) => {
-      // if marker is present, ignore it
-      if (this.dynamicFeatureGroup.getLayers().find((layer) => {
-        return layer.feature.properties["name"] === marker.name;
-      })) {
-        return;
-      }
-
       const markerName = marker.name;
       const markerPosition = marker.latlng;
       const markerShape = marker.shape;
-      const markerLayer = new L.marker(markerPosition, { icon: this.icons[markerShape] });
+      const markerColor = marker.color;
+      const markerLocationType = marker.location_type;
+      const markerLayer = new L.marker(markerPosition, { icon: MapManager.icons[markerShape](markerColor) });
       markerLayer.on("pm:edit", function() {
         // update the configuration data on the backend
         updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
         console.log("marker edited");
       });
-      MapManager._initMarkerLayer(markerLayer, markerName, markerShape);
+      MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor);
       this.dynamicFeatureGroup.addLayer(markerLayer);
 
       // update number of markers to avoid name conflicts
       this.nameNumber = Math.max(this.nameNumber, parseInt(markerName.split(" ")[1]) + 1);
     });
+    this._isinitMarker = true;
   }
+
+  // import all polylines from json config file
+  importPolylines(polylines) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    if (this._isinitLine) {
+      return;
+    }
+    // add polylines
+    polylines.forEach((polyline) => {
+      const polylineLayer = new L.polyline(polyline.latlngs);
+      polylineLayer.on("pm:edit", function() {
+        // update the configuration data on the backend
+        updateConfigPolylines(C().mapMan.getPolylines());
+      });
+      MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color);
+      // add color style to the line
+      if (polyline.color) {
+        polylineLayer.setStyle({
+          color: polyline.color,
+        });
+      }
+
+      this.dynamicFeatureGroup.addLayer(polylineLayer);
+    });
+    this._isinitLine = true;
+  }
+
+  // import all polygons from json config file
+  importPolygons(polygons) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    if (this._isinitPolygon) {
+      return;
+    }
+    // add polygons
+    polygons.forEach((polygon) => {
+      const polygonLayer = new L.polygon(polygon.latlngs);
+      polygonLayer.on("pm:edit", function() {
+        // update the configuration data on the backend
+        updateConfigPolygons(C().mapMan.getPolygons());
+      });
+      MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color);
+      // add color style to the polygon
+      if (polygon.color) {
+        polygonLayer.setStyle({
+          fillColor: polygon.color,
+          color: polygon.color,
+        });
+      }
+
+      this.dynamicFeatureGroup.addLayer(polygonLayer);
+    });
+    //console.log("polygon added!!")
+    this._isinitPolygon = true;
+  }
+
+  // initialize the location type click event listeners
+  setLocationTypeOnClick(locationType, color) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    // remove the old click event listeners
+    this._onClickFunction.forEach((value, key) => {
+      key.off("click", value);
+    });
+
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      const onClickFunc = function() {
+        
+        // update the properties of the layer
+        layer.feature.properties["locationType"] = locationType;
+        layer.feature.properties["color"] = color;
+
+        // update the color of the layer for line and polygon
+        if (layer.feature.properties["shape"] === "Line" || layer.feature.properties["shape"] === "Polygon") {
+          layer.setStyle({
+            fillColor: color,
+            color: color,
+          });
+        }
+        else {
+          // update the icon of the markers
+          let markerShape = layer.feature.properties["shape"];
+          layer.setIcon(MapManager.icons[markerShape](color));
+        }
+
+        // update the configuration data on the backend
+        updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
+      };
+      layer.on("click", onClickFunc);
+      this._onClickFunction.set(layer, onClickFunc);
+    });
+  }
+
+  // remove the location type click event listeners
+  removeLocationTypeOnClick() {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    this._onClickFunction.forEach((value, key) => {
+      key.off("click", value);
+    });
+  }
+
+  // update the color of the location type
+  // used by the LocationTypeSetting component when the color is changed
+  updateLocationTypeColor(locationType, color) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      if (layer.feature.properties["locationType"] === locationType) {
+        // update the color of the layer for line and polygon
+        if (layer.feature.properties["shape"] === "Line" || layer.feature.properties["shape"] === "Polygon") {
+          layer.setStyle({
+            fillColor: color,
+            color: color,
+          });
+        }
+        else {
+          // update the icon of the markers
+          let markerShape = layer.feature.properties["shape"];
+          layer.setIcon(MapManager.icons[markerShape](color));
+        }
+
+
+        layer.feature.properties["color"] = color;
+      }
+    });
+    // update the configuration data on the backend
+    updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
+  }
+
+  // update the location type of the markers
+  // used by the LocationTypeSetting component when the location type is changed
+  updateLocationType(newLocationType, oldLocationType) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    // ignore newly created location types
+    // bug: the location type of the marker is empty when it is created
+    // so the location type of the marker is implicitly set to a new not existing location type
+    // when a new location type is created
+    // this new location type choose all the markers that have empty location type
+    // which is not the desired behavior
+    if (oldLocationType === "") {
+      return;
+    }
+    //console.log("oldLocationType: ", oldLocationType);
+    //console.log("newLocationType: ", newLocationType);
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      // update the location type of the marker if it has the old location type
+      if (layer.feature.properties["locationType"] === oldLocationType) {
+        layer.feature.properties["locationType"] = newLocationType;
+      }
+    });
+    // update the configuration data on the backend
+    updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
+  }
+
+  deleteLocationType(locationType) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      if (layer.feature.properties["locationType"] === locationType) {
+        this.dynamicFeatureGroup.removeLayer(layer);
+      }
+    });
+    // update the configuration data on the backend
+    updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
+  }
+
 }
 
 export default MapManager;

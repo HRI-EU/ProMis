@@ -104,7 +104,7 @@ export async function updateConfig(layers, markers) {
   // create the configuration data
   const config = {
     layers: layersCpy,
-    markers: markers,
+    markers: markers
   };
   // send the updated configuration data to the backend
   try {
@@ -123,4 +123,87 @@ export async function updateConfig(layers, markers) {
     console.error(error.message);
   }
   
+}
+
+export async function updateConfigPolylines(polylines){
+  const url = "http://localhost:8000/config_polylines";
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(polylines, null, 2),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update configuration data");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+export async function updateConfigPolygons(polygons){
+  const url = "http://localhost:8000/config_polygons";
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(polygons, null, 2),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update configuration data");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+export async function updateConfigDynamicLayers(markers, polylines, polygons){
+  const url = "http://localhost:8000/config_dynamic_layers";
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify({markers, polylines, polygons}, null, 2),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update configuration data");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+export async function updateConfigLocationTypes(locationTypes){
+  const url = "http://localhost:8000/location_type_table";
+  //console.log(locationTypes);
+  const locationTypesCpy = structuredClone(locationTypes);
+  // iterate over locationTypes and change locationType field to location_type
+  locationTypesCpy.forEach((locationType) => {
+    locationType.location_type = locationType.locationType;
+    delete locationType.locationType;
+  });
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify({"table": locationTypesCpy}, null, 2),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update configuration data");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
 }

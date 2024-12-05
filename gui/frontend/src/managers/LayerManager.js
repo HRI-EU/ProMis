@@ -26,6 +26,8 @@ class LayerManager {
         layers[i].renderMode = RenderMode.HeatmapRect;
       layers[i].markerLayer = null;
       layers[i].leafletOverlays = [];
+      layers[i].settingsMenuExpanded = false;
+      layers[i].colorMenuExpanded = false;
     }
     this.layers = layers;
     // check if all layers are hidden
@@ -43,6 +45,7 @@ class LayerManager {
     const uniqueId = Date.now();
     const layer = Layer.parseLayer(uniqueId, data, 180.0, fileInfo.name, 5);
     this.layers.push(layer);
+    this.hideAllLayers = false;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
     updateConfig(this.layers, C().mapMan.getMarkers());
@@ -60,7 +63,10 @@ class LayerManager {
 
   //Delete layer with this layerId
   deleteLayer(layerId) {
+    C().mapMan.removeMarkers();
     this.layers = this.layers.filter((layer) => layer.id !== layerId);
+    // check if all layers are hidden
+    this.hideAllLayers = this.layers.every((layer) => !layer.visible);
     C().updateSidebarRight();
     C().mapMan.refreshMap();
     updateConfig(this.layers, C().mapMan.getMarkers());
@@ -115,7 +121,9 @@ class LayerManager {
     var pos = LayerManager.findLayerPos(this.layers, layerId);
     this.layers[pos].hue = hue;
     C().updateSidebarRight();
-    C().mapMan.updateLayerColor(this.layers[pos]);
+    if (this.layers[pos].visible){
+      C().mapMan.updateLayerColor(this.layers[pos]);
+    }
   }
 
   //Change layer opacity

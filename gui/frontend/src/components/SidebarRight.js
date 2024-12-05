@@ -785,7 +785,6 @@ class SidebarRightItem extends React.Component {
                   console.log(event);
                   this.opacitySliderChanged(layer.id, newValue * 0.01);
                 }}
-                aria-label="Default"
                 valueLabelDisplay="auto"
                 style={{
                   color: "#ffffff",
@@ -904,7 +903,6 @@ class SidebarRightItem extends React.Component {
                     onChangeCommitted={(event, newValue) => {
                       this.radiusChanged(layer.id, newValue);
                     }}
-                    aria-label="Default"
                     valueLabelDisplay="auto"
                     style={{
                       width: "180px",
@@ -914,7 +912,6 @@ class SidebarRightItem extends React.Component {
 
                   <TextField
                     id="outlined-basic"
-                    borderColor="white"
                     label=""
                     value={this.state.textfieldRadiusStr}
                     variant="outlined"
@@ -992,7 +989,6 @@ class SidebarRightItem extends React.Component {
                 onChangeCommitted={(event, newValue) => {
                   this.valueRangeChanged(layer.id, newValue);
                 }}
-                aria-label="Default"
                 valueLabelDisplay="auto"
                 style={{
                   width: "180px",
@@ -1010,7 +1006,6 @@ class SidebarRightItem extends React.Component {
               >
                 <TextField
                   id="outlined-basic"
-                  borderColor="white"
                   label=""
                   value={this.state.textfieldRangeVal[0]}
                   variant="outlined"
@@ -1063,7 +1058,6 @@ class SidebarRightItem extends React.Component {
 
                 <TextField
                   id="outlined-basic"
-                  borderColor="white"
                   label=""
                   value={this.state.textfieldRangeVal[1]}
                   variant="outlined"

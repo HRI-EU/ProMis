@@ -26,6 +26,8 @@ function MapComponent() {
 
   const defaultCenter = [49.8728, 8.6512];
 
+  let onlyOnce = false;
+
   useEffect(() => {
     // Hide Leaflet map zoom control buttons after the map is rendered
     const hideZoomControl = () => {
@@ -48,17 +50,46 @@ function MapComponent() {
 
   //This function is called within a MapContainer. It will pass the map reference to the MapManager
   function MapHook() {
+    if (onlyOnce) {
+      return null;
+    }
     const map = useMap();
     C().mapMan.setMap(map);
     // Load the configuration data from the backend
-    getConfig().then((config) => {
+    getConfig().then((configs) => {
+      if (configs === null) {
+        return null;
+      }
+      const config = configs[0];
       if (config !== null) {
         const layers = config.layers;
         const markers = config.markers;
         C().layerMan.importAllLayers(layers);
         C().mapMan.importMarkers(markers);
+        if (config.polylines !== undefined) {
+          const polylines = config.polylines;
+          C().mapMan.importPolylines(polylines);
+        }
+        if (config.polygons !== undefined) {
+          const polygons = config.polygons;
+          C().mapMan.importPolygons(polygons);
+        }
+      }
+      const location_type_table = configs[1];
+      if (location_type_table !== null) {
+        if (location_type_table.table === undefined || location_type_table.table.length === 0) {
+          return null;
+        }
+        // iterate over locationTypes and change location_type field to locationType
+        location_type_table.table.forEach((locationType) => {
+          locationType.locationType = locationType.location_type;
+          delete locationType.location_type;
+        });
+
+        C().sourceMan.locationTypes = location_type_table.table;
       }
     });
+    onlyOnce = true;
     return null;
   }
 
