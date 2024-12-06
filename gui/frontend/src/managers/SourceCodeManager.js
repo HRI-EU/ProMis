@@ -69,7 +69,9 @@ class SourceCodeManager {
       })
         .then((response) => response.json())
         .then((data) => {
-          C().layerMan.importLayer(data, { name: "Generated Layer" });
+          let currentTime = new Date();
+          let localesTime = currentTime.toLocaleString('en-GB');
+          C().layerMan.importLayerFromSourceCode(data, { name: localesTime });
           this.running = false;
           this.success = true;
           this.closed = false;

@@ -51,6 +51,16 @@ class LayerManager {
     updateConfig(this.layers, C().mapMan.getMarkers());
   }
 
+  importLayerFromSourceCode(data, fileInfo) {
+    const uniqueId = Date.now();
+    const layer = Layer.parseLayer(uniqueId, data, 180.0, fileInfo.name, 5);
+    this.layers.splice(0, 0, layer);
+    this.hideAllLayers = false;
+    C().updateSidebarRight();
+    C().mapMan.refreshMap();
+    updateConfig(this.layers, C().mapMan.getMarkers());
+  }
+
   /**
    * Delete all previously added layers from the map and from the SidebarLeft
    */

@@ -119,7 +119,7 @@ class MapManager {
       drawCircle: false, // remove button to draw a cricle
       drawCircleMarker: false, // remove button to draw a cricleMarker
       drawRectangle: false, // remove button to draw a rectangle
-      cutPolygon: true, // remove a button to cut layers
+      cutPolygon: false, // remove a button to cut layers
       dragMode: true, // adds button to toggle global move mode
       deleteLayer: true, // adds a button to delete layers
       editMode: false, // remove button to toggle global edit mode
@@ -639,7 +639,7 @@ class MapManager {
     if (!this.dynamicFeatureGroup) {
       return markers;
     }
-    return this.dynamicFeatureGroup.getLayers();
+    return this.dynamicFeatureGroup.getLayers().filter((layer) => layer.options.pane == "markerPane");
   }
   
   listDroneMarkers() {
