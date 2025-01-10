@@ -10,8 +10,9 @@ import { randomId } from "../utils/Utility.js";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import Button from "@mui/material/Button";
+import LoadingButton from '@mui/lab/LoadingButton';
 import Fab from "@mui/material/Fab";
-import Grid from "@mui/material/Grid";
+import Grid from "@mui/material/Grid2";
 import Chip from "@mui/material/Chip";
 import Alert from "@mui/material/Alert";
 import IconButton from '@mui/material/IconButton';
@@ -26,7 +27,6 @@ import DoneIcon from '@mui/icons-material/Done';
 import TerminalIcon from "@mui/icons-material/TerminalRounded";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import PlayCircleIcon from "@mui/icons-material/PlayCircleOutline";
-import StopCircleIcon from "@mui/icons-material/StopCircleOutlined";
 import FileUploadIcon from "@mui/icons-material/FileUploadOutlined";
 import CloseIcon from "@mui/icons-material/CloseRounded";
 import SettingsFilledIcon from "@mui/icons-material/Settings";
@@ -35,6 +35,9 @@ import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import KeyboardIcon from '@mui/icons-material/Keyboard';
 import KeyboardAltOutlinedIcon from '@mui/icons-material/KeyboardAltOutlined';
+import MapIcon from '@mui/icons-material/Map';
+import PolylineIcon from '@mui/icons-material/Polyline';
+import PsychologyIcon from '@mui/icons-material/Psychology';
 import { Select } from "@mui/material";
 
 const darkTheme = createTheme({
@@ -86,13 +89,17 @@ export default class BottomBar extends React.Component {
       runningParamsToggled: false,
       locationTypeToggled: false,
       sourceCodeToggled: true,
+      supportResolutionWidth: 25,
+      supportResolutionHeight: 25,
+      sampleSize: 25,
+      runningState: 0,
     };
   }
 
   highlightOriginElement = false;
   highlightSourceElement = false;
 
-  inputSize = 80;
+  inputSize = 75;
 
   // Create a reference to the code element
   codeRef = React.createRef(null);
@@ -148,10 +155,19 @@ export default class BottomBar extends React.Component {
     }
 
     this.setState({ ...this.state, [anchor]: open });
+    // reset the toggled states when the bottom bar is closed so that choosing action is reset
+    if (!open) {
+      // set all toggled states to false
+      this.setState({ runningParamsToggled: false, locationTypeToggled: false, sourceCodeToggled: false });
+    }else {
+      // set source code to be toggled by default
+      this.setState({ runningParamsToggled: false, locationTypeToggled: false, sourceCodeToggled: true });
+    }
   };
 
   // Toggle the running state of the source code
-  toggleRun = () => {
+  toggleRun = async () => {
+    // check if source code is available
     if (!C().sourceMan.hasSource) {
       // toggle source code and hide running params and location type
       this.setState({ sourceCodeToggled: true, runningParamsToggled: false, locationTypeToggled: false });
@@ -163,6 +179,7 @@ export default class BottomBar extends React.Component {
       }, 1000);
       return;
     }
+    // check if origin is set
     if (C().sourceMan.origin === "") {
       this.highlightOriginElement = true;
       // toggle running params to show origin
@@ -175,7 +192,38 @@ export default class BottomBar extends React.Component {
       }, 1000);
       return;
     }
-    C().sourceMan.toggleRun(this.state.dimensionWidth, this.state.dimensionHeight, this.state.resolutionWidth, this.state.resolutionHeight);
+    // set running state to loading map data
+    this.setState({ runningState: 1 });
+
+    // prepare the run parameters
+    let runParam = {
+      dimensionWidth: this.state.dimensionWidth,
+      dimensionHeight: this.state.dimensionHeight,
+      resolutionWidth: this.state.resolutionWidth,
+      resolutionHeight: this.state.resolutionHeight,
+      supportResolutionWidth: this.state.supportResolutionWidth,
+      supportResolutionHeight: this.state.supportResolutionHeight,
+      sampleSize: this.state.sampleSize,
+    };
+    
+    // call the backend to run the source code
+    try {
+      const mapHashData = await C().sourceMan.intermediateCalls(runParam, "loadmapdata");
+      const mapHashValue = Number(mapHashData);
+      this.setState({ runningState: 2 });
+      const starmapHashData = await C().sourceMan.intermediateCalls(runParam, "starmap", mapHashValue);
+      const starmapHashValue = Number(starmapHashData);
+      this.setState({ runningState: 3 });
+      await C().sourceMan.intermediateCalls(runParam, "inference", starmapHashValue);
+      this.setState({ runningState: 0 });
+    }
+    catch (error) {
+      console.error(error.message);
+    }
+
+
+    // only for testing purposes
+    //this.setState({ runningState: (this.state.runningState + 1) % 4 });
   };
 
   // Toggle the file input
@@ -270,6 +318,32 @@ export default class BottomBar extends React.Component {
     }
     return items;
   }
+  createInterpolationItems = () => {
+    let items = ["linear", "nearest", "gaussian_process"];
+    return items.map((item, index) => {
+      return <MenuItem key={index} value={item}>{item}</MenuItem>
+    });
+  };
+
+  getRunningIcons = (state) => {
+    if (state > 3 || state < 0) {
+      throw new Error("Invalid state");
+    }
+    const playCircle = <PlayCircleIcon style={{ color: "#ffffff" }} />;
+    const mapIcon = <MapIcon style={{ color: "#ffffff" }} />;
+    const polylineIcon = <PolylineIcon style={{ color: "#ffffff" }} />;
+    const psychologyIcon = <PsychologyIcon style={{ color: "#ffffff" }} />;
+    const icons = [playCircle, mapIcon, polylineIcon, psychologyIcon];
+    return icons[state];
+  }
+
+  getRunningLabels = (state) => {
+    if (state > 3 || state < 0) {
+      throw new Error("Invalid state");
+    }
+    const labels = ["Run", "Loading Map Data", "Calculating StarMap", "Inference"];
+    return labels[state];
+  }
 
   handleOriginChange = (event) => {
     C().sourceMan.updateOrigin(event.target.value);
@@ -277,6 +351,10 @@ export default class BottomBar extends React.Component {
     const latLon = C().mapMan.latlonFromMarkerName(event.target.value);
     // recenter map
     C().mapMan.recenterMap(latLon);
+  }
+
+  handleInterpolationChange = (event) => {
+    C().sourceMan.updateInterpolation(event.target.value);
   }
 
   runningParams = () => (
@@ -322,14 +400,36 @@ export default class BottomBar extends React.Component {
           >Dimensions:</div>
           <TextField type="number" size="small" label="width" variant="outlined" 
             value={this.state.dimensionWidth}
-            onChange={(e) => this.setState({ dimensionWidth: e.target.value })}
+            onFocus={() => {
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
+                                          , this.state.resolutionWidth, this.state.resolutionHeight);
+            }}
+            onChange={(e) => {
+              this.setState({ dimensionWidth: e.target.value })
+              C().mapMan.highlightBoundary(C().sourceMan.origin, e.target.value, this.state.dimensionHeight
+                                          , this.state.resolutionWidth, this.state.resolutionHeight); 
+            }}
+            onBlur={() => {
+              C().mapMan.unhighlightBoundary();
+            }}
             sx={{
               width: this.inputSize
             }}
           />
           <TextField type="number" size="small" label="height" variant="outlined"
             value={this.state.dimensionHeight}
-            onChange={(e) => this.setState({ dimensionHeight: e.target.value })}
+            onFocus={() => {
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
+                                          , this.state.resolutionWidth, this.state.resolutionHeight);
+            }}
+            onChange={(e) => {
+              this.setState({ dimensionHeight: e.target.value })
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, e.target.value
+                                          , this.state.resolutionWidth, this.state.resolutionHeight);
+            }}
+            onBlur={() => {
+              C().mapMan.unhighlightBoundary();
+            }}
             sx={{
               width: this.inputSize
             }}
@@ -359,14 +459,18 @@ export default class BottomBar extends React.Component {
           >Resolutions:</div>
           <TextField type="number" size="small" variant="outlined" 
             value={this.state.resolutionWidth}
-            onChange={(e) => this.setState({ resolutionWidth: e.target.value })}
-            sx={{
-              width: this.inputSize
+            onFocus={() => {
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
+                                          , this.state.resolutionWidth, this.state.resolutionHeight);
             }}
-          />
-          <TextField type="number" size="small" variant="outlined"
-            value={this.state.resolutionHeight}
-            onChange={(e) => this.setState({ resolutionHeight: e.target.value })}
+            onChange={(e) => {
+              this.setState({ resolutionWidth: e.target.value })
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
+                                          , e.target.value, this.state.resolutionHeight);
+            }}
+            onBlur={() => {
+              C().mapMan.unhighlightBoundary();
+            }}
             sx={{
               width: this.inputSize
             }}
@@ -376,8 +480,104 @@ export default class BottomBar extends React.Component {
               marginLeft: "2px",
               color: "#ffffff",
             }}
-          >px</div>
+          >x</div>
+          <TextField type="number" size="small" variant="outlined"
+            value={this.state.resolutionHeight}
+            onFocus={() => {
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
+                                          , this.state.resolutionWidth, this.state.resolutionHeight);
+            }}
+            onChange={(e) => {
+              this.setState({ resolutionHeight: e.target.value })
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
+                                          , this.state.resolutionWidth, e.target.value);
+            }}
+            onBlur={() => {
+              C().mapMan.unhighlightBoundary();
+            }}
+            sx={{
+              width: this.inputSize
+            }}
+          />
+          
         </Grid>
+      </ThemeProvider>
+      <ThemeProvider theme={darkTheme}>
+        <Grid
+          alignItems="center"
+          justifyContent="start"
+          m={0}
+          sx={{ display: "flex" ,
+            marginLeft: "20px",
+          }}
+        >
+          <div
+            style={{
+              marginRight: "10px",
+              color: "#ffffff",
+            }}
+          >Support resolution:</div>
+          <TextField type="number" size="small" variant="outlined" 
+            value={this.state.supportResolutionWidth}
+            onChange={(e) => this.setState({ supportResolutionWidth: e.target.value })}
+            sx={{
+              width: this.inputSize
+            }}
+          />
+          <div
+            style={{
+              marginLeft: "2px",
+              color: "#ffffff",
+            }}
+          >x</div>
+          <TextField type="number" size="small" variant="outlined"
+            value={this.state.supportResolutionHeight}
+            onChange={(e) => this.setState({ supportResolutionHeight: e.target.value })}
+            sx={{
+              width: this.inputSize
+            }}
+          />
+          
+        </Grid>
+      </ThemeProvider>
+      <ThemeProvider theme={darkTheme}>
+        <Grid
+          alignItems="center"
+          justifyContent="start"
+          m={0}
+          sx={{ display: "flex" ,
+            marginLeft: "20px",
+          }}
+        >
+          <div
+            style={{
+              marginRight: "10px",
+              color: "#ffffff",
+            }}
+          >Sample size:</div>
+          <TextField type="number" size="small" variant="outlined" 
+            value={this.state.sampleSize}
+            onChange={(e) => this.setState({ sampleSize: e.target.value })}
+            sx={{
+              width: this.inputSize
+            }}
+          />
+        </Grid>
+      </ThemeProvider>
+      <ThemeProvider theme={darkTheme}>
+        <FormControl sx={{ m: 1, minWidth: 130, marginLeft: 2}} size="small">
+          <InputLabel
+            style={{ color: "#ffffff" }}
+          >Interpolation</InputLabel>
+          <Select
+            label="Interpolation"
+            variant="outlined"
+            value={C().sourceMan.interpolation}
+            onChange={this.handleInterpolationChange}
+          >
+            {this.createInterpolationItems()}
+          </Select>
+        </FormControl>
       </ThemeProvider>
     </Grid>
   )
@@ -410,13 +610,7 @@ export default class BottomBar extends React.Component {
         sx={{ display: "flex" }}
       >
         <Grid
-          container
-          spacing={0}
-          direction="column"
-          alignItems="center"
-          justifyContent="start"
-          m={0}
-          sx={{ display: "flex" }}
+          size={12}
         >
           <Button
             aria-label="add"
@@ -434,8 +628,6 @@ export default class BottomBar extends React.Component {
           </Button>
         </Grid>
 
-        
-
         <Grid
           container
           spacing={0}
@@ -443,98 +635,137 @@ export default class BottomBar extends React.Component {
           alignItems="center"
           justifyContent="start"
           m={0}
-          style={{ marginLeft: "0px" }}
+          style={{ 
+            marginLeft: "32px",
+            marginRight: "32px",
+          }}
+          size={12}
         >
-          <IconButton
-            onClick={() => {
-              this.toggleSourceCode();
-            }}
-            style={{ color: "#eeeeee", fontSize: 12, marginLeft: "32px"  }}
-            aria-label="Open location type menu"
+          <Grid
+            container
+            spacing={1}
+            direction="row"
+            alignItems="center"
+            justifyContent="start"
+            m={0}
+            size={6}
           >
-            {this.state.sourceCodeToggled ? (
-              <KeyboardIcon />
-            ) : (
-              <KeyboardAltOutlinedIcon />
-            )}
-          </IconButton>
-
-          <IconButton
-            onClick={() => {
-              this.toggleRunningParams();
-            }}
-            style={{ color: "#eeeeee", fontSize: 12}}
-            aria-label="Open running param menu"
-          >
-            {this.state.runningParamsToggled ? (
-              <SettingsFilledIcon />
-            ) : (
-              <SettingsOutlinedIcon />
-            )}
-          </IconButton>
-
-          <IconButton
-            onClick={() => {
-              this.toggleLocationType();
-            }}
-            style={{ color: "#eeeeee", fontSize: 12 }}
-            aria-label="Open location type menu"
-          >
-            {this.state.locationTypeToggled ? (
-              <ListAltOutlinedIcon />
-            ) : (
-              <FormatListBulletedIcon />
-            )}
-          </IconButton>
-          
-
-          <Collapse in={!C().sourceMan.closed}
-            collapsedSize={0}
-            orientation="horizontal"  
-          >
-            <Alert 
-              severity={C().sourceMan.success ? "success" : "error"}
-              style={{
-                minWidth: "80px",
-                marginLeft: "30px",
-              }}
-              sx={{
-                padding: "3px 10px 3px 10px",
-              }}
-              variant='filled'
-              action={
-                <IconButton
-                  aria-label="close"
-                  color="inherit"
-                  size="small"
-                  onClick={() => C().sourceMan.closeAlert()}
-                >
-                  <CloseIcon fontSize="inherit" />
-                </IconButton>
-              }
+            <Grid
+              size={1}
             >
-              {C().sourceMan.success ? "Success" : "Error"}
-            </Alert>
-          </Collapse>
+              <IconButton
+                onClick={() => {
+                  this.toggleSourceCode();
+                }}
+                style={{ color: "#eeeeee", fontSize: 12}}
+                aria-label="Open location type menu"
+              >
+                {this.state.sourceCodeToggled ? (
+                  <KeyboardIcon />
+                ) : (
+                  <KeyboardAltOutlinedIcon />
+                )}
+              </IconButton>
+            </Grid>
+            
+            <Grid
+              size={1}
+            >
+              <IconButton
+                onClick={() => {
+                  this.toggleRunningParams();
+                }}
+                style={{ color: "#eeeeee", fontSize: 12}}
+                aria-label="Open running param menu"
+              >
+                {this.state.runningParamsToggled ? (
+                  <SettingsFilledIcon />
+                ) : (
+                  <SettingsOutlinedIcon />
+                )}
+              </IconButton>
+            </Grid>
 
-          <Chip
-            icon={
-              C().sourceMan.running ? (
-                <StopCircleIcon style={{ color: "#ffffff" }} />
-              ) : (
-                <PlayCircleIcon style={{ color: "#ffffff" }} />
-              )
-            }
-            onClick={this.toggleRun}
-            label={C().sourceMan.running ? "Running" : "Run"}
-            variant="outlined"
-            style={{
-              color: "#ffffff",
-              borderColor: "#7e86bd22",
-              minWidth: "80px",
-              marginLeft: "5px",
-            }}
-          />
+            <Grid size={1}> 
+              <IconButton
+                onClick={() => {
+                  this.toggleLocationType();
+                }}
+                style={{ color: "#eeeeee", fontSize: 12 }}
+                aria-label="Open location type menu"
+              >
+                {this.state.locationTypeToggled ? (
+                  <ListAltOutlinedIcon />
+                ) : (
+                  <FormatListBulletedIcon />
+                )}
+              </IconButton>
+            </Grid>
+          </Grid>
+          
+          
+          <Grid
+            container
+            spacing={0}
+            direction="row"
+            alignItems="center"
+            justifyContent="flex-end"
+            size={5}
+            style={{ 
+             }}
+          >
+            <Collapse in={!C().sourceMan.closed}
+              collapsedSize={0}
+              orientation="horizontal"  
+            >
+              <Alert 
+                severity={C().sourceMan.success ? "success" : "error"}
+                style={{
+                  minWidth: "80px",
+                  marginLeft: "30px",
+                }}
+                sx={{
+                  padding: "3px 10px 3px 10px",
+                }}
+                variant='filled'
+                action={
+                  <IconButton
+                    aria-label="close"
+                    color="inherit"
+                    size="small"
+                    onClick={() => {
+                      C().sourceMan.closeAlert()
+                      if (!C().sourceMan.success){
+                        this.setState({ runningState: 0 });
+                      }
+                    }}
+                  >
+                    <CloseIcon fontSize="inherit" />
+                  </IconButton>
+                }
+              >
+                {C().sourceMan.success ? "Success" : "Error"}
+              </Alert>
+            </Collapse>
+
+            <ThemeProvider theme={darkTheme}>
+              <LoadingButton
+                loading={this.state.runningState !== 0}
+                loadingPosition="start"
+                startIcon={this.getRunningIcons(this.state.runningState)}
+                onClick={this.toggleRun}
+                variant="outlined"
+                size="small"
+                sx={{
+                  color: "#ffffff",
+                  borderColor: "#7e86bd22",
+                  borderRadius: "24px",
+                }}
+              >
+                {this.getRunningLabels(this.state.runningState)}
+              </LoadingButton>
+            </ThemeProvider>
+          </Grid>
         </Grid>
         
         {this.state.runningParamsToggled ? this.runningParams() : null}

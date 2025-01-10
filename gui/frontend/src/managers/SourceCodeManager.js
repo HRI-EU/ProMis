@@ -3,7 +3,6 @@ import { updateConfigLocationTypes } from "../utils/Utility.js";
 
 class SourceCodeManager {
   constructor() {
-    this.running = false;
     this.hasSource = false;
     this.source = "";
     this.success = true;
@@ -11,29 +10,18 @@ class SourceCodeManager {
     this.origin = "";
     this.edit = false;
     this.locationTypes = [];
+    this.interpolation = "linear";
   }
 
-  //Toggle the running state of the source code
-  toggleRun(dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight) {
-    // close alert if open
-    if (!this.closed){
-      this.closed = true;
-    }
-
-    if (!this.hasSource){
-      console.log("No source code!!!");
-      return;
-    }
-    // check if origin is set
-    if (this.origin === ""){
-      console.log("No origin set!!!");
-      return;
-    }
-    if (this.running){
-      console.log("Already running!!!");
-      return;
-    }
-    this.running = !this.running;
+  getRequestBody({
+    dimensionWidth
+    , dimensionHeight
+    , resolutionWidth
+    , resolutionHeight
+    , supportResolutionWidth
+    , supportResolutionHeight
+    , sampleSize
+  }) {
     // sort the location types by location type
     const sortedTypes = [...this.locationTypes].sort((a, b) => (a.locationType > b.locationType) ? 1 : -1);
 
@@ -56,37 +44,82 @@ class SourceCodeManager {
       dimensions: [dimensionWidth, dimensionHeight],
       resolutions: [resolutionWidth, resolutionHeight],
       location_types: locationTypes,
+      support_resolutions: [supportResolutionWidth, supportResolutionHeight],
+      sample_size: sampleSize,
+      interpolation: this.interpolation
     };
-    if (this.running && this.hasSource) {
-      //Run the source code
-      const url = "http://localhost:8000/runpromis";
-      fetch(url, {
+    return body;
+  }
+
+  async intermediateCalls({
+    dimensionWidth
+    , dimensionHeight
+    , resolutionWidth
+    , resolutionHeight
+    , supportResolutionWidth
+    , supportResolutionHeight
+    , sampleSize
+  }, endpoint, hashValue=-1) {
+    // close alert if open
+    if (!this.closed){
+      this.closed = true;
+    }
+
+    if (!this.hasSource){
+      console.log("No source code!!!");
+      return;
+    }
+    // check if origin is set
+    if (this.origin === ""){
+      console.log("No origin set!!!");
+      return;
+    }
+
+    const bodyParams = {
+      dimensionWidth
+      , dimensionHeight
+      , resolutionWidth
+      , resolutionHeight
+      , supportResolutionWidth
+      , supportResolutionHeight
+      , sampleSize
+    };
+    const body = this.getRequestBody(bodyParams);
+    //Run the source code
+    const url = "http://localhost:8000/" + endpoint + (hashValue === -1 ? "" : "/" + hashValue);
+    console.log(url);
+    try {
+      const response = await fetch(url, {
         method: "POST",
         body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
         },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          let currentTime = new Date();
-          let localesTime = currentTime.toLocaleString('en-GB');
-          C().layerMan.importLayerFromSourceCode(data, { name: localesTime });
-          this.running = false;
-          this.success = true;
-          this.closed = false;
-          C().toggleDrawerSidebarRight();
-          C().updateBottomBar();
-        })
-        .catch((error) => {
-          console.error("Error:", error.message);
-          this.running = false;
-          this.success = false;
-          this.closed = false;
-          C().updateBottomBar();
-        });
+      });
+      if (!response.ok) {
+        throw new Error("error during endpoint:" + endpoint + "\nreport error: " + response.status);
+      }
+      if (endpoint !== "inference") {
+        const success = await response.text();
+        return success;
+      }
+      if (endpoint === "inference") {
+        const data = await response.json();
+        let currentTime = new Date();
+        let localesTime = currentTime.toLocaleString('en-GB');
+        C().layerMan.importLayerFromSourceCode(data, { name: localesTime });
+        this.success = true;
+        this.closed = false;
+        C().toggleDrawerSidebarRight();
+        C().updateBottomBar();
+      }
     }
-    C().updateBottomBar();
+    catch (error) {
+      this.success = false;
+      this.closed = false;
+      C().updateBottomBar();
+      throw error;
+    }
   }
 
   toggleEdit() {
@@ -101,6 +134,11 @@ class SourceCodeManager {
 
   updateOrigin(origin) {
     this.origin = origin;
+    C().updateBottomBar();
+  }
+  
+  updateInterpolation(interpolation) {
+    this.interpolation = interpolation;
     C().updateBottomBar();
   }
 

@@ -106,6 +106,7 @@ export default function LocationTypeSetting({ initialRows }) {
 
   const handleChooseClick = (id) => () => {
     setChooseRow(id);
+    document.body.style.cursor = 'pointer';
     // collect the location type and color of the chosen row
     const chosenRow = rows.find((row) => row.id === id);
     const locationType = chosenRow.locationType;

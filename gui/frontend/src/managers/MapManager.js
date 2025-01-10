@@ -1,5 +1,6 @@
 import L from "leaflet";
 import "leaflet.heat";
+import * as turf from "@turf/turf";
 
 import ColorHelper from "../utils/ColorHelper.js";
 import { updateConfig, updateConfigPolygons, updateConfigPolylines, updateConfigDynamicLayers } from "../utils/Utility.js";
@@ -32,6 +33,7 @@ class MapManager {
     this._isinitLine = false;
     this._isinitPolygon = false;
     this._onClickFunction = new Map();
+    this.bBoxFeatureGroup = null;
   }
 
   // get markers from map
@@ -423,12 +425,12 @@ class MapManager {
               positive,
             );
 
-            var hsla = ColorHelper.calcHslaFromParams(
+            /*var hsla = ColorHelper.calcHslaFromParams(
               currentLayer.hue,
               sat,
               currentLayer.opacity,
               positive,
-            );
+            );*/
 
             if (
               marker.probability >= currentLayer.valueRange[0] &&
@@ -489,7 +491,8 @@ class MapManager {
                       fillColor: hsl,
                       fillOpacity: currentLayer.opacity,
                       weight: 1.5,
-                      color: hsla, //Outline color
+                      stroke: false,
+                      //color: hsla, //Outline color
                     };
                     // Creating a polygon
                     var polygon = new L.polygon(voronoiPolygon, polygonOptions);
@@ -809,6 +812,7 @@ class MapManager {
 
   // remove the location type click event listeners
   removeLocationTypeOnClick() {
+    document.body.style.cursor = 'default';
     if (!this.dynamicFeatureGroup) {
       return;
     }
@@ -884,6 +888,72 @@ class MapManager {
     });
     // update the configuration data on the backend
     updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
+  }
+
+  _getBBox(originLatlng, width, height) {
+    const origin = turf.point([originLatlng.lng, originLatlng.lat]);
+    // calculate coordinates of the rectangle bounding box based on the origin and the width and height of box
+    const north = turf.destination(origin, height / 2000, 0, { units: "kilometers" });
+    const east = turf.destination(origin, width / 2000, 90, { units: "kilometers" });
+    const south = turf.destination(origin, height / 2000, 180, { units: "kilometers" });
+    const west = turf.destination(origin, width / 2000, -90, { units: "kilometers" });
+    const bbox = turf.bbox(turf.featureCollection([origin, north, east, south, west]));
+    return L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
+  }
+
+  _createGrid(originLatlng, width, height, resolutionWidth, resolutionHeight) {
+    // calculate the coordinates of the bounding box
+    const bbox = this._getBBox(originLatlng, width, height);
+    // calculate the width and height of each grid cell
+    const cellWidth = (bbox.getEast() - bbox.getWest()) / resolutionWidth;
+    const cellHeight = (bbox.getNorth() - bbox.getSouth()) / resolutionHeight;
+    // create the grid
+    for (let i = 0; i < resolutionWidth; i++) {
+      for (let j = 0; j < resolutionHeight; j++) {
+        const cell = L.rectangle(
+          [
+            [bbox.getSouth() + j * cellHeight, bbox.getWest() + i * cellWidth],
+            [bbox.getSouth() + (j + 1) * cellHeight, bbox.getWest() + (i + 1) * cellWidth],
+          ],
+          { color: "#0000ff", weight: 1 },
+        );
+        this.bBoxFeatureGroup.addLayer(cell);
+      }
+    }
+  }
+
+  // highlight the boundary of the selected area
+  highlightBoundary(origin, dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight) {
+    // do nothing if origin is not selected or any of the dimension or resolution is not set
+    if (origin === "") {
+      return;
+    }
+    console.log("highlightBoundary");
+
+    // remove the old bounding box layer
+    this.unhighlightBoundary();
+    // create feature group to store the bounding box layer
+    this.bBoxFeatureGroup = L.featureGroup().addTo(this.map);
+    // calculate the bounding box
+    const originLatlng = C().mapMan.latlonFromMarkerName(origin);
+    const bbox = this._getBBox(originLatlng, dimensionWidth, dimensionHeight);
+    // create the bounding box layer
+    const bBoxLayer = L.rectangle(bbox, { color: "#ff0000", weight: 1 });
+    this.bBoxFeatureGroup.addLayer(bBoxLayer);
+
+    // create the grid
+    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight);
+
+    // zoom to the bounding box
+    //this.map.fitBounds(bbox);
+  }
+
+  // remove the bounding box feature group if it exists
+  unhighlightBoundary() {
+    if (this.bBoxFeatureGroup) {
+      console.log("unhighlightBoundary");
+      this.map.removeLayer(this.bBoxFeatureGroup);
+    }
   }
 
 }

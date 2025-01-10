@@ -1,6 +1,6 @@
 from numpy import eye
 import re
-from typing import Set
+from typing import Set, Literal
 
 from promis import ProMis, StaRMap
 from promis.geo import PolarLocation, CartesianLocation, CartesianRasterBand, CartesianMap, PolarRoute, PolarPolygon
@@ -21,6 +21,9 @@ class Item(BaseModel):
     dimensions: tuple[int, int]
     resolutions: tuple[int, int]
     location_types: dict[str, str]
+    support_resolutions: tuple[int, int]
+    sample_size: int
+    interpolation: Literal["linear", "nearest", "gaussian_process"]
 
 class DynamicLayer(BaseModel):
     markers: list[Marker]
@@ -37,7 +40,6 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -85,11 +87,14 @@ def _get_location_type_table():
         location_type_table = LocationTypeTable(table=[])
     return location_type_table
 
-def create_hash(req: Item):
+def create_hash_uam(req: Item):
     # prepare for hash
     reqDict = req.model_dump()
     del reqDict["source"]
     del reqDict["resolutions"]
+    del reqDict["support_resolutions"]
+    del reqDict["sample_size"]
+    del reqDict["interpolation"]
     locations_to_remove = []
     for location_type, filter in reqDict["location_types"].items():
         if filter == "":
@@ -99,24 +104,31 @@ def create_hash(req: Item):
 
     return myHash(repr(reqDict))
 
-@app.post("/runpromis")
-def run_new(req: Item):
-    # We center a 1km^2 mission landscape over TU Darmstadt
+def create_hash_starmap(req: Item, dynamic_layers: DynamicLayer, hashVal: int):
+    # prepare for hash
+    reqDict = req.model_dump()
+    del reqDict["source"]
+    reqDict["hashVal"] = hashVal
+    reqDict["dynamic_layers"] = dynamic_layers
+
+    return myHash(repr(reqDict))
+
+@app.post("/loadmapdata")
+def load_map_data(req: Item):
     mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
-    width, height = dimensions
 
     # We load geographic features from OpenStreetMap using a range of filters
     location_types = req.location_types
 
     # prepare for hash
-    hashVal = create_hash(req)
+    hashVal = create_hash_uam(req)
     # load the cache info
     try:
         with open(f"./cache/uam_{hashVal}.pickle", 'rb') as f:
             uam = CartesianMap.load(f"./cache/uam_{hashVal}.pickle")
             has_cache = True
-            print("found cache")
+            print("found cache map data in loadmapdata")
     except FileNotFoundError:
         has_cache = False
 
@@ -139,15 +151,46 @@ def run_new(req: Item):
         uam.apply_covariance(10.0 * eye(2))
         
         uam.save(f"./cache/uam_{hashVal}.pickle")
+    
+    return hashVal
 
-    # create polar map
-    polar_map = uam.to_polar()
-    # create all markers, lines and polygons
+@app.post("/starmap/{hashVal}")
+def calculate_star_map(req: Item, hashVal: int):
+    mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
+    dimensions = req.dimensions
+    width, height = dimensions
+    sample_size = req.sample_size
+    interpolation = req.interpolation
+
+    # We load geographic features from OpenStreetMap using a range of filters
+    location_types = req.location_types
+    # load the cache info
+    try:
+        with open(f"./cache/uam_{hashVal}.pickle", 'rb') as f:
+            uam = CartesianMap.load(f"./cache/uam_{hashVal}.pickle")
+            print("found cache map data in starmap")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="No map data found on this request.")
+    
+    # get dynamic markers, line and polygons
     map_config = _get_config()
     markers = map_config.markers
     polylines = map_config.polylines
     polygons = map_config.polygons
 
+    dynamic_layers = DynamicLayer(markers=markers, polylines=polylines, polygons=polygons)
+
+    star_map_hash_val = create_hash_starmap(req, dynamic_layers, hashVal)
+
+    # load the cache info
+    #try:
+    #    with open(f"./cache/starmap_{star_map_hash_val}.pickle", 'rb') as f:
+    #        print("found cache star map in starmap")
+    #except FileNotFoundError:
+    # create polar map
+    polar_map = uam.to_polar()
+
+    # create all markers, lines and polygons to uam
     for marker in markers:
         if marker.location_type == "":
             continue
@@ -177,18 +220,33 @@ def run_new(req: Item):
     # using linear interpolation of a sample set
     target_resolution = req.resolutions
     target = CartesianRasterBand(mission_center, target_resolution, width, height)
-    star_map = StaRMap(target, uam, list(location_types.keys()), "linear")
+    star_map = StaRMap(target, uam, list(location_types.keys()), interpolation)
 
     # The sample points for which the relations will be computed directly
-    support_resolution = target_resolution
-    support = CartesianRasterBand(mission_center, support_resolution, width, height)
+    support_resolutions = req.support_resolutions
+    support = CartesianRasterBand(mission_center, support_resolutions, width, height)
 
     # We now compute the Distance and Over relationships for the selected points
-    # For this, we take 25 random samples from generated/possible map variations
-    star_map.add_support_points(support, 25)
+    star_map.add_support_points(support, sample_size)
 
-    # In ProMis, we define the constraints of the mission 
-    # as hybrid probabilistic first-order logic program
+    #star_map.save(f"./cache/starmap_{star_map_hash_val}.pickle")
+
+    app.star_map = star_map
+    
+    return star_map_hash_val
+
+@app.post("/inference/{hashVal}")
+def inference(req: Item, hashVal: int):
+    # load the cache info
+    #try:
+    #    with open(f"./cache/starmap_{hashVal}.pickle", 'rb') as f:
+    #        star_map = StaRMap.load(f"./cache/starmap_{hashVal}.pickle")
+    #        print("found cache star map in inference")
+    #except FileNotFoundError:
+    #    raise HTTPException(status_code=404, detail="No star map found on this request.")
+
+    star_map = app.star_map
+    
     logic = req.source
 
     # Solve mission constraints using StaRMap parameters and multiprocessing
@@ -206,6 +264,7 @@ def run_new(req: Item):
         val = values[i][0]
         data.append([lat, long, val])
     return data
+
 
 @app.post("/config")
 def update_config(config: Config):
@@ -236,7 +295,6 @@ def update_config_dynamic(dynamic_layers: DynamicLayer):
     markers = dynamic_layers.markers
     polylines = dynamic_layers.polylines
     polygons = dynamic_layers.polygons
-    print(polylines)
 
     config = _get_config()
     config.markers = markers

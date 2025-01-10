@@ -23,7 +23,7 @@ class LayerManager {
   importAllLayers(layers) {
     for (let i = 0; i < layers.length; i++) {
       if (layers[i].renderMode == undefined)
-        layers[i].renderMode = RenderMode.HeatmapRect;
+        layers[i].renderMode = RenderMode.Voronoi;
       layers[i].markerLayer = null;
       layers[i].leafletOverlays = [];
       layers[i].settingsMenuExpanded = false;
@@ -53,7 +53,7 @@ class LayerManager {
 
   importLayerFromSourceCode(data, fileInfo) {
     const uniqueId = Date.now();
-    const layer = Layer.parseLayer(uniqueId, data, 180.0, fileInfo.name, 5);
+    const layer = Layer.parseLayer(uniqueId, data, 180.0, fileInfo.name, 5, true);
     this.layers.splice(0, 0, layer);
     this.hideAllLayers = false;
     C().updateSidebarRight();
