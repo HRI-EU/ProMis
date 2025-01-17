@@ -9,13 +9,11 @@
 #
 
 # Standard Library
-from abc import ABC
+from abc import ABC, abstractmethod
 
 # Third Party
-from numpy import vstack
-
 # ProMis
-from promis.geo import CartesianMap, PolarLocation, PolarMap
+from promis.geo import CartesianLocation, CartesianMap, PolarLocation, PolarMap
 
 
 class SpatialLoader(ABC):
@@ -32,6 +30,10 @@ class SpatialLoader(ABC):
 
     def to_cartesian_map(self) -> CartesianMap:
         return PolarMap(self.origin, self.features).to_cartesian()
+
+    @abstractmethod
+    def load(self, feature_description: dict):
+        pass
 
     @staticmethod
     def compute_bounding_box(
@@ -51,8 +53,7 @@ class SpatialLoader(ABC):
         width, height = dimensions
 
         # Compute bounding box corners in Cartesian and project back to polar
-        cartesian_origin = origin.to_cartesian()
-        north_east = (cartesian_origin + vstack([width / 2.0, height / 2.0])).to_polar(origin)
-        south_west = (cartesian_origin - vstack([width / 2.0, height / 2.0])).to_polar(origin)
+        north_east = CartesianLocation(width / 2.0, height / 2.0).to_polar(origin)
+        south_west = CartesianLocation(-width / 2.0, -height / 2.0).to_polar(origin)
 
         return south_west.latitude, south_west.longitude, north_east.latitude, north_east.longitude

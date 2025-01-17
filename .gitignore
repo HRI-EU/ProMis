@@ -11,6 +11,7 @@
 # Folders with derived content
 external/
 output/
+examples/
 
 # Node.js package lock
 package-lock.json

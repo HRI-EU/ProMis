@@ -144,15 +144,21 @@ class Map(ABC):
             for _ in range(number_of_samples)
         ]
 
-    def apply_covariance(self, covariance: ndarray):
+    def apply_covariance(self, covariance: ndarray | dict):
         """Set the covariance matrix of all features.
 
         Args:
-            covariance: The covariance matrix to set for all featuers
+            covariance: The covariance matrix to set for all featuers or a dictionary
+                mapping location_type to covariance matrix
         """
 
-        for feature in self.features:
-            feature.covariance = covariance
+        if isinstance(covariance, dict):
+            for feature in self.features:
+                if feature.location_type in covariance.keys():
+                    feature.covariance = covariance[feature.location_type]
+        else:
+            for feature in self.features:
+                feature.covariance = covariance
 
 
 class PolarMap(Map):

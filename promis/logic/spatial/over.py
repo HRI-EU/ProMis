@@ -24,3 +24,7 @@ class Over(Relation):
     @staticmethod
     def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
         return location.geometry.within(r_tree.geometries.take(r_tree.nearest(location.geometry)))
+
+    @staticmethod
+    def empty_map_parameters() -> list[float]:
+        return [0.0, 0.0]

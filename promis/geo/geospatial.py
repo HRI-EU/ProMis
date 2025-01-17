@@ -56,7 +56,9 @@ class Geospatial(ABC):
 
         self._identifier = value
 
-    def to_geo_json(self, indent: int | str | None = None, **kwargs) -> str:
+    def to_geo_json(
+        self, indent: int | str | None = None, properties: dict = None, **kwargs
+    ) -> str:
         """Returns the GeoJSON representation of the geometry embedded into a feature.
 
         Args:
@@ -93,7 +95,9 @@ class Geospatial(ABC):
                         49.878091
                     ]
                 },
-                "properties": {}
+                "properties": {
+                    "location_type": "UNKNOWN"
+                }
             }
 
         See also:
@@ -103,12 +107,16 @@ class Geospatial(ABC):
         """
 
         # this relies on the inheriting instance to provide __geo_interface__ property/attribute
+        if properties is None:
+            properties = {}
+
         return cast(
             str,
             dumps(
                 Feature(
                     geometry=self,
                     id=self.identifier,
+                    properties={"location_type": self.location_type} | properties,
                 ),
                 indent=indent,
                 **kwargs,

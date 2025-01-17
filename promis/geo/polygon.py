@@ -91,14 +91,16 @@ class Polygon(Geospatial):
 
         # Check if a distribution is given
         if self.distribution is None:
-            return type(self)(
-                self.locations,
-                self.holes,
-                self.location_type,
-                self.name,
-                self.identifier,
-                self.covariance,
-            )
+            return [
+                type(self)(
+                    self.locations,
+                    self.holes,
+                    self.location_type,
+                    self.name,
+                    self.identifier,
+                    self.covariance,
+                )
+            ] * number_of_samples
 
         # Gather all the sampled polygons
         sampled_polygons = []

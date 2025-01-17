@@ -14,6 +14,7 @@ from collections import defaultdict
 from copy import deepcopy
 from itertools import product
 from pickle import dump, load
+from re import finditer
 from time import time
 
 # Third Party
@@ -27,7 +28,7 @@ from sklearn.preprocessing import StandardScaler, normalize
 
 # ProMis
 from promis.geo import CartesianCollection, CartesianLocation, CartesianMap, CartesianRasterBand
-from promis.logic.spatial import Distance, Over
+from promis.logic.spatial import Distance, Over, Relation
 
 
 class StaRMap:
@@ -45,7 +46,6 @@ class StaRMap:
         self,
         target: CartesianCollection,
         uam: CartesianMap,
-        location_types: list[str],
         method="linear",
     ) -> "StaRMap":
         """Setup the StaR Map environment representation."""
@@ -61,22 +61,35 @@ class StaRMap:
         self.target = target
         self.uam = uam
         self.method = method
-        self.location_types = location_types
+
+        # Each relation is stored as collection of support points and fitted approximator
+        self.clear_relations()
+
+    def initialize(self, support: CartesianCollection, number_of_random_maps: int, logic: str):
+        """Setup the StaRMap for a given set of support points, number of samples and set of constraints.
+
+        Args:
+            support: The support points to be computed
+            number_of_random_maps: The number of samples to be used per support point
+            logic: The set of constraints deciding which relations are computed
+        """
+
+        for relation, location_type in self.get_mentioned_relations(logic):
+            self.add_support_points(support, number_of_random_maps, [relation], [location_type])
+
+    def clear_relations(self):
+        """Clear out the stored relations data."""
 
         # Each relation is stored as collection of support points and fitted approximator
         self.relations = {
-            "over": defaultdict(
-                lambda: {
-                    "collection": CartesianCollection(self.target.origin, 2),
-                    "approximator": None,
-                }
-            ),
-            "distance": defaultdict(
-                lambda: {
-                    "collection": CartesianCollection(self.target.origin, 2),
-                    "approximator": None,
-                }
-            ),
+            "over": defaultdict(self.empty_relation),
+            "distance": defaultdict(self.empty_relation),
+        }
+
+    def empty_relation(self):
+        return {
+            "collection": CartesianCollection(self.target.origin, 2),
+            "approximator": None,
         }
 
     @staticmethod
@@ -101,17 +114,7 @@ class StaRMap:
         self.method = method
         self.fit()
 
-    def fit(
-        self,
-        relations: list[str] | None = None,
-        location_types: list[str] | None = None,
-    ):
-        if relations is None:
-            relations = self.relations.keys()
-
-        if location_types is None:
-            location_types = self.location_types
-
+    def fit(self, relations: list[str], location_types: list[str]):
         # Predict for each value
         for relation, location_type in product(relations, location_types):
             if self.method == "gaussian_process":
@@ -167,6 +170,62 @@ class StaRMap:
 
         return self.relation_name_to_class(relation)(parameters, location_type)
 
+    def get_all(self) -> Distance | Over:
+        """Get all the relations for each location type.
+
+        Returns:
+            A list of all Collections of computed points for all relations
+        """
+
+        relations = self.relations.keys()
+        location_types = self.location_types
+
+        return [
+            self.get(relation, location_type)
+            for relation, location_type in product(relations, location_types)
+        ]
+
+    def get_mentioned_relations(self, logic: str) -> list[tuple[str, str]]:
+        """Get all relations mentioned in a logic program.
+
+        Args:
+            logic: The logic program
+
+        Returns:
+            A list of the (relation_type, location_type) pairs mentioned in the program
+        """
+
+        mentioned_relations = []
+        mentioned_relations += list(
+            set(
+                [
+                    ("distance", match.group(1))
+                    for match in finditer(r"distance\(X,\s*(\w+)\)", logic)
+                ]
+            )
+        )
+        mentioned_relations += list(
+            set([("over", match.group(1)) for match in finditer(r"over\(X,\s*(\w+)\)", logic)])
+        )
+
+        return mentioned_relations
+
+    def get_from_logic(self, logic: str) -> list[Relation]:
+        """Get all relations mentioned in a logic program.
+
+        Args:
+            logic: The logic program
+
+        Returns:
+            A list of the Relations mentioned in the program
+        """
+
+        relations = []
+        for relation_type, location_type in self.get_mentioned_relations(logic):
+            relations.append(self.get(relation_type, location_type))
+
+        return relations
+
     def _train_gaussian_process(
         self,
         support: CartesianCollection,
@@ -202,18 +261,12 @@ class StaRMap:
         self,
         number_of_random_maps: int,
         number_of_improvement_points: int,
-        relations: list[str] | None = None,
-        location_types: list[str] | None = None,
+        relations: list[str],
+        location_types: list[str],
     ):
         assert isinstance(
             self.target, CartesianRasterBand
         ), "StaRMap improve currently only works with RasterBand targets!"
-
-        if relations is None:
-            relations = self.relations.keys()
-
-        if location_types is None:
-            location_types = self.location_types
 
         for relation, location_type in product(relations, location_types):
             gaussian_process, scaler = self.relations[relation][location_type]["approximator"]
@@ -251,15 +304,9 @@ class StaRMap:
     def prune(
         self,
         threshold: float,
-        relations: list[str] | None = None,
-        location_types: list[str] | None = None,
+        relations: list[str],
+        location_types: list[str],
     ):
-        if relations is None:
-            relations = self.relations.keys()
-
-        if location_types is None:
-            location_types = self.location_types
-
         for relation, location_type in product(relations, location_types):
             coordinates = self.relations[relation][location_type]["collection"].coordinates()
             clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=threshold).fit(
@@ -283,8 +330,8 @@ class StaRMap:
         self,
         support: CartesianCollection,
         number_of_random_maps: int,
-        relations: list[str] | None = None,
-        location_types: list[str] | None = None,
+        relations: list[str],
+        location_types: list[str],
     ):
         """Compute distributional clauses.
 
@@ -295,34 +342,46 @@ class StaRMap:
             location_types: Which types of geospatial data to compute
         """
 
-        if relations is None:
-            relations = self.relations.keys()
-
-        if location_types is None:
-            location_types = self.location_types
-
-        for relation, location_type in product(relations, location_types):
+        for location_type in location_types:
             # Get all relevant features from map
             typed_map = self.uam.filter(location_type)
 
-            # If map had no relevant features, fill with default values
-            if not typed_map.features:
-                self.relations[relation][location_type]["collection"].append_with_default(
-                    support.coordinates(), None
-                )
-            else:
-                # Setup data structures
-                random_maps = typed_map.sample(number_of_random_maps)
-                r_trees = [instance.to_rtree() for instance in random_maps]
-                locations = support.to_cartesian_locations()
-                values = vstack(
-                    [
-                        self.relation_name_to_class(relation).compute_parameters(location, r_trees)
-                        for location in locations
-                    ]
-                )
+            # Setup data structures
+            random_maps = typed_map.sample(number_of_random_maps)
+            r_trees = [instance.to_rtree() for instance in random_maps]
+            locations = support.to_cartesian_locations()
 
-                # Add to collections
-                self.relations[relation][location_type]["collection"].append(locations, values)
+            for relation in relations:
+                # If map had no relevant features, fill with default values
+                if not typed_map.features:
+                    self.relations[relation][location_type]["collection"].append_with_default(
+                        support.coordinates(),
+                        self.relation_name_to_class(relation).empty_map_parameters(),
+                    )
+
+                    continue
+
+                try:
+                    values = vstack(
+                        [
+                            self.relation_name_to_class(relation).compute_parameters(
+                                location, r_trees
+                            )
+                            for location in locations
+                        ]
+                    )
+
+                    # Add to collections
+                    self.relations[relation][location_type]["collection"].append(locations, values)
+                except Exception as e:
+                    print(
+                        f"""StaR Map encountered excpetion {e};
+                        {relation} for {location_type} will use default parameters!"""
+                    )
+
+                    self.relations[relation][location_type]["collection"].append_with_default(
+                        support.coordinates(),
+                        self.relation_name_to_class(relation).empty_map_parameters(),
+                    )
 
         self.fit(relations, location_types)

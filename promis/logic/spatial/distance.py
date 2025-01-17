@@ -36,8 +36,8 @@ class Distance(Relation):
 
     def __lt__(self, value: float) -> CartesianCollection:
         means = self.parameters.data["v0"]
-        stds = self.parameters.data["v1"]
-        cdf = norm.cdf(value, loc=means, scale=sqrt(stds))
+        variances = self.parameters.data["v1"]
+        cdf = norm.cdf(value, loc=means, scale=sqrt(variances))
 
         if isinstance(self.parameters, CartesianRasterBand):
             probabilities = CartesianRasterBand(
@@ -71,3 +71,7 @@ class Distance(Relation):
     @staticmethod
     def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
         return location.geometry.distance(r_tree.geometries.take(r_tree.nearest(location.geometry)))
+
+    @staticmethod
+    def empty_map_parameters() -> list[float]:
+        return [1000.0, 0.0]

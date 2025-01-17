@@ -85,6 +85,11 @@ class Relation(ABC):
             self.index_to_distributional_clause(index) for index in range(len(self.parameters.data))
         ]
 
+    @staticmethod
+    @abstractmethod
+    def empty_map_parameters() -> list[float]:
+        pass
+
     @abstractmethod
     def index_to_distributional_clause(self, index: int) -> str:
         """Express a single index of this  Relation as distributional clause.
