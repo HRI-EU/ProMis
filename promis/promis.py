@@ -14,6 +14,7 @@ from multiprocessing import Pool
 
 # Third Party
 from numpy import array
+from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 # ProMis
 from promis.geo import CartesianCollection
@@ -37,26 +38,33 @@ class ProMis:
         self.star_map = star_map
 
     def solve(
-        self, logic: str, n_jobs: int = None, batch_size: int = 1, check_required_relations=True
+        self, support: CartesianCollection, logic: str, n_jobs: int = None, batch_size: int = 1, check_required_relations=True, method="linear"
     ) -> CartesianCollection:
         """Solve the given ProMis problem.
 
         Args:
+            support: The points to compute exactly, with the output being interpolated to the same target as
+                the employed StaRMap
             logic: The constraints of the landscape(X) predicate, including its definition
             n_jobs: How many workers to use in parallel
             batch_size: How many pixels to infer at once
             check_required_relations: Only get the relations explicitly mentioned in the logic
+            method: Interpolation method, either 'linear' or 'nearest'
 
         Returns:
             The Probabilistic Mission Landscape as well as time to
             generate the code, time to compile and time for inference in seconds.
         """
 
+        # During inference, we set the ProMis support points as StaRMap target
+        target = deepcopy(self.star_map.target)
+        self.star_map.target = support
+
         # Get all relevant relations from the StaRMap
         relations = self.star_map.get_from_logic(logic)
 
         # For each point in the target CartesianCollection, we need to run a query
-        number_of_queries = len(self.star_map.target.data)
+        number_of_queries = len(support.data)
         queries = [f"query(landscape(x_{index})).\n" for index in range(number_of_queries)]
 
         # We batch up queries into separate programs
@@ -89,8 +97,20 @@ class ProMis:
             flattened_data.extend(batch)
 
         # Write results to CartesianCollection and return
-        inference_results = deepcopy(self.star_map.target)
-        inference_results.data["v0"] = array(flattened_data)
+        inference_results = deepcopy(target)
+        if method == "linear":
+            inference_results.data["v0"] = LinearNDInterpolator(
+                support.coordinates(),  array(flattened_data)
+            )(target.coordinates())
+        elif method == "nearest":
+            inference_results.data["v0"] = NearestNDInterpolator(
+                support.coordinates(),  array(flattened_data)
+            )(target.coordinates())
+        else:
+            raise ValueError(f"Unsupported interpolation method {method} chosen for ProMis.solve!")
+
+        # Restore prior target of StaRMap            
+        self.star_map.target = target
 
         return inference_results
 
