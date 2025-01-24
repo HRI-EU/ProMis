@@ -10,6 +10,7 @@ class Layer(BaseModel):
     colorMenuExpanded: bool
     hue: int
     opacity: float
+    renderMode: str = "HEATMAP_RECT"
     radius: float
     valueRange: tuple[float, float]
     markersValMinMax: tuple[float, float]

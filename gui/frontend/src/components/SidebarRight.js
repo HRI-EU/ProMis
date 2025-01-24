@@ -31,8 +31,6 @@ import VisibilityRounded from "@mui/icons-material/VisibilityRounded";
 import VisibilityOffRounded from "@mui/icons-material/VisibilityOffRounded";
 import RemoveCircleOutline from "@mui/icons-material/RemoveCircleOutline";
 import ChevronRightIcon from "@mui/icons-material/ChevronRightRounded";
-import ExpandLessRounded from "@mui/icons-material/ExpandLessRounded";
-import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ArrowUpIcon from "@mui/icons-material/ArrowUpwardRounded";
 import ArrowDownIcon from "@mui/icons-material/ArrowDownwardRounded";
@@ -42,6 +40,8 @@ import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import SettingsFilledIcon from "@mui/icons-material/Settings";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import AddIcon from "@mui/icons-material/AddRounded";
+import EditIcon from '@mui/icons-material/Edit';
+import DoneIcon from '@mui/icons-material/Done';
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -185,7 +185,6 @@ export default class SidebarRight extends React.Component {
               fontSize: 12,
             }}
             variant="outlined"
-            textColor="#ffffff"
             startIcon={<AddIcon />}
           >
             <VisuallyHiddenInput type="file" />
@@ -203,6 +202,9 @@ export default class SidebarRight extends React.Component {
   render() {
     //Update reference
     C().addRefSidebarRight(this.updateUI);
+    C().addToggleDrawerRight(() => {
+      this.setState({ right: true });
+    });
 
     return (
       <div
@@ -263,6 +265,7 @@ class SidebarRightItem extends React.Component {
       textfieldRangeVal: this.layer.valueRange,
       textfieldRangeMinStr: this.layer.valueRange[0] + "",
       textfieldRangeMaxStr: this.layer.valueRange[1] + "",
+      layerName: this.layer.name,
     };
     this.index = props.index;
   }
@@ -296,6 +299,14 @@ class SidebarRightItem extends React.Component {
     });
   };
 
+  // toggle the edit name of the layer
+  toggleEditName = (layer, layerName = "") => {
+    if (layerName === "") {
+      layerName = this.state.layerName;
+    }
+    C().layerMan.toggleEditName(layer.id, layerName);
+  }
+
   // toggle the visibility of the layer
   toggleVisibility = (layer) => {
     C().layerMan.changeLayerVisibility(layer.id, !layer.visible);
@@ -319,16 +330,6 @@ class SidebarRightItem extends React.Component {
     C().layerMan.changeLayerRenderMode(layerId, renderMode);
   };
 
-  // return the eye symbol if the layer is visible, otherwise return the crossed eye symbol
-  getEyeSymbol(isVisible) {
-    return isVisible ? <VisibilityRounded /> : <VisibilityOffRounded />;
-  }
-
-  // return the arrow symbol if the layer is expanded, otherwise return the arrow down symbol
-  getArrowSymbol(isExpanded) {
-    return isExpanded ? <ExpandLessRounded /> : <ExpandMoreRounded />;
-  }
-
   // return the name of the render mode
   getRenderModeName(renderMode) {
     switch (renderMode) {
@@ -344,7 +345,6 @@ class SidebarRightItem extends React.Component {
   // delete the layer
   onDeleteLayer = (layerId) => {
     C().layerMan.deleteLayer(layerId);
-    updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
   };
 
   /**
@@ -411,7 +411,6 @@ class SidebarRightItem extends React.Component {
                 this.toggleVisibility(layer);
               }}
               style={{ color: "#ffffff", fontSize: 12 }}
-              iconStyle={{ width: "8px", height: "8px" }}
               aria-label="Toggle all layers"
             >
               <Box
@@ -444,19 +443,71 @@ class SidebarRightItem extends React.Component {
                 width: "190px",
               }}
             >
-              <ListItemText
-                primary={layer.name == "" ? "Untitled" : layer.name}
-                style={{
-                  textAlign: "left",
-                  marginTop: "0px",
-                  marginBottom: "0px",
-                  marginRight: "0px",
-                  marginLeft: "0px",
-                  width: "190px",
-                  overflow: "hidden",
-                  color: layer.visible ? "#ffffff" : "#ffffff88",
-                }}
-              />
+              {layer.editName ? 
+                (<TextField
+                  id="outlined-basic"
+                  borderColor="white"
+                  label=""
+                  value={this.state.layerName}
+                  variant="outlined"
+                  size="small"
+                  onChange={(event) => {
+                    var str = event.target.value;
+                    this.setState({ layerName: str });
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      this.toggleEditName(layer);
+                    } else if (event.key === "Escape") {
+                      this.setState({ layerName: layer.name });
+                      this.toggleEditName(layer, layer.name);
+                    }
+                  }}
+                  InputProps={{
+                    inputProps: {
+                      min: 0,
+                      style: { textAlign: "left" },
+                    },
+                    style: {
+                      color: "#ffffff",
+                      borderRadius: "8px",
+                    },
+                  }}
+                  style={{
+                    width: "180px",
+                    marginTop: "0px",
+                  }}
+                  sx={{
+                    color: "white",
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgba(228, 219, 233, 0.25)",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgba(228, 219, 233, 0.25)",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "rgba(228, 219, 233, 0.25)",
+                    },
+                    ".MuiSvgIcon-root ": {
+                      fill: "white !important",
+                    },
+                  }}
+                />)
+                :
+                (<ListItemText
+                  primary={layer.name == "" ? "Untitled" : layer.name}
+                  style={{
+                    textAlign: "left",
+                    marginTop: "0px",
+                    marginBottom: "0px",
+                    marginRight: "0px",
+                    marginLeft: "0px",
+                    width: "190px",
+                    overflow: "hidden",
+                    color: layer.visible ? "#ffffff" : "#ffffff88",
+                  }}
+                />)
+              }
             </div>
           </Grid>
 
@@ -499,11 +550,25 @@ class SidebarRightItem extends React.Component {
               <MyLocationIcon />
             </IconButton>
 
+            <IconButton 
+              onClick={() => {
+                this.toggleEditName(layer);
+              }}
+              style={{ color: "#eeeeee", fontSize: 12, marginLeft: "10px"}}
+              aria-label="Edit layer name"
+            >
+              {layer.editName ? (
+                <DoneIcon />
+              ) : (
+                <EditIcon />
+              )}
+            </IconButton>
+
             <IconButton
               onClick={() => {
                 this.toggleColorMenu(layer);
               }}
-              style={{ color: "#eeeeee", fontSize: 12, marginLeft: "42px" }}
+              style={{ color: "#eeeeee", fontSize: 12 }}
               aria-label="Open color menu"
             >
               {layer.colorMenuExpanded ? (
@@ -548,9 +613,9 @@ class SidebarRightItem extends React.Component {
               <IconButton
                 onClick={() => {
                   this.hueSliderChanged(layer.id, 0);
+                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -573,9 +638,9 @@ class SidebarRightItem extends React.Component {
               <IconButton
                 onClick={() => {
                   this.hueSliderChanged(layer.id, 72);
+                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -599,9 +664,9 @@ class SidebarRightItem extends React.Component {
               <IconButton
                 onClick={() => {
                   this.hueSliderChanged(layer.id, 144);
+                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -624,9 +689,9 @@ class SidebarRightItem extends React.Component {
               <IconButton
                 onClick={() => {
                   this.hueSliderChanged(layer.id, 216);
+                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -650,9 +715,9 @@ class SidebarRightItem extends React.Component {
               <IconButton
                 onClick={() => {
                   this.hueSliderChanged(layer.id, 288);
+                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
-                iconStyle={{ width: "8px", height: "8px" }}
                 aria-label="Toggle all layers"
               >
                 <Box
@@ -682,18 +747,16 @@ class SidebarRightItem extends React.Component {
               }}
             >
               <Slider
-                defaultValue={layer.hue}
                 min={0}
                 max={359}
-                //value={value}
-                /*onChangeCommitted={(event, newValue) => {
-                  console.log(event);
+                value={layer.hue}
+                onChangeCommitted={(event, newValue) => {
                   this.hueSliderChanged(layer.id, newValue);
-                }}*/
+                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+                }}
                 onChange={(event, newValue) => {
                   this.hueSliderChanged(layer.id, newValue);
                 }}
-                aria-label="Default"
                 valueLabelDisplay="auto"
                 style={{
                   color: "#ffffff",
@@ -722,7 +785,6 @@ class SidebarRightItem extends React.Component {
                   console.log(event);
                   this.opacitySliderChanged(layer.id, newValue * 0.01);
                 }}
-                aria-label="Default"
                 valueLabelDisplay="auto"
                 style={{
                   color: "#ffffff",
@@ -841,7 +903,6 @@ class SidebarRightItem extends React.Component {
                     onChangeCommitted={(event, newValue) => {
                       this.radiusChanged(layer.id, newValue);
                     }}
-                    aria-label="Default"
                     valueLabelDisplay="auto"
                     style={{
                       width: "180px",
@@ -851,7 +912,6 @@ class SidebarRightItem extends React.Component {
 
                   <TextField
                     id="outlined-basic"
-                    borderColor="white"
                     label=""
                     value={this.state.textfieldRadiusStr}
                     variant="outlined"
@@ -929,7 +989,6 @@ class SidebarRightItem extends React.Component {
                 onChangeCommitted={(event, newValue) => {
                   this.valueRangeChanged(layer.id, newValue);
                 }}
-                aria-label="Default"
                 valueLabelDisplay="auto"
                 style={{
                   width: "180px",
@@ -947,7 +1006,6 @@ class SidebarRightItem extends React.Component {
               >
                 <TextField
                   id="outlined-basic"
-                  borderColor="white"
                   label=""
                   value={this.state.textfieldRangeVal[0]}
                   variant="outlined"
@@ -1000,7 +1058,6 @@ class SidebarRightItem extends React.Component {
 
                 <TextField
                   id="outlined-basic"
-                  borderColor="white"
                   label=""
                   value={this.state.textfieldRangeVal[1]}
                   variant="outlined"
@@ -1066,7 +1123,6 @@ class SidebarRightItem extends React.Component {
                   fontSize: 12,
                 }}
                 variant="outlined"
-                textColor="#ffffff"
                 startIcon={<RemoveCircleOutline />}
               >
                 Delete layer
@@ -1087,7 +1143,6 @@ class SidebarRightItem extends React.Component {
                   fontSize: 12,
                 }}
                 variant="outlined"
-                textColor="#ffffff"
                 startIcon={<FileDownloadIcon />}
               >
                 export GeoJSON

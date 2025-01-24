@@ -205,7 +205,6 @@ export default function SidebarLeft() {
             fontSize: 12,
           }}
           variant="outlined"
-          textColor="#ffffff"
           startIcon={<FileUploadIcon />}
         >
           <div
@@ -230,7 +229,6 @@ export default function SidebarLeft() {
             fontSize: 12,
           }}
           variant="outlined"
-          textColor="#ffffff"
           startIcon={<FileDownloadIcon />}
         >
           <div
@@ -254,7 +252,6 @@ export default function SidebarLeft() {
             fontSize: 12,
           }}
           variant="outlined"
-          textColor="#ffffff"
           startIcon={<SimCardDownloadIcon />}
         >
           <div
@@ -278,7 +275,6 @@ export default function SidebarLeft() {
             fontSize: 12,
           }}
           variant="outlined"
-          textColor="#ffffff"
           startIcon={<ClearIcon />}
         >
           <div
@@ -316,7 +312,6 @@ export default function SidebarLeft() {
             fontSize: 12,
           }}
           variant="outlined"
-          textColor="#ffffff"
           startIcon={<InfoIcon />}
         >
           <div

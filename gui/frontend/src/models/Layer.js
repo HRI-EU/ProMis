@@ -47,13 +47,21 @@ export default class Layer {
     this.visible = true;
     this.settingsMenuExpanded = false;
     this.colorMenuExpanded = false;
+    this.editName = false;
 
     this.hue = typeof hue === "number" ? hue : 0.0; // Float type field
-    this.opacity = 0.3;
+    this.opacity = 0.6;
 
-    this.renderMode = RenderMode.HeatmapRect;
+    this.renderMode = RenderMode.Voronoi;
     this.radius = radius || 1.0; // Float type field
-    this.valueRange = markersValMinMax || [0, 1];
+
+    // check if value rang is probability from 0 to 1
+    if (markersValMinMax[0] < 0 || markersValMinMax[1] > 1) {
+      console.log("Not probability value range");
+      this.valueRange = markersValMinMax;
+    } else {
+      this.valueRange = [0.1, 1];
+    }
     this.markersValMinMax = markersValMinMax || [0, 1]; // [min, max] probability of markers array
 
     this.markersLatMinMax = markersLatMinMax || [0, 0]; // [min, max] lat of markers array
@@ -80,9 +88,10 @@ export default class Layer {
    * @param {number} hue color hue from 0 to 360
    * @param {string} name name of the layer
    * @param {number} radius radius of the marker
+   * @param {boolean} fromSource if the layer is created from source
    * @returns
    */
-  static parseLayer(id, data, hue, name, radius) {
+  static parseLayer(id, data, hue, name, radius, fromSource = false) {
     const markers = [];
     const markersValMinMax = [0, 0];
     const markersLatMinMax = [90, -90]; //Every value will be smaller than 90 and bigger than -90
@@ -125,10 +134,24 @@ export default class Layer {
       }
     });
 
-    console.log("latMinMax ", markersLatMinMax);
-    console.log("lngMinMax ", markersLngMinMax);
+    //console.log("latMinMax ", markersLatMinMax);
+    //console.log("lngMinMax ", markersLngMinMax);
 
     const markerDst = Layer.calcMarkerDst(markers, radius);
+    if (fromSource) {
+      return new Layer(
+        id,
+        markers,
+        hue,
+        name,
+        radius,
+        markerDst[0],
+        markerDst[1],
+        [0, 1],
+        markersLatMinMax,
+        markersLngMinMax,
+      );
+    }
     return new Layer(
       id,
       markers,

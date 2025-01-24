@@ -29,8 +29,22 @@
   width: 100%;
   margin: auto;
   border-radius: 8px;
+  border: 1px solid #282C34;
   text-align: left;
 }
+
+#editing.errorSignal, #highlighting.errorSignal {
+  animation-name: changeBlackToRed;
+  animation-duration: 1s;
+}
+
+@keyframes changeBlackToRed {
+  0%   {border-color: #282C34;}
+  50%  {border-color: red;}
+  100% {border-color: #282C34;}
+}
+
+
 
 /*#editing {
   width: calc(100% - 20px);

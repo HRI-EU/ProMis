@@ -1,5 +1,7 @@
 # Example Usage
 
+For a step by step example check out this [guide](./example.md)
+
 ## Import CSV file as a new layer
 
 To instantiate a new layer of points and the corresponding probability values, simply expand the right sidebar by clicking on the top-right button and select "new layer".

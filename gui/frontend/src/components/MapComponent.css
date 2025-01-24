@@ -7,7 +7,12 @@
 }
 
 .drone-icon {
-  background-image: url(../assets/icons/Drone.svg);
+  background-image: url(../assets/icons/drone_new.svg);
+}
+
+.leaflet-div-icon {
+  background: transparent;
+  border: 0cap;
 }
 
 .landing-site-icon {
