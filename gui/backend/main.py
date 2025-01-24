@@ -103,10 +103,10 @@ def create_hash_starmap(req: RunRequest, dynamic_layers: DynamicLayer, hashVal: 
 @app.post("/loadmapdata")
 def load_map_data(req: RunRequest):
     mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
-    dimensions = req.dimensions
+    width, height = req.dimensions
 
     # We load geographic features from OpenStreetMap using a range of filters
-    location_types = req.location_types
+    feature_description = req.location_types
 
     # prepare for hash
     hashVal = create_hash_uam(req)
@@ -120,14 +120,7 @@ def load_map_data(req: RunRequest):
         has_cache = False
 
     if (not has_cache):
-        osm_loader = OsmLoader(mission_center, dimensions)
-        for name, osm_filter in location_types.items():
-            if (osm_filter == ""):
-                continue
-            osm_loader.load_routes(osm_filter, name)
-            osm_loader.load_polygons(osm_filter, name)
-        
-        uam = osm_loader.to_polar_map()
+        uam = OsmLoader(mission_center, (width, height), feature_description).to_polar_map()
         
         uam.save(f"./cache/uam_{hashVal}.pickle")
     
@@ -140,6 +133,7 @@ def calculate_star_map(req: RunRequest, hashVal: int):
     width, height = dimensions
     sample_size = req.sample_size
     interpolation = req.interpolation
+    logic = req.source
 
     # We load geographic features from OpenStreetMap using a range of filters
     location_types = req.location_types
@@ -196,26 +190,22 @@ def calculate_star_map(req: RunRequest, hashVal: int):
     loc_type_table = _get_location_type_table()
     loc_to_uncertainty = dict()
     for entry in loc_type_table.table:
-        loc_to_uncertainty[entry.location_type] = entry.uncertainty
+        loc_to_uncertainty[entry.location_type] = entry.uncertainty * eye(2)
     
-    for feature in uam.features:
-        assert feature.location_type in loc_to_uncertainty, f"There is a feature without appropriate location type in table: {feature}"
-        cov = loc_to_uncertainty[feature.location_type] * eye(2)
-        feature.covariance = cov
-
+    uam.apply_covariance(loc_to_uncertainty)
     # We create a statistical relational map (StaR Map) to represent the 
     # stochastic relationships in the environment, computing a raster of 1000 x 1000 points
     # using linear interpolation of a sample set
     target_resolution = req.resolutions
     target = CartesianRasterBand(mission_center, target_resolution, width, height)
-    star_map = StaRMap(target, uam, list(location_types.keys()), interpolation)
+    star_map = StaRMap(target, uam, method=interpolation)
 
     # The sample points for which the relations will be computed directly
     support_resolutions = req.support_resolutions
     support = CartesianRasterBand(mission_center, support_resolutions, width, height)
 
     # We now compute the Distance and Over relationships for the selected points
-    star_map.add_support_points(support, sample_size)
+    star_map.initialize(support, sample_size, logic)
 
     #star_map.save(f"./cache/starmap_{star_map_hash_val}.pickle")
 
@@ -236,10 +226,15 @@ def inference(req: RunRequest, hashVal: int):
     star_map = app.star_map
     
     logic = req.source
+    mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
+    dimensions = req.dimensions
+    width, height = dimensions
+    support_resolutions = req.support_resolutions
+    support = CartesianRasterBand(mission_center, support_resolutions, width, height)
 
     # Solve mission constraints using StaRMap parameters and multiprocessing
     promis = ProMis(star_map)
-    landscape = promis.solve(logic, n_jobs=4, batch_size=15)
+    landscape = promis.solve(support, logic, n_jobs=4, batch_size=15)
 
     polar_pml = landscape.to_polar()
     data = []
