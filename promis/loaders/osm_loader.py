@@ -24,10 +24,23 @@ class OsmLoader(SpatialLoader):
 
     """A loader for spatial data from OpenStreetMaps (OSM) via the overpy package."""
 
-    def __init__(self, origin: PolarLocation, dimensions: tuple[float, float]):
+    def __init__(
+        self,
+        origin: PolarLocation,
+        dimensions: tuple[float, float],
+        feature_description: dict | None,
+    ):
         # Initialize Overpass API
         self.overpass_api = Overpass()
         super().__init__(origin, dimensions)
+
+        if feature_description is not None:
+            self.load(feature_description)
+
+    def load(self, feature_description: dict):
+        for location_type, osm_filter in feature_description.items():
+            self.load_routes(osm_filter, location_type)
+            self.load_polygons(osm_filter, location_type)
 
     def load_routes(
         self,
@@ -157,33 +170,6 @@ class OsmLoader(SpatialLoader):
             relation_polygons = []
 
         self.features += relation_polygons + way_polygons
-
-    # def load_polar(
-    #     self, origin: PolarLocation, width: float, height: float, timeout: float = 5.0
-    # ) -> PolarMap:
-    #     # Compute bounding box and format it for Overpass
-    #     south, west, north, east = self.compute_bounding_box(origin, width, height)
-    #     bounding_box = f"({south:.4f}, {west:.4f}, {north:.4f}, {east:.4f})"
-
-    #     # Download features via overpass
-    #     features = (
-    #         self.load_polygons("['leisure' = 'park']", bounding_box, "park")
-    #         + self.load_polygons("['natural' = 'water']", bounding_box, "water")
-    #         + self.load_polygons("['natural' = 'bay']", bounding_box, "bay")
-    #         + self.load_polygons("['building']", bounding_box, "building")
-    #         + self.load_routes("['highway']", bounding_box, "road")
-    #         + self.load_routes("['highway' = 'residential']", bounding_box, "residential")
-    #         + self.load_routes("['highway' = 'primary']", bounding_box, "primary")
-    #         + self.load_routes("['highway' = 'secondary']", bounding_box, "secondary")
-    #         + self.load_routes("['highway' = 'tertiary']", bounding_box, "tertiary")
-    #         + self.load_routes("['highway' = 'footway']", bounding_box, "footway")
-    #         + self.load_routes("['highway' = 'service']", bounding_box, "service")
-    #         + self.load_routes("['railway' = 'rail']", bounding_box, "railway")
-    #         + self.load_routes("'footway' = 'crossing'", bounding_box, "crossing")
-    #     )
-
-    #     # Return map with currently hardcoded features
-    #     return PolarMap(origin, width, height, features)
 
     @staticmethod
     def relation_to_polygon(relation: Relation, **kwargs) -> PolarPolygon:

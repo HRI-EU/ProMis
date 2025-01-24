@@ -63,7 +63,7 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
         resolution: The number of horizontal and vertical pixels
         width: The width the raster band stretches over in meters
         height: The height the raster band stretches over in meters
-        dimensions: How many values are stored per location
+        number_of_values: How many values are stored per location
     """
 
     def __init__(
@@ -72,11 +72,11 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
         resolution: tuple[int, int],
         width: float,
         height: float,
-        dimensions: int = 1,
+        number_of_values: int = 1,
     ):
         # Setup RasterBand and Collection underneath
         RasterBand.__init__(self, resolution, width, height)
-        CartesianCollection.__init__(self, origin, dimensions)
+        CartesianCollection.__init__(self, origin, number_of_values)
 
         # Compute coordinates from spatial dimensions and resolution
         x_coordinates = linspace(-self.width / 2, self.width / 2, self.resolution[0])
@@ -85,7 +85,7 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
 
         # Put coordinates and default value 0 together into matrix and set DataFrame
         raster_entries = concatenate(
-            (raster_coordinates, zeros((raster_coordinates.shape[0], self.dimensions))), axis=1
+            (raster_coordinates, zeros((raster_coordinates.shape[0], number_of_values))), axis=1
         )
         self.data = DataFrame(raster_entries, columns=self.data.columns)
 
@@ -99,7 +99,7 @@ class PolarRasterBand(RasterBand, PolarCollection):
         resolution: The number of horizontal and vertical pixels
         width: The width the raster band stretches over in meters
         height: The height the raster band stretches over in meters
-        dimensions: How many values are stored per location
+        number_of_values: How many values are stored per location
     """
 
     def __init__(
@@ -108,11 +108,11 @@ class PolarRasterBand(RasterBand, PolarCollection):
         resolution: tuple[int, int],
         width: float,
         height: float,
-        dimensions: int = 1,
+        number_of_values: int = 1,
     ):
         # Setup RasterBand and Collection underneath
         RasterBand.__init__(self, resolution, width, height)
-        PolarCollection.__init__(self, origin, dimensions)
+        PolarCollection.__init__(self, origin, number_of_values)
 
         # Compute the locations
         locations = []
@@ -125,7 +125,7 @@ class PolarRasterBand(RasterBand, PolarCollection):
             )
 
         # Initialize raster with zero-values
-        values = zeros((len(locations), self.dimensions))
+        values = zeros((len(locations), self.number_of_values))
 
         # Write to collection
         PolarCollection.append(self, locations, values)

@@ -153,9 +153,11 @@ class Location(Geospatial):
 
         # Check if a distribution is given
         if self.distribution is None:
-            return type(self)(
-                self.x, self.y, self.location_type, self.name, self.identifier, self.covariance
-            )
+            return [
+                type(self)(
+                    self.x, self.y, self.location_type, self.name, self.identifier, self.covariance
+                )
+            ] * number_of_samples
 
         # Convert all samples to individual locations and return as list
         return [
@@ -322,6 +324,7 @@ class CartesianLocation(Location):
     Args:
         east: The easting of the location in meters
         north: The northing of the location in meters
+        up: The altitude of the location in meters
         origin: A reference that can be used to project this cartesian representation (back)
             into a polar one
         location_type: The type of this polygon

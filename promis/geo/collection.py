@@ -13,6 +13,7 @@ from abc import ABC
 from pickle import dump, load
 from typing import Any
 
+import smopy
 from matplotlib import pyplot as plt
 
 # Third Party
@@ -40,12 +41,10 @@ class Collection(ABC):
         self,
         data: DataFrame,
         origin: PolarLocation,
-        dimensions: int = 1,
     ):
         # Attributes setup
         self.data = data
         self.origin = origin
-        self.dimensions = dimensions
 
     @staticmethod
     def load(path) -> "Collection":
@@ -60,6 +59,20 @@ class Collection(ABC):
         """Empties out the kept data."""
 
         self.data = self.data.iloc[0:0]
+
+    def extent(self) -> tuple[float, float, float, float]:
+        """Get the extent of this collection, i.e., the min and max coordinates.
+
+        Returns:
+            The minimum and maximum coordinates in order west, east, south, north
+        """
+
+        west = min(self.data[self.data.columns[1]])
+        east = max(self.data[self.data.columns[1]])
+        south = min(self.data[self.data.columns[0]])
+        north = max(self.data[self.data.columns[0]])
+
+        return west, east, south, north
 
     def values(self) -> NDArray[Any]:
         """Unpack the location values as numpy array.
@@ -91,11 +104,11 @@ class Collection(ABC):
 
         self.data.to_csv(path, mode=mode, index=False, float_format="%f")
 
-    def _polar_columns(self) -> list[str]:
-        return ["longitude", "latitude"] + [f"v{i}" for i in range(self.dimensions)]
+    def _polar_columns(self, number_of_values: int = 1) -> list[str]:
+        return ["longitude", "latitude"] + [f"v{i}" for i in range(number_of_values)]
 
-    def _cartesian_columns(self) -> list[str]:
-        return ["east", "north"] + [f"v{i}" for i in range(self.dimensions)]
+    def _cartesian_columns(self, number_of_values: int = 1) -> list[str]:
+        return ["east", "north"] + [f"v{i}" for i in range(number_of_values)]
 
     def append(
         self,
@@ -141,19 +154,57 @@ class Collection(ABC):
 
         self.append(coordinates, values=repeat(atleast_2d(value), len(coordinates), axis=0))
 
-    def scatter(self, value_index: int = 0, axis=None, **kwargs):
-        if axis is None:
-            axis = plt
+    def scatter(self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs):
+        """Create a scatterplot of this Collection.
 
+        Args:
+            value_index: Which value of the
+            plot_basemap: Whether an OpenStreetMap tile shall be rendered below
+            ax: The axis to plot to, default pyplot context if None
+            zoom: The zoom level of the OSM basemap, default 16
+            **kwargs: Args passed to the matplotlib scatter function
+        """
+
+        # Would cause circular import if done at module scope
+        from promis.loaders import OsmLoader
+
+        # Either render with given axis or default context
+        if ax is None:
+            ax = plt.gca()
+
+        if plot_basemap:
+            # Get OpenStreetMap and crop to relevant area
+            south, west, north, east = OsmLoader.compute_bounding_box(
+                self.origin, self.dimensions()
+            )
+            map = smopy.Map((south, west, north, east), z=zoom)
+            left, bottom = map.to_pixels(south, west)
+            right, top = map.to_pixels(north, east)
+            region = map.img.crop((left, top, right, bottom))
+
+            # Render base map
+            ax.imshow(region, extent=self.extent())
+
+        # Scatter collection data
         coordinates = self.coordinates()
         colors = self.values()[:, value_index].ravel()
-        axis.scatter(coordinates[:, 0], coordinates[:, 1], c=colors, **kwargs)
+        return ax.scatter(coordinates[:, 0], coordinates[:, 1], c=colors, **kwargs)
 
 
 class CartesianCollection(Collection):
-    def __init__(self, origin: PolarLocation, dimensions: int = 1):
-        self.dimensions = dimensions
-        super().__init__(DataFrame(columns=self._cartesian_columns()), origin, dimensions)
+    def __init__(self, origin: PolarLocation, number_of_values: int = 1):
+        super().__init__(DataFrame(columns=self._cartesian_columns(number_of_values)), origin)
+
+    def dimensions(self) -> tuple[float, float]:
+        """Get the dimensions of this Collection in meters.
+
+        Returns:
+            The dimensions of this Collection in meters
+        """
+
+        west, east, south, north = self.extent()
+
+        return east - west, north - south
 
     def to_cartesian_locations(self) -> list[CartesianLocation]:
         coordinates = self.coordinates()
@@ -171,21 +222,29 @@ class CartesianCollection(Collection):
         )
 
         # Create the new collection in polar coordinates
-        polar_collection = PolarCollection(self.origin, self.dimensions)
+        polar_collection = PolarCollection(self.origin, len(self.data.columns) - 2)
         polar_collection.data["longitude"] = longitudes
         polar_collection.data["latitude"] = latitudes
 
         # Copy over the values
-        for i in range(self.dimensions):
+        for i in range(len(self.data.columns) - 2):
             polar_collection.data[f"v{i}"] = self.data[f"v{i}"]
 
         return polar_collection
 
 
 class PolarCollection(Collection):
-    def __init__(self, origin: PolarLocation, dimensions: int = 1):
-        self.dimensions = dimensions
-        super().__init__(DataFrame(columns=self._polar_columns()), origin, dimensions)
+    def __init__(self, origin: PolarLocation, number_of_values: int = 1):
+        super().__init__(DataFrame(columns=self._polar_columns(number_of_values)), origin)
+
+    def dimensions(self) -> tuple[float, float]:
+        """Get the dimensions of this Collection in meters.
+
+        Returns:
+            The dimensions of this Collection in meters
+        """
+
+        return self.to_cartesian().dimensions()
 
     def to_polar_locations(self) -> list[PolarLocation]:
         coordinates = self.coordinates()
@@ -203,12 +262,12 @@ class PolarCollection(Collection):
         )
 
         # Create the new collection in polar coordinates
-        cartesian_collection = CartesianCollection(self.origin, self.dimensions)
+        cartesian_collection = CartesianCollection(self.origin, len(self.data.columns) - 2)
         cartesian_collection.data["east"] = easts
         cartesian_collection.data["north"] = norths
 
         # Copy over the values
-        for i in range(self.dimensions):
+        for i in range(len(self.data.columns) - 2):
             cartesian_collection.data[f"v{i}"] = self.data[f"v{i}"]
 
         return cartesian_collection

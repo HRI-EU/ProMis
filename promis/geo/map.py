@@ -55,6 +55,15 @@ class Map(ABC):
         with open(path, "wb") as file:
             dump(self, file)
 
+    def location_types(self) -> list[str]:
+        """Get all location types contained in this map.
+
+        Returns:
+            A list of all location types contained in this map
+        """
+
+        return list(set([feature.location_type for feature in self.features]))
+
     def is_valid(self) -> bool:
         """Whether this map contains only valid polygonal shapes according to :mod:`shapely`.
 
@@ -135,15 +144,21 @@ class Map(ABC):
             for _ in range(number_of_samples)
         ]
 
-    def apply_covariance(self, covariance: ndarray):
+    def apply_covariance(self, covariance: ndarray | dict):
         """Set the covariance matrix of all features.
 
         Args:
-            covariance: The covariance matrix to set for all featuers
+            covariance: The covariance matrix to set for all featuers or a dictionary
+                mapping location_type to covariance matrix
         """
 
-        for feature in self.features:
-            feature.covariance = covariance
+        if isinstance(covariance, dict):
+            for feature in self.features:
+                if feature.location_type in covariance.keys():
+                    feature.covariance = covariance[feature.location_type]
+        else:
+            for feature in self.features:
+                feature.covariance = covariance
 
 
 class PolarMap(Map):
