@@ -9,3 +9,8 @@ class Config(BaseModel):
     markers: list[Marker]
     polylines: list[Line] = []
     polygons: list[Polygon] = []
+
+class DynamicLayer(BaseModel):
+    markers: list[Marker]
+    polylines: list[Line]
+    polygons: list[Polygon]

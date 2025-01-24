@@ -18,6 +18,7 @@ import { getConfig } from "../utils/Utility.js";
 import SidebarRight from "./SidebarRight.js";
 import SidebarLeft from "./SidebarLeft.js";
 import BottomBar from "./BottomBar.js";
+import DynamicLayerInteractive from "./DynamicLayerInteractive.js";
 
 //import WeatherInfoBox from "./WeatherInfoBox.js";
 
@@ -123,6 +124,9 @@ function MapComponent() {
 
       <SidebarRight />
       {/* <WeatherInfoBox /> */}
+      
+      <DynamicLayerInteractive />
+
     </Container>
   );
 }

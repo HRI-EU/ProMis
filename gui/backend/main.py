@@ -1,34 +1,21 @@
 from numpy import eye
 import re
-from typing import Set, Literal
+from typing import Set
+
 
 from promis import ProMis, StaRMap
-from promis.geo import PolarLocation, CartesianLocation, CartesianRasterBand, CartesianMap, PolarRoute, PolarPolygon
+from promis.geo import PolarLocation, CartesianRasterBand, PolarMap, PolarRoute, PolarPolygon
 from promis.loaders import OsmLoader
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, ValidationError
-from .models.Config import Config
+from pydantic import ValidationError
+from .models.Config import Config, DynamicLayer
 from .models.LocationTypeTable import LocationTypeTable
-from .models.Marker import Marker
 from .models.Line import Line
 from .models.Polygon import Polygon
+from .models.RunRequest import RunRequest
 
-class Item(BaseModel):
-    source: str
-    origin: tuple[float, float]
-    dimensions: tuple[int, int]
-    resolutions: tuple[int, int]
-    location_types: dict[str, str]
-    support_resolutions: tuple[int, int]
-    sample_size: int
-    interpolation: Literal["linear", "nearest", "gaussian_process"]
-
-class DynamicLayer(BaseModel):
-    markers: list[Marker]
-    polylines: list[Line]
-    polygons: list[Polygon]
 
 
 app = FastAPI()
@@ -87,7 +74,7 @@ def _get_location_type_table():
         location_type_table = LocationTypeTable(table=[])
     return location_type_table
 
-def create_hash_uam(req: Item):
+def create_hash_uam(req: RunRequest):
     # prepare for hash
     reqDict = req.model_dump()
     del reqDict["source"]
@@ -104,7 +91,7 @@ def create_hash_uam(req: Item):
 
     return myHash(repr(reqDict))
 
-def create_hash_starmap(req: Item, dynamic_layers: DynamicLayer, hashVal: int):
+def create_hash_starmap(req: RunRequest, dynamic_layers: DynamicLayer, hashVal: int):
     # prepare for hash
     reqDict = req.model_dump()
     del reqDict["source"]
@@ -114,7 +101,7 @@ def create_hash_starmap(req: Item, dynamic_layers: DynamicLayer, hashVal: int):
     return myHash(repr(reqDict))
 
 @app.post("/loadmapdata")
-def load_map_data(req: Item):
+def load_map_data(req: RunRequest):
     mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
 
@@ -126,7 +113,7 @@ def load_map_data(req: Item):
     # load the cache info
     try:
         with open(f"./cache/uam_{hashVal}.pickle", 'rb') as f:
-            uam = CartesianMap.load(f"./cache/uam_{hashVal}.pickle")
+            uam = PolarMap.load(f"./cache/uam_{hashVal}.pickle")
             has_cache = True
             print("found cache map data in loadmapdata")
     except FileNotFoundError:
@@ -139,23 +126,15 @@ def load_map_data(req: Item):
                 continue
             osm_loader.load_routes(osm_filter, name)
             osm_loader.load_polygons(osm_filter, name)
-
-        # We now convert the data into an Uncertainty Annotated Map
-        uam = osm_loader.to_cartesian_map()
-
-        # We can add extra information, e.g., from background knowledge or other sensors
-        # Here, we place the drone operator at the center of the map
-        # uam.features.append(CartesianLocation(0, 0, location_type="operator"))
-
-        # Annotate the same level of uncertainty on all features
-        uam.apply_covariance(10.0 * eye(2))
+        
+        uam = osm_loader.to_polar_map()
         
         uam.save(f"./cache/uam_{hashVal}.pickle")
     
     return hashVal
 
 @app.post("/starmap/{hashVal}")
-def calculate_star_map(req: Item, hashVal: int):
+def calculate_star_map(req: RunRequest, hashVal: int):
     mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
     width, height = dimensions
@@ -167,7 +146,7 @@ def calculate_star_map(req: Item, hashVal: int):
     # load the cache info
     try:
         with open(f"./cache/uam_{hashVal}.pickle", 'rb') as f:
-            uam = CartesianMap.load(f"./cache/uam_{hashVal}.pickle")
+            polar_map = PolarMap.load(f"./cache/uam_{hashVal}.pickle")
             print("found cache map data in starmap")
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="No map data found on this request.")
@@ -188,7 +167,6 @@ def calculate_star_map(req: Item, hashVal: int):
     #        print("found cache star map in starmap")
     #except FileNotFoundError:
     # create polar map
-    polar_map = uam.to_polar()
 
     # create all markers, lines and polygons to uam
     for marker in markers:
@@ -213,7 +191,17 @@ def calculate_star_map(req: Item, hashVal: int):
         polar_map.features.append(polygon_feature)
 
     uam = polar_map.to_cartesian()
-    uam.apply_covariance(10*eye(2))
+    
+    # apply covariance
+    loc_type_table = _get_location_type_table()
+    loc_to_uncertainty = dict()
+    for entry in loc_type_table.table:
+        loc_to_uncertainty[entry.location_type] = entry.uncertainty
+    
+    for feature in uam.features:
+        assert feature.location_type in loc_to_uncertainty, f"There is a feature without appropriate location type in table: {feature}"
+        cov = loc_to_uncertainty[feature.location_type] * eye(2)
+        feature.covariance = cov
 
     # We create a statistical relational map (StaR Map) to represent the 
     # stochastic relationships in the environment, computing a raster of 1000 x 1000 points
@@ -236,7 +224,7 @@ def calculate_star_map(req: Item, hashVal: int):
     return star_map_hash_val
 
 @app.post("/inference/{hashVal}")
-def inference(req: Item, hashVal: int):
+def inference(req: RunRequest, hashVal: int):
     # load the cache info
     #try:
     #    with open(f"./cache/starmap_{hashVal}.pickle", 'rb') as f:

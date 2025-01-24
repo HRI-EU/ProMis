@@ -143,6 +143,10 @@ export default function LocationTypeSetting({ initialRows }) {
     if (updatedRow.filter === undefined) {
       updatedRow.filter = "";
     }
+    // make sure the row has an uncertainty (default to 10)
+    if (updatedRow.uncertainty === undefined) {
+      updatedRow.uncertainty = 10;
+    }
 
     setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
 
@@ -156,9 +160,10 @@ export default function LocationTypeSetting({ initialRows }) {
   };
 
   const columns = [
-    { field: 'locationType', headerName: 'Location Type', width: 140, editable: true },
-    { field: 'filter', headerName: 'Osm Filter', width: 320, editable: true },
+    { field: 'locationType', headerName: 'Location Type', width: 120, editable: true },
+    { field: 'filter', headerName: 'Osm Filter', width: 250, editable: true },
     { field: 'color', headerName: 'Color', width: 80, editable: true },
+    { field: 'uncertainty', headerName: 'Uncertainty', width: 100, editable: true },
     {
       field: 'actions',
       type: 'actions',
@@ -214,7 +219,7 @@ export default function LocationTypeSetting({ initialRows }) {
       field: 'choose',
       type: 'actions',
       headerName: 'Choose',
-      width: 80,
+      width: 70,
       cellClassName: 'actions',
       getActions: ({ id }) => {
         const isChosen = chooseRow === id;

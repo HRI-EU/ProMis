@@ -956,6 +956,14 @@ class MapManager {
     }
   }
 
+  toggleDynamicOnTop(onTop) {
+    if (onTop) {
+      this.dynamicFeatureGroup.bringToFront();
+    } else {
+      this.dynamicFeatureGroup.bringToBack();
+    }
+  }
+
 }
 
 export default MapManager;

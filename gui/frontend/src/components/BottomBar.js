@@ -52,24 +52,28 @@ const initialRows = [
     locationType: "primary_road",
     filter: "['highway' = 'primary']",
     color: "blue",
+    uncertainty: 10,
   },
   {
     id: randomId(),
     locationType: "secondary_road",
     filter: "['highway' = 'secondary']",
     color: "red",
+    uncertainty: 10,
   },
   {
     id: randomId(),
     locationType: "tertiary_road",
     filter: "['highway' = 'tertiary']",
     color: "green",
+    uncertainty: 10,
   },
   {
     id: randomId(),
     locationType: "park",
     filter: "['leisure' = 'park']",
     color: "yellow",
+    uncertainty: 10,
   },
 ];
 
