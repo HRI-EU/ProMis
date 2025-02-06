@@ -66,6 +66,7 @@ setuptools.setup(
         "fastapi[standard]",
         "graphviz",
         "seaborn",
+        "smopy",
         # => testing and code quality
         #   -> static code analysis
         "black",
