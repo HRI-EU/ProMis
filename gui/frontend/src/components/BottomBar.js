@@ -405,13 +405,15 @@ export default class BottomBar extends React.Component {
           <TextField type="number" size="small" label="width" variant="outlined" 
             value={this.state.dimensionWidth}
             onFocus={() => {
-              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight);
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight,
+                                           this.state.resolutionWidth, this.state.resolutionHeight,
+                                           this.state.supportResolutionWidth, this.state.supportResolutionHeight);
             }}
             onChange={(e) => {
               this.setState({ dimensionWidth: e.target.value })
               C().mapMan.highlightBoundary(C().sourceMan.origin, e.target.value, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight); 
+                                          , this.state.resolutionWidth, this.state.resolutionHeight,
+                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
             }}
             onBlur={() => {
               C().mapMan.unhighlightBoundary();
@@ -424,12 +426,14 @@ export default class BottomBar extends React.Component {
             value={this.state.dimensionHeight}
             onFocus={() => {
               C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight);
+                                          , this.state.resolutionWidth, this.state.resolutionHeight,
+                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
             }}
             onChange={(e) => {
               this.setState({ dimensionHeight: e.target.value })
               C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, e.target.value
-                                          , this.state.resolutionWidth, this.state.resolutionHeight);
+                                          , this.state.resolutionWidth, this.state.resolutionHeight,
+                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
             }}
             onBlur={() => {
               C().mapMan.unhighlightBoundary();
@@ -465,12 +469,14 @@ export default class BottomBar extends React.Component {
             value={this.state.resolutionWidth}
             onFocus={() => {
               C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight);
+                                          , this.state.resolutionWidth, this.state.resolutionHeight,
+                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
             }}
             onChange={(e) => {
               this.setState({ resolutionWidth: e.target.value })
               C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , e.target.value, this.state.resolutionHeight);
+                                          , e.target.value, this.state.resolutionHeight,
+                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
             }}
             onBlur={() => {
               C().mapMan.unhighlightBoundary();
@@ -489,12 +495,14 @@ export default class BottomBar extends React.Component {
             value={this.state.resolutionHeight}
             onFocus={() => {
               C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight);
+                                          , this.state.resolutionWidth, this.state.resolutionHeight,
+                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
             }}
             onChange={(e) => {
               this.setState({ resolutionHeight: e.target.value })
               C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, e.target.value);
+                                          , this.state.resolutionWidth, e.target.value,
+                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
             }}
             onBlur={() => {
               C().mapMan.unhighlightBoundary();
@@ -523,7 +531,20 @@ export default class BottomBar extends React.Component {
           >Support resolution:</div>
           <TextField type="number" size="small" variant="outlined" 
             value={this.state.supportResolutionWidth}
-            onChange={(e) => this.setState({ supportResolutionWidth: e.target.value })}
+            onFocus={() => {
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight,
+                                           this.state.resolutionWidth, this.state.resolutionHeight,
+                                           this.state.supportResolutionWidth, this.state.supportResolutionHeight);
+            }}
+            onChange={(e) => {
+              this.setState({ supportResolutionWidth: e.target.value })
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
+                                          , this.state.resolutionWidth, this.state.resolutionHeight,
+                                          e.target.value, this.state.supportResolutionHeight);
+            }}
+            onBlur={() => {
+              C().mapMan.unhighlightBoundary();
+            }}
             sx={{
               width: this.inputSize
             }}
@@ -536,7 +557,20 @@ export default class BottomBar extends React.Component {
           >x</div>
           <TextField type="number" size="small" variant="outlined"
             value={this.state.supportResolutionHeight}
-            onChange={(e) => this.setState({ supportResolutionHeight: e.target.value })}
+            onFocus={() => {
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight,
+                                           this.state.resolutionWidth, this.state.resolutionHeight,
+                                           this.state.supportResolutionWidth, this.state.supportResolutionHeight);
+            }}
+            onChange={(e) => {
+              this.setState({ supportResolutionHeight: e.target.value })
+              C().mapMan.highlightBoundary(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
+                                          , this.state.resolutionWidth, this.state.resolutionHeight,
+                                          this.state.supportResolutionWidth, e.target.value);
+            }}
+            onBlur={() => {
+              C().mapMan.unhighlightBoundary();
+            }}
             sx={{
               width: this.inputSize
             }}
