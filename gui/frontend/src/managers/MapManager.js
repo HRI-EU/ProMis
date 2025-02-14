@@ -901,7 +901,8 @@ class MapManager {
     return L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
   }
 
-  _createGrid(originLatlng, width, height, resolutionWidth, resolutionHeight) {
+  _createGrid(originLatlng, width, height, resolutionWidth, resolutionHeight,
+              color = "#0000ff", borderWeight = 1, fillOpacity = 0.2) {
     // calculate the coordinates of the bounding box
     const bbox = this._getBBox(originLatlng, width, height);
     // calculate the width and height of each grid cell
@@ -915,7 +916,7 @@ class MapManager {
             [bbox.getSouth() + j * cellHeight, bbox.getWest() + i * cellWidth],
             [bbox.getSouth() + (j + 1) * cellHeight, bbox.getWest() + (i + 1) * cellWidth],
           ],
-          { color: "#0000ff", weight: 1 },
+          { color: color, weight: borderWeight, fillOpacity: fillOpacity },
         );
         this.bBoxFeatureGroup.addLayer(cell);
       }
@@ -923,7 +924,14 @@ class MapManager {
   }
 
   // highlight the boundary of the selected area
-  highlightBoundary(origin, dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight) {
+  highlightBoundary(origin,
+                    dimensionWidth, 
+                    dimensionHeight, 
+                    resolutionWidth, 
+                    resolutionHeight,
+                    supportResolutionWidth,
+                    supportResolutionHeight,
+                  ) {
     // do nothing if origin is not selected or any of the dimension or resolution is not set
     if (origin === "") {
       return;
@@ -938,12 +946,13 @@ class MapManager {
     const originLatlng = C().mapMan.latlonFromMarkerName(origin);
     const bbox = this._getBBox(originLatlng, dimensionWidth, dimensionHeight);
     // create the bounding box layer
-    const bBoxLayer = L.rectangle(bbox, { color: "#ff0000", weight: 1 });
+    const bBoxLayer = L.rectangle(bbox, { color: "white", weight: 1 });
     this.bBoxFeatureGroup.addLayer(bBoxLayer);
 
     // create the grid
-    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight);
-
+    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, supportResolutionWidth, supportResolutionHeight, "#31e30e", 2, 0);
+    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight, "#d9a766", 1);
+    
     // zoom to the bounding box
     //this.map.fitBounds(bbox);
   }
