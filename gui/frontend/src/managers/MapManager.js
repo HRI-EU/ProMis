@@ -950,9 +950,9 @@ class MapManager {
     this.bBoxFeatureGroup.addLayer(bBoxLayer);
 
     // create the grid
-    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, supportResolutionWidth, supportResolutionHeight, "#31e30e", 2, 0);
-    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight, "#d9a766", 1);
     
+    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight, "#d9a766", 1);
+    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, supportResolutionWidth, supportResolutionHeight, "#31e30e", 2, 0);
     // zoom to the bounding box
     //this.map.fitBounds(bbox);
   }
