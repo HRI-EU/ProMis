@@ -1,7 +1,6 @@
 // MapComponent.js
-import React, { useEffect, useRef } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
-import { useMap } from "react-leaflet";
+import React, { useEffect } from "react";
+import L from "leaflet";
 import "leaflet.heat";
 import "../libs/leaflet-openweathermap.js";
 import "../libs/leaflet-openweathermap.css";
@@ -23,38 +22,45 @@ import DynamicLayerInteractive from "./DynamicLayerInteractive.js";
 //import WeatherInfoBox from "./WeatherInfoBox.js";
 
 function MapComponent() {
-  const mapRef = useRef();
+  var map = null;
 
   const defaultCenter = [49.8728, 8.6512];
 
-  let onlyOnce = false;
+  let didInit = false;
 
   useEffect(() => {
-    // Hide Leaflet map zoom control buttons after the map is rendered
-    const hideZoomControl = () => {
-      const zoomControl = document.querySelector(".leaflet-control-zoom");
-      if (zoomControl) {
-        zoomControl.style.visibility = "hidden";
-      }
-    };
+    if (didInit)
+      return;
 
-    hideZoomControl();
+    map = L.map("map", {
+      preferCanvas: true,
+      center: defaultCenter,
+      zoom: 13,
+      zoomSnap: 0.2,
+      maxZoom: 20,
+    });
+    
 
-    // Clean up the effect when the component is unmounted
-    return () => {
-      const zoomControl = document.querySelector(".leaflet-control-zoom");
-      if (zoomControl) {
-        zoomControl.style.visibility = "visible";
-      }
-    };
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxNativeZoom: 19,
+      maxZoom: 20,
+    }).addTo(map);
+
+    MapHook();
+
+    // hide zoom control
+    const zoomControl = document.querySelector(".leaflet-control-zoom");
+    if (zoomControl) {
+      zoomControl.style.visibility = "hidden";
+    }
+
+    didInit = true;
   }, []); // Empty dependency array ensures the effect runs once after the initial render
 
   //This function is called within a MapContainer. It will pass the map reference to the MapManager
   function MapHook() {
-    if (onlyOnce) {
-      return null;
-    }
-    const map = useMap();
+
     C().mapMan.setMap(map);
     // Load the configuration data from the backend
     getConfig().then((configs) => {
@@ -90,7 +96,7 @@ function MapComponent() {
         C().sourceMan.locationTypes = location_type_table.table;
       }
     });
-    onlyOnce = true;
+    
     return null;
   }
 
@@ -104,23 +110,11 @@ function MapComponent() {
 
       <BottomBar />
 
-      <MapContainer
-        preferCanvas={true}
+      <div
+        id="map"
         style={{ height: "100vh", width: "100%" }}
-        ref={mapRef}
-        center={defaultCenter}
-        zoom={13}
-        zoomSnap={0.2}
-        maxZoom={20}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          maxNativeZoom='19'
-          maxZoom={20}
-        />
-        <MapHook />
-      </MapContainer>
+      </div>
 
       <SidebarRight />
       {/* <WeatherInfoBox /> */}
