@@ -265,6 +265,10 @@ class LayerManager {
       features: [],
     };
     this.layers.forEach((layer) => {
+      // ignore hided layers
+      if (layer.markerLayer == null) {
+        return;
+      }
       geoJSON.features.push(...layer.markerLayer.toGeoJSON().features);
     });
     geoJSON.features.push(...dynamicFeatureGroup.toGeoJSON().features);
