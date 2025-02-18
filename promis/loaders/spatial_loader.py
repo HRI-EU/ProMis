@@ -36,7 +36,7 @@ class SpatialLoader(ABC):
         pass
 
     @staticmethod
-    def compute_bounding_box(
+    def compute_polar_bounding_box(
         origin: PolarLocation, dimensions: tuple[float, float]
     ) -> tuple[float, float, float, float]:
         """Computes the north, east, south and west limits of the area to be loaded.

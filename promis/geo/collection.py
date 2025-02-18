@@ -174,7 +174,7 @@ class Collection(ABC):
 
         if plot_basemap:
             # Get OpenStreetMap and crop to relevant area
-            south, west, north, east = OsmLoader.compute_bounding_box(
+            south, west, north, east = OsmLoader.compute_polar_bounding_box(
                 self.origin, self.dimensions()
             )
             map = smopy.Map((south, west, north, east), z=zoom)

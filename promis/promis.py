@@ -14,6 +14,7 @@ from multiprocessing import Pool
 from re import finditer
 from functools import cached_property
 from pickle import dump, load
+from typing import Literal
 
 # Third Party
 from numpy import array
@@ -39,12 +40,9 @@ class ProMis:
 
         Args:
             star_map: The statistical relational map holding the parameters for ProMis
-            logic: The constraints of the landscape(X) predicate, including its definition
         """
 
-        # Set parameters
         self.star_map = star_map
-        self.logic = logic
 
     def solve(
         self,
@@ -52,8 +50,7 @@ class ProMis:
         logic: str,
         n_jobs: int = None,
         batch_size: int = 1,
-        check_required_relations=True,
-        method="linear",
+        method: Literal["linear", "nearest"] = "linear",
         show_progress: bool = False,
         print_first: bool = False,
     ) -> CartesianCollection:
@@ -70,7 +67,6 @@ class ProMis:
             logic: The constraints of the landscape(X) predicate, including its definition
             n_jobs: How many workers to use in parallel
             batch_size: How many pixels to infer at once
-            check_required_relations: Only get the relations explicitly mentioned in the logic
             method: Interpolation method, either 'linear' or 'nearest'
             show_progress: Whether to show a progress bar
             print_first: Whether to print the first program to stdout
@@ -98,7 +94,7 @@ class ProMis:
             batch = range(index, index + batch_size)
 
             # Write the background knowledge, queries and parameters to the program
-            program = self.logic + "\n"
+            program = logic + "\n"
             for batch_index in batch:
                 if batch_index >= number_of_queries:
                     break
