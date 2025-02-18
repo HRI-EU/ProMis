@@ -44,9 +44,6 @@ setuptools.setup(
     install_requires=[
         # => libraries for actual functionality
         #   -> general tools
-        "dataclasses; python_version < '3.7'",
-        "types-dataclasses; python_version < '3.7'",
-        "typing-extensions; python_version < '3.8'",
         "rich",
         #   -> generic scientific
         "numpy",
@@ -73,7 +70,6 @@ setuptools.setup(
         "black",
         "ruff",
         #   -> dynamic code analysis
-        "hypothesis",
         "pytest",
         "pytest-cov",
     ],

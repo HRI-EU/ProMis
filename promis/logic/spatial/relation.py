@@ -34,7 +34,6 @@ DerivedRelation = TypeVar("DerivedRelation", bound="Relation")
 
 
 class Relation(ABC):
-
     """A spatial relation between points in space and typed map features.
 
     Args:
@@ -96,7 +95,7 @@ class Relation(ABC):
     @staticmethod
     @abstractmethod
     def empty_map_parameters() -> list[float]:
-        pass
+        """Create the default parameters for an empty map."""
 
     @abstractmethod
     def index_to_distributional_clause(self, index: int) -> str:
@@ -105,8 +104,6 @@ class Relation(ABC):
         Returns:
             The distributional clause representing the respective entry of this Relation
         """
-
-        pass
 
     @staticmethod
     @abstractmethod
@@ -120,8 +117,6 @@ class Relation(ABC):
         Returns:
             The value of this Relation for the given location and map
         """
-
-        pass
 
     @staticmethod
     @abstractmethod
@@ -192,6 +187,7 @@ class ScalarRelation(Relation):
 
         self.problog_name = problog_name
 
+        # TODO: Find better treatment of zero variance
         self.parameters.data["v1"] = clip(self.parameters.data["v1"], enforced_min_variance, None)
 
     def __lt__(self, value: float) -> CartesianCollection:
@@ -215,6 +211,7 @@ class ScalarRelation(Relation):
         return probabilities
 
     def __gt__(self, value: float) -> CartesianCollection:
+        # Use the existing __lt__ method to compute the inverse
         probabilities = self < value
         probabilities.data["v0"] = 1.0 - probabilities.data["v0"]
 

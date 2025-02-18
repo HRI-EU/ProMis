@@ -78,6 +78,7 @@ class StaRMap:
         self.method = method
 
         # Each relation is stored as collection of support points and fitted approximator
+        self.relations: dict[str, dict[str | None, RelationInformation]]
         self.clear_relations()
 
     def initialize(self, support: CartesianCollection, number_of_random_maps: int, logic: str):
@@ -95,17 +96,9 @@ class StaRMap:
     def clear_relations(self):
         """Clear out the stored relations data."""
 
-        # Each relation is stored as collection of support points and fitted approximator
-        self.relations: dict[str, dict[str | None, RelationInformation]]
-        self.clear_relations()
-
-    def clear_relations(self):
-        """Clear out the stored relations data."""
-
-        # Each relation is stored as collection of support points and fitted approximator
         self.relations = {
-            "over": defaultdict(self.empty_relation),
-            "distance": defaultdict(self.empty_relation),
+            "over": defaultdict(self._empty_relation),
+            "distance": defaultdict(self._empty_relation),
             "depth": defaultdict(self._empty_relation),
         }
 
@@ -123,13 +116,6 @@ class StaRMap:
         ], f"Requested unknown relation '{relation}' from StaR Map"
 
         return Over if relation == "over" else Distance
-
-    def all_relations(self) -> list[Relation]:
-        return [
-            self.get(relation_type, location_type)
-            for relation_type in self.relations
-            for location_type in self.relations[relation_type]
-        ]
 
     @property
     def relation_types(self) -> set[str]:
@@ -303,18 +289,32 @@ class StaRMap:
             A list of the (relation_type, location_type) pairs mentioned in the program
         """
 
-        mentioned_relations = []
-        mentioned_relations += list(
-            set(
-                [
-                    ("distance", match.group(1))
-                    for match in finditer(r"distance\(X,\s*(\w+)\)", logic)
-                ]
-            )
-        )
-        mentioned_relations += list(
-            set([("over", match.group(1)) for match in finditer(r"over\(X,\s*(\w+)\)", logic)])
-        )
+        # TODO can it really be None?
+        mentioned_relations: list[tuple[str, str | None]] = []
+
+        for name, arity in self.relation_arities.items():
+            realtes_to = ",".join([r"\s*((?:'\w*')|(?:\w+))\s*"] * (arity - 1))
+
+            # Prepend comma to first element if not empty
+            if realtes_to:
+                realtes_to = "," + realtes_to
+
+            for match in finditer(rf"({name})\(X{realtes_to}\)", logic):
+                name = match.group(1)
+                if name == "landscape":
+                    # TODO really?
+                    continue  # Ignore landscape relation since it is not part of the StaRMap
+
+                match arity:
+                    case 1:
+                        mentioned_relations.append((name, None))
+                    case 2:
+                        location_type = match.group(2)
+                        if location_type[0] in "'\"":  # Remove quotes
+                            location_type = location_type[1:-1]
+                        mentioned_relations.append((name, location_type))
+                    case _:
+                        raise Exception(f"Only arity 1 and 2 are supported, but got {arity}")
 
         return mentioned_relations
 
@@ -334,19 +334,6 @@ class StaRMap:
             relations.append(self.get(relation_type, location_type))
 
         return relations
-
-    # TODO remove?
-    # def all_relations(self) -> list[Relation]:
-    #     return [
-    #         self.get(relation_type, location_type)
-    #         for relation_type in self.relations
-    #         for location_type in self.relations[relation_type]
-    #     ]
-
-    # TODO remove?
-    # @property
-    # def relation_types(self) -> set[str]:
-    #     return set(self.relations.keys())
 
     def _train_gaussian_process(
         self,

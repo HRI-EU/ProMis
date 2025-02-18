@@ -23,6 +23,9 @@ from promis.geo.collection import CartesianCollection
 from promis.geo.location import CartesianLocation
 from promis.logic.spatial.relation import ScalarRelation
 
+DEFAULT_LAND_HEIGHT = 10
+DEFAULT_UNIFORM_VARIANCE = 0.25
+
 
 class Depth(ScalarRelation):
     """The depth information as a Gaussian distribution. This relation is unary.
@@ -38,11 +41,19 @@ class Depth(ScalarRelation):
 
     @staticmethod
     def compute_relation(locations: ndarray[Point], r_tree: STRtree) -> float:
+        # TODO what?
         raise NotImplementedError("Please use the compute_relations method instead.")
+
+    @staticmethod
+    def empty_map_parameters() -> list[float]:
+        return [DEFAULT_LAND_HEIGHT, DEFAULT_UNIFORM_VARIANCE]
 
     @classmethod
     def compute_parameters(
-        cls, data_map: CartesianMap, support: CartesianCollection, uniform_variance: float = 0.25
+        cls,
+        data_map: CartesianMap,
+        support: CartesianCollection,
+        uniform_variance: float = DEFAULT_UNIFORM_VARIANCE,
     ) -> array:
         """Compute the depth values for the requested support locations.
 
@@ -77,13 +88,11 @@ class Depth(ScalarRelation):
 
         color = self.parameters.values()[:, value_index].reshape(resolution).T
         # Use a diverging colormap with sea level (depth 0.0) as the center point
-        axis.imshow(
-            color, norm=CenteredNorm(vcenter=0.0), cmap="BrBG_r", origin="lower", **kwargs
-        )
+        axis.imshow(color, norm=CenteredNorm(vcenter=0.0), cmap="BrBG_r", origin="lower", **kwargs)
         axis.colorbar()
 
 
-def feature_to_depth(feature: CartesianGeometry, land_height: float = 10) -> float:
+def feature_to_depth(feature: CartesianGeometry, land_height: float = DEFAULT_LAND_HEIGHT) -> float:
     """Extracts the depth from a feature, if present.
 
     Args:

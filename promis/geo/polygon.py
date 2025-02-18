@@ -22,7 +22,6 @@ from shapely.geometry import Polygon as ShapelyPolygon
 
 # ProMis
 from promis.geo.geospatial import Geospatial
-from promis.geo.geospatial import Geospatial
 from promis.geo.helpers import meters_to_radians, radians_to_meters
 from promis.geo.location import CartesianLocation, PolarLocation
 from promis.models import Gaussian
