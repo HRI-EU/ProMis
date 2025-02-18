@@ -8,11 +8,6 @@
 .hammett-db
 .mutmut-cache
 
-# Folders with derived content
-external/
-output/
-examples/
-
 # Node.js package lock
 package-lock.json
 
@@ -282,9 +277,10 @@ dist
 ######################
 
 data/
-.promis_cache/
 
-examples/**/*.pkl
+# Folders with derived content
+.promis_cache/
+**.pkl
 examples/**/*.gif
 examples/**/*.png
 examples/**/*.pdf
