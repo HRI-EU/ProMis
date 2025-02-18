@@ -9,12 +9,15 @@
 #
 
 # Third Party
+from numpy import ndarray
+
+# Geometry
+from shapely import Point, within
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianLocation
-
 from .relation import Relation
+from promis.geo import CartesianLocation
 
 
 class Over(Relation):

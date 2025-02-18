@@ -9,14 +9,17 @@
 #
 
 # Third Party
-from numpy import clip, sqrt
+from numpy import clip, sqrt, ndarray
 from scipy.stats import norm
+from shapely.strtree import STRtree
+
+# Geometry
+from shapely import Point, distance
 from shapely.strtree import STRtree
 
 # ProMis
 from promis.geo import CartesianCollection, CartesianLocation, CartesianRasterBand
-
-from .relation import Relation
+from .relation import Relation, ScalarRelation
 
 
 class Distance(Relation):  # TODO make ScalarRelation

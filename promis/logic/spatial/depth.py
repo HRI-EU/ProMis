@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import CenteredNorm
 
 # Third Party
-from numpy import array, full_like
-from shapely import STRtree
+from numpy import array, full_like, ndarray
+from shapely import Point, STRtree
 
 # ProMis
 from promis.geo import CartesianGeometry, CartesianMap, CartesianPolygon, CartesianRoute
@@ -37,7 +37,7 @@ class Depth(ScalarRelation):
         super().__init__(parameters, location_type=None, problog_name="depth")
 
     @staticmethod
-    def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
+    def compute_relation(locations: ndarray[Point], r_tree: STRtree) -> float:
         raise NotImplementedError("Please use the compute_relations method instead.")
 
     @classmethod

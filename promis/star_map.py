@@ -12,6 +12,7 @@
 import warnings
 from collections import defaultdict
 from copy import deepcopy
+from functools import cache
 from itertools import product
 from pickle import dump, load
 from re import finditer
@@ -21,6 +22,7 @@ from time import time
 from numpy import array, sort, unique, vstack
 from numpy.random import choice
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
+from shapely import STRtree
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
@@ -264,9 +266,9 @@ class StaRMap:
         relations: list[str],
         location_types: list[str],
     ):
-        assert isinstance(
-            self.target, CartesianRasterBand
-        ), "StaRMap improve currently only works with RasterBand targets!"
+        assert isinstance(self.target, CartesianRasterBand), (
+            "StaRMap improve currently only works with RasterBand targets!"
+        )
 
         for relation, location_type in product(relations, location_types):
             gaussian_process, scaler = self.relations[relation][location_type]["approximator"]
@@ -383,5 +385,64 @@ class StaRMap:
                         support.coordinates(),
                         self.relation_name_to_class(relation).empty_map_parameters(),
                     )
+
+        # TODO: see if this is still required
+        # # TODO: This could be parallelized, as each relation is independent from the others.
+
+        # support_coordinates = support.coordinates()
+        # support_points = array([location.geometry for location in support.to_cartesian_locations()])
+
+        # if relations is None:
+        #     relations = self.relations.keys()
+
+        # if location_types is None:
+        #     location_types = self.location_types
+
+        # @cache
+        # def sampled_rtrees_for(location_type: str | None) -> list[STRtree]:
+        #     filtered_map: CartesianMap = self.uam.filter(location_type)
+        #     return [
+        #         random_map.to_rtree() for random_map in filtered_map.sample(number_of_random_maps)
+        #     ]
+
+        # for relation, location_type in product(relations, location_types):
+        #     # Get all relevant features from map
+        #     if location_type is None:
+        #         continue  # Skip depth, as it is handled separately below
+        #     r_trees = sampled_rtrees_for(location_type)
+
+        #     # If map had no relevant features, fill with default values
+        #     if r_trees[0].geometries.size == 0:
+        #         self.relations[relation][location_type]["collection"].append_with_default(
+        #             support_coordinates, (None, None)
+        #         )
+        #     else:
+        #         match relation:
+        #             case "distance" | "over":
+        #                 # Setup data structures
+        #                 values = self.relation_name_to_class(relation).compute_parameters(
+        #                     support_points, r_trees
+        #                 )
+
+        #                 # Add to collections
+        #                 self.relations[relation][location_type]["collection"].append(
+        #                     support_coordinates, values
+        #                 )
+        #             case "depth":
+        #                 pass  # Nothing to do here per location_type, it's handled specially below
+        #             case _:
+        #                 raise ValueError(f"Requested unknown relation '{relation}' from StaR Map")
+
+        # # Depth is a special case, as it is not dependent on the location type
+        # if any(
+        #     location_type in self.location_types for location_type in Depth.RELEVANT_LOCATION_TYPES
+        # ):
+        #     self.relations["depth"][None]["collection"].append(
+        #         support_coordinates, Depth.compute_parameters(self.uam, support).T
+        #     )
+        # else:
+        #     self.relations["depth"][None]["collection"].append_with_default(
+        #         support_coordinates, (None, None)
+        #     )
 
         self.fit(relations, location_types)
