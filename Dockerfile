@@ -1,15 +1,12 @@
 FROM ubuntu:22.04
 
 ## APT installs and settings ##
-# Resolve APT dependencies
 RUN apt-get update -qq
 RUN apt-get install git curl xz-utils python3-pip python3-gdal libgdal-dev cython3 -qqy
 
 # Locales settings for Sphinx to work
 RUN apt-get install -y locales
-RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
- && sed -i -e 's/# pt_BR.UTF-8 UTF-8/pt_BR.UTF-8 UTF-8/' /etc/locale.gen \
- && locale-gen
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 
 ## Git and pip setup ##
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
@@ -31,4 +28,5 @@ RUN cd problog; pip install .
 
 # Set promis root-directory as workdir
 WORKDIR /ProMis
+# Setting -e does not really work here
 RUN pip install .
