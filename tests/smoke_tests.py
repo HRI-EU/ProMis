@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory
 from textwrap import dedent
 from unittest import TestCase, main
 
-from numpy import eye
+from numpy import eye, isfinite
 
 
 class TestBasics(TestCase):
@@ -67,8 +67,8 @@ class TestBasics(TestCase):
         # support.append_with_default(
         #     PolarRasterBand(origin, (10, 10), width, height).to_polar_locations(), zeros((0, 0))
         # )
-        support = PolarRasterBand(origin, (10, 10), width, height)
-        target = PolarRasterBand(origin, (250, 250), width, height)
+        support = PolarRasterBand(origin, (10, 10), width, height).to_cartesian()
+        target = PolarRasterBand(origin, (250, 250), width, height).to_cartesian()
         alternative = CartesianCollection(origin)
         alternative.append_with_default([CartesianLocation(42, 42)], value=42)
 
@@ -85,7 +85,7 @@ class TestBasics(TestCase):
             print("Done UAM saving")
 
             star_map = StaRMap(target, CartesianMap.load(tmpdir / "uam.pkl"))
-            star_map.initialize(support.to_cartesian(), number_of_random_maps, logic)
+            star_map.initialize(support, number_of_random_maps, logic)
 
             print("Done StaRMap initialization")
 
@@ -107,6 +107,8 @@ class TestBasics(TestCase):
 
             landscape.save(tmpdir / "landscape.pkl")
             landscape = Collection.load(tmpdir / "landscape.pkl")
+
+            assert isfinite(landscape.values()).all()
 
 
 if __name__ == "__main__":
