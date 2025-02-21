@@ -148,33 +148,6 @@ class RasterBand(ABC):
 
         return cls(data, map.origin, map.width, map.height)
 
-    def get_interpolator(self, method: str = "linear") -> RegularGridInterpolator:
-        """Get an interpolator for the raster band.
-
-        Args:
-            method: The interpolation method to use
-
-        Returns:
-            A callable interpolator function
-        """
-
-        # Get coordinates
-        all_coordinates = self.coordinates().reshape(*self.resolution, 2)
-        x = all_coordinates[:, 0, 0]
-        y = all_coordinates[0, :, 1]
-
-        # Get values
-        values = self.values().reshape(*self.resolution, self.dimensions)
-
-        # Create interpolator
-        return RegularGridInterpolator(
-            (x, y),
-            values,
-            method=method,
-            bounds_error=False,
-            fill_value=None,
-        )
-
 
 class CartesianRasterBand(RasterBand, CartesianCollection):
     """A raster-band of Cartesian referenced data.
@@ -209,6 +182,49 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
             (raster_coordinates, zeros((raster_coordinates.shape[0], number_of_values))), axis=1
         )
         self.data = DataFrame(raster_entries, columns=self.data.columns)
+
+    # Provide a spcific implementation to maintain the RasterBand type
+    def to_polar(self) -> "PolarRasterBand":
+        band = PolarRasterBand(
+            self.origin,
+            self.resolution,
+            self.width,
+            self.height,
+            self.number_of_values,
+        )
+        # copy all but the fiurst two columns of the data
+        band.data.iloc[:, 2:] = self.data.iloc[:, 2:]
+        return band
+
+    # A more efficient implementation than the default one
+    def get_interpolator(self, method: str = "linear") -> RegularGridInterpolator:
+        """Get an interpolator for the raster band.
+
+        Args:
+            method: The interpolation method to use
+
+        Returns:
+            A callable interpolator function
+        """
+
+        # Get coordinates
+        all_coordinates = self.coordinates().reshape(*self.resolution, 2)
+        x = all_coordinates[:, 0, 0]
+        y = all_coordinates[0, :, 1]
+
+        # Get values
+        values = self.values().reshape(*self.resolution, self.dimensions)
+
+        # Create interpolator
+        # TODO We'd ideally like to interpolate linearly within the
+        # support points, but with "nearest" outside of them.
+        return RegularGridInterpolator(
+            (x, y),
+            values,
+            method=method,
+            bounds_error=False,
+            fill_value=None,
+        )
 
 
 class PolarRasterBand(RasterBand, PolarCollection):
@@ -270,3 +286,16 @@ class PolarRasterBand(RasterBand, PolarCollection):
             image[i, j] = column[i + j * self.resolution[0]]
 
         return image
+
+    # Provide a spcific implementation to maintain the RasterBand type
+    def to_cartesian(self) -> "CartesianRasterBand":
+        band = CartesianRasterBand(
+            self.origin,
+            self.resolution,
+            self.width,
+            self.height,
+            self.number_of_values,
+        )
+        # copy all but the fiurst two columns of the data
+        band.data.iloc[:, 2:] = self.data.iloc[:, 2:]
+        return band

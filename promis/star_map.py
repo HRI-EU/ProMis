@@ -12,7 +12,6 @@
 import warnings
 from collections import defaultdict
 from copy import deepcopy
-from functools import cache
 from itertools import product
 from pickle import dump, load
 from re import finditer
@@ -22,28 +21,20 @@ from typing import Any, TypedDict
 # Third Party
 from numpy import array, sort, unique, vstack
 from numpy.random import choice
-from scipy.interpolate import RegularGridInterpolator
-from shapely import STRtree
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 from sklearn.preprocessing import StandardScaler, normalize
 
 # ProMis
-from promis.geo import (
-    CartesianCollection,
-    CartesianLocation,
-    CartesianMap,
-    Collection,
-    RasterBand,
-)
-from promis.logic.spatial import Distance, Over, Relation, Depth
+from promis.geo import CartesianCollection, CartesianLocation, CartesianMap, RasterBand
+from promis.logic.spatial import Depth, Distance, Over, Relation
 
 
 # TODO make Private?
 class RelationInformation(TypedDict):
-    collection: Collection
-    approximator: Any
+    collection: CartesianCollection
+    approximator: None | object
 
 
 class StaRMap:
@@ -69,13 +60,13 @@ class StaRMap:
         self,
         target: CartesianCollection,
         uam: CartesianMap,
-        method="linear",
-    ) -> "StaRMap":
+        method: str = "linear",
+    ) -> None:
         """Setup the StaR Map environment representation."""
 
         # Setup distance and over relations
         self.uam = uam
-        self.target = target
+        self.target = target  # Assumes that self.uam is already set
         self.method = method
 
         # Each relation is stored as collection of support points and fitted approximator
@@ -91,8 +82,12 @@ class StaRMap:
             logic: The set of constraints deciding which relations are computed
         """
 
-        for relation, location_type in self.get_mentioned_relations(logic):
-            self.add_support_points(support, number_of_random_maps, [relation], [location_type])
+        # Aggregate all relations
+        agg = defaultdict(list)
+        for relation, location_type in self._get_mentioned_relations(logic):
+            agg[relation].append(location_type)
+
+        self.add_support_points(support, number_of_random_maps, agg)
 
     def clear_relations(self):
         """Clear out the stored relations data."""
@@ -105,6 +100,7 @@ class StaRMap:
 
     def _empty_relation(self) -> RelationInformation:
         return {
+            # Two values for storing mean and variance
             "collection": CartesianCollection(self.target.origin, 2),
             "approximator": None,
         }
@@ -114,11 +110,22 @@ class StaRMap:
         if relation not in ["over", "distance", "depth"]:
             raise NotImplementedError(f'Requested unknown relation "{relation}" from StaR Map')
 
-        return Over if relation == "over" else Distance
+        # TODO: make more elegant/extensible
+        match relation:
+            case "over":
+                return Over
+            case "distance":
+                return Distance
+            case "depth":
+                return Depth
 
     @property
     def relation_types(self) -> set[str]:
         return set(self.relations.keys())
+
+    @property
+    def relation_and_location_types(self) -> dict[str, set[str]]:
+        return {name: set(info.keys()) for name, info in self.relations.items()}
 
     @property
     def relation_arities(self) -> dict[str, int]:
@@ -131,6 +138,7 @@ class StaRMap:
     @target.setter
     def target(self, target: CartesianCollection) -> None:
         # Validate that target and UAM have the same origin coordinates
+        # TODO: Why does PolarLocation not have a __eq__ method?
         if any(target.origin.to_numpy() != self.uam.origin.to_numpy()):
             raise ValueError(
                 "StaRMap target and UAM must have the same origin but were: "
@@ -167,104 +175,76 @@ class StaRMap:
         if self.is_fitted:
             self.fit()
 
-    def fit(self, relations: list[str], location_types: list[str]):
+    def fit(self, what: dict[str, list[str]] | None = None) -> None:
+        if what is None:
+            what = self.relation_and_location_types  # Inefficient, but works
+
         # Predict for each value
-        for relation, location_type in product(relations, location_types):
-            if self.method == "gaussian_process":
-                # Setup input scaler
-                scaler = StandardScaler().fit(self.target.coordinates())
+        for relation, location_types in what.items():
+            for location_type in location_types:
+                # Not all relations must be present for all location types
+                if relation not in self.relations or location_type not in self.relations[relation]:
+                    continue  # Nothing to do here
 
-            # Not all relations must be present for all location types
-            # TODO check if still required
-            if relation not in self.relations or location_type not in self.relations[relation]:
-                continue
+                info = self.relations[relation][location_type]
 
-            # TODO We should determine when we can use
-            # scipy.interpolate.RegularGridInterpolator ?
-            # Also, we'd really like to interpolate linearly withing the
-            # support points, but with "nearest" outside of them.
+                match self.method:
+                    case "gaussian_process":
+                        # Setup input scaler
+                        scaler = StandardScaler().fit(self.target.coordinates())
 
-            match self.method:
-                case "gaussian_process":
-                    # Setup input scaler
-                    scaler = StandardScaler().fit(self.target.coordinates())
+                        # Fit GP to relation data and store approximator
+                        gaussian_process, _ = self._train_gaussian_process(info["collection"], None)
+                        info["approximator"] = (gaussian_process, scaler)
 
-                    # Fit GP to relation data and store approximator
-                    gaussian_process, _ = self._train_gaussian_process(
-                        self.relations[relation][location_type]["collection"], None
-                    )
-                    self.relations[relation][location_type]["approximator"] = (
-                        gaussian_process,
-                        scaler,
-                    )
+                    # Could easily be extended to other methods, like spline interpolation
+                    case "linear" | "nearest":
+                        # If `collection` is a reaster band, this will be particularly efficient
+                        info["approximator"] = info["collection"].get_interpolator(self.method)
 
-                # Could easily be extended to other methods, like spline interpolation
-                case "linear" | "nearest":
-                    collection = self.relations[relation][location_type]["collection"]
-
-                    # Get coordinates of overall training samples so far
-                    all_coordinates = collection.coordinates().reshape(*self._support_resolution, 2)
-                    x = all_coordinates[:, 0, 0]
-                    y = all_coordinates[0, :, 1]
-
-                    # Fit linear interpolator for each relation
-                    self.relations[relation][location_type]["approximator"] = (
-                        RegularGridInterpolator(
-                            (x, y),
-                            collection.values().reshape(*self._support_resolution, 2),
-                            method=self.method,
-                            bounds_error=False,
-                            fill_value=None,
-                        )
-                    )
-
-                case _:
-                    raise f"Unsupported method {self.method} in StaRMap!"
+                    case _:
+                        raise NotImplementedError(f"Unsupported method {self.method} in StaRMap!")
 
     @property
     def is_fitted(self) -> bool:
         # In the beginning, self.relations might not be defined yet
-        return hasattr(self, "relations") and (
-            all(
-                (
-                    relation not in self.relations
-                    or location_type not in self.relations[relation]
-                    or self.relations[relation][location_type]["approximator"] is not None
-                )
-                for relation, location_type in product(self.relations, self.location_types)
-            )
+        return hasattr(self, "relations") and all(
+            info["approximator"] is not None
+            for entries in self.relations.values()
+            for info in entries.values()
         )
 
-    def get(self, relation: str, location_type: str) -> Distance | Over:
+    def get(self, relation: str, location_type: str) -> Relation:
         """Get the computed data for a relation to a location type.
 
         Args:
-            relation: The relation to return, currently 'over' and 'distance' are supported
+            relation: The relation to return
             location_type: The location type to relate to
 
         Returns:
-            The Collection of computed points for this relation
+            The relation for the given location type
         """
 
         parameters = deepcopy(self.target)
         coordinates = parameters.coordinates()
 
+        info = self.relations[relation][location_type]
         if self.method == "gaussian_process":
-            gp, scaler = self.relations[relation][location_type]["approximator"]
+            gp, scaler = info["approximator"]
             approximated = gp.predict(scaler.transform(coordinates))
         else:
-            approximated = self.relations[relation][location_type]["approximator"](coordinates)
+            approximated = info["approximator"](coordinates)
 
         parameters.data["v0"] = approximated[:, 0]
         parameters.data["v1"] = approximated[:, 1]
 
         return self.relation_name_to_class(relation)(parameters, location_type)
 
-    def get_all(self) -> Distance | Over:
+    def get_all(self) -> list[Relation]:
         """Get all the relations for each location type.
 
         Returns:
-            A list of all Collections of computed points for all relations
+            A list of all relations
         """
 
         relations = self.relations.keys()
@@ -275,7 +255,7 @@ class StaRMap:
             for relation, location_type in product(relations, location_types)
         ]
 
-    def get_mentioned_relations(self, logic: str) -> list[tuple[str, str]]:
+    def _get_mentioned_relations(self, logic: str) -> list[tuple[str, str]]:
         """Get all relations mentioned in a logic program.
 
         Args:
@@ -326,7 +306,7 @@ class StaRMap:
         # TODO make in list comprehension
 
         relations = []
-        for relation_type, location_type in self.get_mentioned_relations(logic):
+        for relation_type, location_type in self._get_mentioned_relations(logic):
             relations.append(self.get(relation_type, location_type))
 
         return relations
@@ -370,7 +350,7 @@ class StaRMap:
         location_types: list[str],
     ):
         assert isinstance(self.target, RasterBand), (
-            "StaRMap improve currently only works with RasterBand targets!"
+            "StaRMap auto_improve() currently only works with RasterBand targets!"
         )
 
         for relation, location_type in product(relations, location_types):
@@ -433,10 +413,9 @@ class StaRMap:
 
     def add_support_points(
         self,
-        support: RasterBand,
+        support: CartesianCollection,
         number_of_random_maps: int,
-        relations: list[str],
-        location_types: list[str],
+        what: dict[str, list[str]] | None = None,
     ):
         """Compute distributional clauses.
 
@@ -444,10 +423,13 @@ class StaRMap:
             support: The Collection of points for which the spatial relations will be computed
             number_of_random_maps: How often to sample from map data in order to
                 compute statistics of spatial relations
-            location_types: Which types of geospatial data to compute
+            what: The spatial relations to compute, as a mapping of relation names to location types
         """
 
-        for location_type in location_types:
+        what = self.relation_and_location_types if what is None else what
+        all_location_types = [location_type for types in what.values() for location_type in types]
+
+        for location_type in all_location_types:
             # Get all relevant features from map
             typed_map = self.uam.filter(location_type)
 
@@ -456,10 +438,15 @@ class StaRMap:
             r_trees = [instance.to_rtree() for instance in random_maps]
             locations = support.to_cartesian_locations()
 
-            for relation in relations:
+            for relation, types in what.items():
+                if relation not in what or location_type not in types:
+                    continue
+                else:
+                    info = self.relations[relation][location_type]
+
                 # If map had no relevant features, fill with default values
                 if not typed_map.features:
-                    self.relations[relation][location_type]["collection"].append_with_default(
+                    info["collection"].append_with_default(
                         support.coordinates(),
                         self.relation_name_to_class(relation).empty_map_parameters(),
                     )
@@ -477,14 +464,14 @@ class StaRMap:
                     )
 
                     # Add to collections
-                    self.relations[relation][location_type]["collection"].append(locations, values)
+                    info["collection"].append(locations, values)
                 except Exception as e:
                     print(
                         f"""StaR Map encountered excpetion {e};
                         {relation} for {location_type} will use default parameters!"""
                     )
 
-                    self.relations[relation][location_type]["collection"].append_with_default(
+                    info["collection"].append_with_default(
                         support.coordinates(),
                         self.relation_name_to_class(relation).empty_map_parameters(),
                     )
@@ -568,4 +555,4 @@ class StaRMap:
         #         support_coordinates, (None, None)
         #     )
 
-        self.fit(relations, location_types)
+        self.fit(what)

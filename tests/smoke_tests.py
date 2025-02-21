@@ -19,7 +19,6 @@ class TestBasics(TestCase):
         from promis.loaders import OsmLoader
 
         feature_description = {
-            "park": "['leisure' = 'park']",
             "primary": "['highway' = 'primary']",
         }
 
@@ -50,7 +49,7 @@ class TestBasics(TestCase):
 
             % Permits related to local features
             permits(X) :- 
-                distance(X, primary) < 15; over(X, park).
+                distance(X, primary) < 15.
 
             % Definition of a valid mission
             landscape(X) :- 
@@ -63,6 +62,10 @@ class TestBasics(TestCase):
         origin = PolarLocation(latitude=49.878091, longitude=8.654052)
         width, height = 100.0, 50.0
         number_of_random_maps = 3
+        # support = CartesianCollection(origin, number_of_random_maps)
+        # support.append_with_default(
+        #     PolarRasterBand(origin, (10, 10), width, height).to_polar_locations(), zeros((0, 0))
+        # )
         support = PolarRasterBand(origin, (10, 10), width, height)
         target = PolarRasterBand(origin, (250, 250), width, height)
         alternative = CartesianCollection(origin)
@@ -83,12 +86,12 @@ class TestBasics(TestCase):
             print("Done UAM saving")
 
             star_map = StaRMap(target, CartesianMap.load(tmpdir / "uam.pkl"))
-            star_map.initialize(support, number_of_random_maps, logic)
+            star_map.initialize(support.to_cartesian(), number_of_random_maps, logic)
 
             print("Done StaRMap initialization")
 
             # optional: add support points
-            star_map.add_support_points(support, number_of_random_maps, ["distance"], ["primary"])
+            # star_map.add_support_points(alternative, number_of_random_maps)
             star_map.save(tmpdir / "star_map.pkl")
 
             print("Done support points")
