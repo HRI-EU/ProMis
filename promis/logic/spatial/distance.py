@@ -18,7 +18,7 @@ from shapely import Point, distance
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianLocation, CartesianRasterBand
+from promis.geo import CartesianCollection, CartesianLocation, RasterBand
 from .relation import ScalarRelation
 
 

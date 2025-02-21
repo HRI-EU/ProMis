@@ -35,6 +35,7 @@ from promis.geo import (
     CartesianLocation,
     CartesianMap,
     Collection,
+    RasterBand,
 )
 from promis.logic.spatial import Distance, Over, Relation, Depth
 
@@ -110,10 +111,8 @@ class StaRMap:
 
     @staticmethod
     def relation_name_to_class(relation: str) -> Relation:
-        assert relation in [
-            "over",
-            "distance",
-        ], f"Requested unknown relation '{relation}' from StaR Map"
+        if relation not in ["over", "distance", "depth"]:
+            raise NotImplementedError(f'Requested unknown relation "{relation}" from StaR Map')
 
         return Over if relation == "over" else Distance
 
@@ -160,11 +159,8 @@ class StaRMap:
 
     @method.setter
     def method(self, method: str) -> None:
-        assert method in [
-            "linear",
-            "nearest",
-            "gaussian_process",
-        ], f"StaRMap does not support the method {method}"
+        if method not in ["linear", "nearest", "gaussian_process"]:
+            raise NotImplementedError(f'StaRMap does not support the method "{method}"')
         self._method = method
 
         # Make sure to refit if method changes
@@ -373,7 +369,7 @@ class StaRMap:
         relations: list[str],
         location_types: list[str],
     ):
-        assert isinstance(self.target, CartesianRasterBand), (
+        assert isinstance(self.target, RasterBand), (
             "StaRMap improve currently only works with RasterBand targets!"
         )
 
@@ -437,7 +433,7 @@ class StaRMap:
 
     def add_support_points(
         self,
-        support: CartesianRasterBand,
+        support: RasterBand,
         number_of_random_maps: int,
         relations: list[str],
         location_types: list[str],

@@ -12,39 +12,34 @@
 from abc import ABC
 from collections import defaultdict
 from collections.abc import Callable
-from io import BytesIO
 from itertools import product
-from typing import Any
+from typing import NoReturn
+
+# Plotting
+import matplotlib.pyplot as plt
+from matplotlib.transforms import Bbox
 
 # Third Party
-from numpy import array, concatenate, linspace, meshgrid, ravel, vstack, zeros
+from numpy import array, concatenate, float32, linspace, meshgrid, ravel, vstack, zeros
 from pandas import DataFrame
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from matplotlib.transforms import Bbox
-from numpy import array, float32, ndarray, sum, uint8, vstack, zeros
-from PIL.Image import Image, fromarray
-from PIL.Image import open as open_image
-from sklearn.preprocessing import MinMaxScaler
 from scipy.interpolate import RegularGridInterpolator
+from sklearn.preprocessing import MinMaxScaler
 
 # ProMis
+import promis.geo
 from promis.geo import (
     CartesianCollection,
     CartesianLocation,
-    PolarCollection,
-    PolarLocation,
+    CartesianMap,
     CartesianPolygon,
     PolarCollection,
     PolarLocation,
+    PolarMap,
 )
-import promis.geo
-from promis.geo.map import CartesianMap, PolarMap
-from promis.models import GaussianMixture
 
 
 class RasterBand(ABC):
-    """A raster-band of spatially referenced data.
+    """A raster-band of spatially referenced data on a regular grid.
 
     Args:
         resolution: The number of horizontal and vertical pixels
@@ -54,11 +49,10 @@ class RasterBand(ABC):
 
     def __init__(
         self,
-        resolution: tuple[int, int] | ndarray,  # or data
-        origin: PolarLocation,
+        resolution: tuple[int, int],
         width: float,
         height: float,
-    ):
+    ) -> None:
         # Setup raster attributes
         self.resolution = resolution
         self.width = width
@@ -68,8 +62,8 @@ class RasterBand(ABC):
         self.center_x = self.width / 2
         self.center_y = self.height / 2
 
-    def append(self, location: CartesianLocation | PolarLocation, values: list[float]):
-        raise Exception("RasterBand cannot be extended with locations!")
+    def append(self, location: CartesianLocation | PolarLocation, values: list[float]) -> NoReturn:
+        raise NotImplementedError(f"{type(self).__name__} cannot be extended with locations")
 
     @classmethod
     def from_map(
@@ -182,6 +176,41 @@ class RasterBand(ABC):
         )
 
 
+class CartesianRasterBand(RasterBand, CartesianCollection):
+    """A raster-band of Cartesian referenced data.
+
+    Args:
+        origin: The polar coordinates of this raster-band's center
+        resolution: The number of horizontal and vertical pixels
+        width: The width the raster band stretches over in meters
+        height: The height the raster band stretches over in meters
+        number_of_values: How many values are stored per location
+    """
+
+    def __init__(
+        self,
+        origin: PolarLocation,
+        resolution: tuple[int, int],
+        width: float,
+        height: float,
+        number_of_values: int = 1,
+    ) -> None:
+        # Setup RasterBand and Collection underneath
+        RasterBand.__init__(self, resolution, width, height)
+        CartesianCollection.__init__(self, origin, number_of_values)
+
+        # Compute coordinates from spatial dimensions and resolution
+        x_coordinates = linspace(-self.width / 2, self.width / 2, self.resolution[0])
+        y_coordinates = linspace(-self.height / 2, self.height / 2, self.resolution[1])
+        raster_coordinates = vstack(list(map(ravel, meshgrid(x_coordinates, y_coordinates)))).T
+
+        # Put coordinates and default value 0 together into matrix and set DataFrame
+        raster_entries = concatenate(
+            (raster_coordinates, zeros((raster_coordinates.shape[0], number_of_values))), axis=1
+        )
+        self.data = DataFrame(raster_entries, columns=self.data.columns)
+
+
 class PolarRasterBand(RasterBand, PolarCollection):
     """A raster-band of Polar referenced data.
 
@@ -216,7 +245,7 @@ class PolarRasterBand(RasterBand, PolarCollection):
             )
 
         # Initialize raster with zero-values
-        values = zeros((len(locations), self.number_of_values))
+        values = zeros((len(locations), number_of_values))
 
         # Write to collection
         PolarCollection.append(self, locations, values)

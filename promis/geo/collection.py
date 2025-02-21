@@ -166,7 +166,7 @@ class Collection(ABC):
         """
 
         # Would cause circular import if done at module scope
-        from promis.loaders import OsmLoader
+        from promis.loaders import SpatialLoader
 
         # Either render with given axis or default context
         if ax is None:
@@ -174,7 +174,7 @@ class Collection(ABC):
 
         if plot_basemap:
             # Get OpenStreetMap and crop to relevant area
-            south, west, north, east = OsmLoader.compute_polar_bounding_box(
+            south, west, north, east = SpatialLoader.compute_polar_bounding_box(
                 self.origin, self.dimensions()
             )
             map = smopy.Map((south, west, north, east), z=zoom)

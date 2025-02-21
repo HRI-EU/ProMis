@@ -9,7 +9,7 @@
 #
 
 # Standard Library
-from abc import ABC
+from abc import ABC, abstractmethod
 
 # Third Party
 # ProMis
@@ -32,8 +32,8 @@ class SpatialLoader(ABC):
         return PolarMap(self.origin, self.features).to_cartesian()
 
     @abstractmethod
-    def load(self, feature_description: dict):
-        pass
+    def load(self, feature_description: dict[str, str]) -> None:
+        """Populates the loader with spatial data from a source."""
 
     @staticmethod
     def compute_polar_bounding_box(

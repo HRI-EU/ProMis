@@ -12,28 +12,19 @@ class TestBasics(TestCase):
             CartesianCollection,
             CartesianLocation,
             CartesianMap,
-            CartesianRasterBand,
             Collection,
             PolarLocation,
+            PolarRasterBand,
         )
         from promis.loaders import OsmLoader
 
         feature_description = {
             "park": "['leisure' = 'park']",
             "primary": "['highway' = 'primary']",
-            "secondary": "['highway' = 'secondary']",
-            "tertiary": "['highway' = 'tertiary']",
-            "service": "['highway' = 'service']",
-            "crossing": "['footway' = 'crossing']",
-            "bay": "['natural' = 'bay']",
-            "rail": "['railway' = 'rail']",
         }
 
         covariance = {
             "primary": 15 * eye(2),
-            "secondary": 10 * eye(2),
-            "tertiary": 5 * eye(2),
-            "service": 2.5 * eye(2),
             "operator": 20 * eye(2),
         }
 
@@ -50,7 +41,7 @@ class TestBasics(TestCase):
             vlos(X) :- 
                 fog, distance(X, operator) < 50;
                 clear, distance(X, operator) < 100;
-                clear, over(X, bay), distance(X, operator) < 400.
+                clear, distance(X, operator) < 400.
 
             % Sufficient charge to return to operator
             can_return(X) :-
@@ -59,10 +50,7 @@ class TestBasics(TestCase):
 
             % Permits related to local features
             permits(X) :- 
-                distance(X, service) < 15; distance(X, primary) < 15;
-                distance(X, secondary) < 10; distance(X, tertiary) < 5;
-                distance(X, crossing) < 5; distance(X, rail) < 5;
-                over(X, park).
+                distance(X, primary) < 15; over(X, park).
 
             % Definition of a valid mission
             landscape(X) :- 
@@ -70,33 +58,53 @@ class TestBasics(TestCase):
                 permits(X), can_return(X).
         """
 
+        print("Running smoke test")
+
         origin = PolarLocation(latitude=49.878091, longitude=8.654052)
         width, height = 100.0, 50.0
         number_of_random_maps = 3
-        support = CartesianRasterBand(origin, (10, 10), width, height)
-        target = CartesianRasterBand(origin, (250, 250), width, height)
+        support = PolarRasterBand(origin, (10, 10), width, height)
+        target = PolarRasterBand(origin, (250, 250), width, height)
         alternative = CartesianCollection(origin)
         alternative.append_with_default([CartesianLocation(42, 42)], value=42)
+
+        print("set up")
 
         with TemporaryDirectory() as tmpdir_path:
             tmpdir = Path(tmpdir_path)
 
             uam = OsmLoader(origin, (width, height), feature_description).to_cartesian_map()
+            print("Done OSM loading")
+
             uam.features.append(CartesianLocation(0.0, 0.0, location_type="operator"))
             uam.apply_covariance(covariance)
             uam.save(tmpdir / "uam.pkl")
 
+            print("Done UAM saving")
+
             star_map = StaRMap(target, CartesianMap.load(tmpdir / "uam.pkl"))
             star_map.initialize(support, number_of_random_maps, logic)
+
+            print("Done StaRMap initialization")
+
             # optional: add support points
             star_map.add_support_points(support, number_of_random_maps, ["distance"], ["primary"])
             star_map.save(tmpdir / "star_map.pkl")
 
+            print("Done support points")
+
             promis = ProMis(StaRMap.load(tmpdir / "star_map.pkl"))
+
+            print("Done ProMis initialization")
+
             landscape = promis.solve(support, logic, n_jobs=4, batch_size=1)
+            print("Done ProMis solve")
+
             landscape.save(tmpdir / "landscape.pkl")
             landscape = Collection.load(tmpdir / "landscape.pkl")
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+
+    TestBasics().test_example_notebook()

@@ -27,7 +27,7 @@ from shapely import Point
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianRasterBand
+from promis.geo import CartesianCollection, RasterBand
 
 #: Helper to define derived relations within base class
 DerivedRelation = TypeVar("DerivedRelation", bound="Relation")
@@ -195,8 +195,8 @@ class ScalarRelation(Relation):
         stds = self.parameters.data["v1"]
         cdf = norm.cdf(value, loc=means, scale=sqrt(stds))
 
-        if isinstance(self.parameters, CartesianRasterBand):
-            probabilities = CartesianRasterBand(
+        if isinstance(self.parameters, RasterBand):
+            probabilities = RasterBand(
                 self.parameters.origin,
                 self.parameters.resolution,
                 self.parameters.width,

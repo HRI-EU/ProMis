@@ -18,7 +18,7 @@ from promis.geo.helpers import Direction
 from promis.geo.location import CartesianLocation, PolarLocation
 from promis.geo.map import CartesianMap, PolarMap
 from promis.geo.polygon import CartesianPolygon, PolarPolygon
-from promis.geo.raster_band import CartesianRasterBand, PolarRasterBand
+from promis.geo.raster_band import RasterBand, PolarRasterBand
 from promis.geo.route import CartesianRoute, PolarRoute
 
 # Type aliases
@@ -33,7 +33,7 @@ __all__ = [
     "CartesianLocation",
     "CartesianMap",
     "CartesianPolygon",
-    "CartesianRasterBand",
+    "RasterBand",
     "CartesianRoute",
     "Direction",
     "Geospatial",

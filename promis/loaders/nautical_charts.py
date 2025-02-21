@@ -1,17 +1,5 @@
 """Allows to find and read nautical charts. Currently, this only supports IHO S-57 charts.
 
-Examples:
-    This shows how to recursively read all obstacles/relevant chart objects from a given directory:
-
-    >>> from pyrate.common.charts import ChartFileHandler, S57ChartHandler
-    >>> path_to_charts = "stda/data/charts/noaa_vector/data"
-    >>> # Nothing about this is is specific to the `S57ChartHandler`, so cast it to `ChartFileHandler`
-    >>> handler: ChartFileHandler = S57ChartHandler()
-    >>> polygons = [ #doctest: +SKIP
-    ...     handler.read_chart_file(chart_file)
-    ...     for chart_file in handler.find_chart_files(path_to_charts)
-    ... ]
-
 Ideas:
     - Maybe use `Fiona <https://pypi.org/project/Fiona/>`__ as an alternative?
 
@@ -415,7 +403,4 @@ class NauticalChartLoader(SpatialLoader):
                     if not cropped.is_empty:
                         yield from from_shapely(cropped, copy_metadata_from=geometry)
 
-        return CartesianMap(
-            origin=self.origin,
-            features=list(generate()),
-        )
+        return CartesianMap(origin=self.origin, features=list(generate()))

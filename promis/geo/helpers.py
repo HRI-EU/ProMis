@@ -297,18 +297,18 @@ def difference_latitude(value_a: ScalarOrArray, value_b: ScalarOrArray) -> Scala
     finite (i.e. ``NaN``, ``+Inf`` or ``-Inf``) a warning is printed and ``NaN`` is returned.
 
     Examples:
-        >>> difference_latitude(-45.0, +50.0)
+        >>> difference_latitude(-45.0, +50.0).item()
         95.0
-        >>> difference_latitude(-90.0, -90.0)
+        >>> difference_latitude(-90.0, -90.0).item()
         0.0
-        >>> difference_latitude(-90.0, +90.0)  # the maximum distance
+        >>> difference_latitude(-90.0, +90.0).item()  # the maximum distance
         180.0
-        >>> difference_latitude(-90.0, +190.0)
+        >>> difference_latitude(-90.0, +190.0).item()
         80.0
 
         Take care: this will also calculate distances for rubbish values.
 
-        >>> difference_latitude(95324.0, 3224.25)
+        >>> difference_latitude(95324.0, 3224.25).item()
         60.25
 
     Args:
