@@ -11,12 +11,13 @@
 # Standard Library
 import warnings
 from collections import defaultdict
+from collections.abc import Iterable
 from copy import deepcopy
 from itertools import product
 from pickle import dump, load
 from re import finditer
 from time import time
-from typing import Any, TypedDict
+from typing import TypedDict
 
 # Third Party
 from numpy import array, sort, unique, vstack
@@ -82,12 +83,9 @@ class StaRMap:
             logic: The set of constraints deciding which relations are computed
         """
 
-        # Aggregate all relations
-        agg = defaultdict(list)
-        for relation, location_type in self._get_mentioned_relations(logic):
-            agg[relation].append(location_type)
-
-        self.add_support_points(support, number_of_random_maps, agg)
+        self.add_support_points(
+            support, number_of_random_maps, self._get_mentioned_relations(logic)
+        )
 
     def clear_relations(self):
         """Clear out the stored relations data."""
@@ -255,7 +253,7 @@ class StaRMap:
             for relation, location_type in product(relations, location_types)
         ]
 
-    def _get_mentioned_relations(self, logic: str) -> list[tuple[str, str]]:
+    def _get_mentioned_relations(self, logic: str) -> dict[str, set[str | None]]:
         """Get all relations mentioned in a logic program.
 
         Args:
@@ -266,7 +264,7 @@ class StaRMap:
         """
 
         # TODO can it really be None?
-        mentioned_relations: list[tuple[str, str | None]] = []
+        relations: dict[str, set[str | None]] = defaultdict(set)
 
         for name, arity in self.relation_arities.items():
             realtes_to = ",".join([r"\s*((?:'\w*')|(?:\w+))\s*"] * (arity - 1))
@@ -281,18 +279,20 @@ class StaRMap:
                     # TODO really?
                     continue  # Ignore landscape relation since it is not part of the StaRMap
 
+                for_relation = relations[name]
+
                 match arity:
                     case 1:
-                        mentioned_relations.append((name, None))
+                        for_relation.add(None)
                     case 2:
                         location_type = match.group(2)
                         if location_type[0] in "'\"":  # Remove quotes
                             location_type = location_type[1:-1]
-                        mentioned_relations.append((name, location_type))
+                        for_relation.add(location_type)
                     case _:
                         raise Exception(f"Only arity 1 and 2 are supported, but got {arity}")
 
-        return mentioned_relations
+        return relations
 
     def get_from_logic(self, logic: str) -> list[Relation]:
         """Get all relations mentioned in a logic program.
@@ -303,13 +303,12 @@ class StaRMap:
         Returns:
             A list of the Relations mentioned in the program
         """
-        # TODO make in list comprehension
 
-        relations = []
-        for relation_type, location_type in self._get_mentioned_relations(logic):
-            relations.append(self.get(relation_type, location_type))
-
-        return relations
+        return [
+            self.get(relation_type, location_type)
+            for relation_type, location_types in self._get_mentioned_relations(logic).items()
+            for location_type in location_types
+        ]
 
     def _train_gaussian_process(
         self,
@@ -415,7 +414,7 @@ class StaRMap:
         self,
         support: CartesianCollection,
         number_of_random_maps: int,
-        what: dict[str, list[str]] | None = None,
+        what: dict[str, Iterable[str | None]] | None = None,
     ):
         """Compute distributional clauses.
 

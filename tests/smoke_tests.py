@@ -72,8 +72,6 @@ class TestBasics(TestCase):
         alternative = CartesianCollection(origin)
         alternative.append_with_default([CartesianLocation(42, 42)], value=42)
 
-        print("set up")
-
         with TemporaryDirectory() as tmpdir_path:
             tmpdir = Path(tmpdir_path)
 

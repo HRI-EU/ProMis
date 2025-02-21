@@ -11,24 +11,16 @@
 # Standard Library
 from copy import deepcopy
 from multiprocessing import Pool
-from re import finditer
-from functools import cached_property
-from pickle import dump, load
 from typing import Literal
 
 # Third Party
 from numpy import array
-from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 from rich.progress import track
+from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 # ProMis
 from promis.geo import CartesianCollection
 from promis.logic import Solver
-
-from .star_map import StaRMap
-from promis.logic.spatial import Distance, Over, Depth
-from promis.geo import PolarLocation
-from promis.loaders import OsmLoader
 from promis.star_map import StaRMap
 
 
@@ -129,16 +121,19 @@ class ProMis:
 
         # Write results to CartesianCollection and return
         inference_results = deepcopy(target)
-        if method == "linear":
-            inference_results.data["v0"] = LinearNDInterpolator(
-                support.coordinates(), array(flattened_data)
-            )(target.coordinates())
-        elif method == "nearest":
-            inference_results.data["v0"] = NearestNDInterpolator(
-                support.coordinates(), array(flattened_data)
-            )(target.coordinates())
-        else:
-            raise ValueError(f"Unsupported interpolation method {method} chosen for ProMis.solve!")
+        match method:
+            case "linear":
+                inference_results.data["v0"] = LinearNDInterpolator(
+                    support.coordinates(), array(flattened_data)
+                )(target.coordinates())
+            case "nearest":
+                inference_results.data["v0"] = NearestNDInterpolator(
+                    support.coordinates(), array(flattened_data)
+                )(target.coordinates())
+            case _:
+                raise NotImplementedError(
+                    f"Unsupported interpolation method {method} chosen for solving"
+                )
 
         # Restore prior target of StaRMap
         self.star_map.target = target
@@ -148,13 +143,3 @@ class ProMis:
     @staticmethod
     def _run_inference(solver: Solver) -> list[float]:
         return solver.inference()
-
-    # TODO check if still needed
-    # @staticmethod
-    # def load(path) -> "ProMis":
-    #     with open(path, "rb") as file:
-    #         return load(file)
-
-    # def save(self, path):
-    #     with open(path, "wb") as file:
-    #         dump(self, file)
