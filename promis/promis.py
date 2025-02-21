@@ -114,7 +114,7 @@ class ProMis:
         flattened_data = []
         with Pool(n_jobs) as pool:
             batched_results = pool.imap(
-                self.run_inference,
+                ProMis._run_inference,
                 solvers,
                 # chunksize=10 if len(solvers) > 1000 else 1,
             )
@@ -146,7 +146,7 @@ class ProMis:
         return inference_results
 
     @staticmethod
-    def run_inference(solver):
+    def _run_inference(solver: Solver) -> list[float]:
         return solver.inference()
 
     # TODO check if still needed

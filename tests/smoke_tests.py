@@ -1,5 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from textwrap import dedent
 from unittest import TestCase, main
 
 from numpy import eye
@@ -27,7 +28,7 @@ class TestBasics(TestCase):
             "operator": 20 * eye(2),
         }
 
-        logic = """
+        logic = dedent("""
             % UAV properties
             initial_charge ~ normal(90, 5).
             charge_cost ~ normal(-0.1, 0.2).
@@ -37,7 +38,7 @@ class TestBasics(TestCase):
             1/10::fog; 9/10::clear.
 
             % Visual line of sight
-            vlos(X) :- 
+            vlos(X) :-
                 fog, distance(X, operator) < 50;
                 clear, distance(X, operator) < 100;
                 clear, distance(X, operator) < 400.
@@ -48,14 +49,14 @@ class TestBasics(TestCase):
                 D is distance(X, operator), 0 < B + (2 * O * D).
 
             % Permits related to local features
-            permits(X) :- 
+            permits(X) :-
                 distance(X, primary) < 15.
 
             % Definition of a valid mission
-            landscape(X) :- 
-                vlos(X), weight < 25, can_return(X); 
+            landscape(X) :-
+                vlos(X), weight < 25, can_return(X);
                 permits(X), can_return(X).
-        """
+        """)
 
         print("Running smoke test")
 
@@ -100,7 +101,10 @@ class TestBasics(TestCase):
 
             print("Done ProMis initialization")
 
-            landscape = promis.solve(support, logic, n_jobs=4, batch_size=1)
+            # landscape = promis.solve(support, logic, n_jobs=4, batch_size=1)
+            landscape = promis.solve(
+                support, logic, n_jobs=None, batch_size=2, print_first=True, show_progress=True
+            )
             print("Done ProMis solve")
 
             landscape.save(tmpdir / "landscape.pkl")
