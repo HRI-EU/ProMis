@@ -296,6 +296,6 @@ class PolarRasterBand(RasterBand, PolarCollection):
             self.height,
             self.number_of_values,
         )
-        # copy all but the fiurst two columns of the data
+        # copy all but the first two columns of the data
         band.data.iloc[:, 2:] = self.data.iloc[:, 2:]
         return band
