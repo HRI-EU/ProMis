@@ -10,11 +10,10 @@
 
 # Standard Library
 from abc import ABC, abstractmethod
+from typing import Any
 
-# Third Party
 # ProMis
-from promis.geo import CartesianLocation, CartesianMap, PolarLocation, PolarMap
-from promis.geo.polygon import CartesianPolygon
+from promis.geo import CartesianLocation, CartesianMap, CartesianPolygon, PolarLocation, PolarMap
 
 
 class SpatialLoader(ABC):
@@ -29,11 +28,16 @@ class SpatialLoader(ABC):
         return PolarMap(self.origin, self.features)
 
     def to_cartesian_map(self) -> CartesianMap:
-        return PolarMap(self.origin, self.features).to_cartesian()
+        return CartesianMap(self.origin, self.features)
 
     @abstractmethod
-    def load(self, feature_description: dict[str, str]) -> None:
-        """Populates the loader with spatial data from a source."""
+    def load(self, feature_description: dict[str, Any] | None = None) -> None:
+        """Populates :attr:`~SpatialLoader.features` with from a source.
+
+        Args:
+            feature_description: A mapping of location types to loader specific descriptions.
+                Passing None can be valid for loaders with a fixed set of features.
+        """
 
     @staticmethod
     def compute_polar_bounding_box(

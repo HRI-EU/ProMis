@@ -332,7 +332,7 @@ class NauticalChartLoader(SpatialLoader):
         if not chart_root.is_dir():
             raise NotADirectoryError(f"chart_root must be a directory, but got {chart_root}")
 
-    def load_chart_data(self) -> CartesianMap:
+    def load(self, feature_description=None) -> None:
         handler = S57ChartHandler()
 
         # This is in local coordinates realtive to `origin`,
@@ -340,55 +340,6 @@ class NauticalChartLoader(SpatialLoader):
         bounding_box = SpatialLoader.compute_cartesian_bounding_box(
             CartesianLocation(0, 0), self.dimensions
         )
-
-        def from_shapely(
-            shapely_geometry, copy_metadata_from: Geospatial | None = None
-        ) -> Generator[CartesianLocation, None, None]:
-            """Constructs an appropriate geometry from a Shapely geometry object.
-
-            Args:
-                shapely_geometry: The geometry to convert. Supported types are Point, LineString, Polygon, and MultiPolygon.
-                copy_metadata_from: The geometry to copy metadata from, or None to not copy metadata.
-
-            Returns:
-                The constructed geometry.
-            """
-            reference = copy_metadata_from or CartesianLocation(0, 0)  # for defaults
-
-            match shapely_geometry:
-                case Point(x=x, y=y):
-                    yield CartesianLocation(
-                        east=x,
-                        north=y,
-                        name=reference.name,
-                        location_type=reference.location_type,
-                        identifier=reference.identifier,
-                    )
-                case LineString(coords=coords):
-                    yield CartesianRoute.from_numpy(
-                        array(coords),
-                        name=reference.name,
-                        location_type=reference.location_type,
-                        identifier=reference.identifier,
-                    )
-                case MultiLineString(geoms=geoms):
-                    for line in geoms:
-                        yield from from_shapely(line, reference)
-                case Polygon(exterior=exterior, interiors=interiors):
-                    yield CartesianPolygon.from_numpy(
-                        array(exterior.coords).T,
-                        holes=[array(ring.coords).T for ring in interiors],
-                        name=reference.name,
-                        location_type=reference.location_type,
-                        identifier=reference.identifier,
-                    )
-                case MultiPolygon(geoms=geoms):
-                    for polygon in geoms:
-                        yield from from_shapely(polygon, reference)
-                case _:
-                    raise NotImplementedError(
-                        f"Cannot handle geometry type {shapely_geometry.geom_type}"
-                    )
 
         def generate() -> Generator[PolarChartGeometry, None, None]:
             # TODO: This is quite slow and could easily be parallelized
@@ -400,6 +351,54 @@ class NauticalChartLoader(SpatialLoader):
                     cropped = intersection(bounding_box.geometry, geometry.geometry)
 
                     if not cropped.is_empty:
-                        yield from from_shapely(cropped, copy_metadata_from=geometry)
+                        yield from _from_shapely(cropped, copy_metadata_from=geometry)
 
-        return CartesianMap(origin=self.origin, features=list(generate()))
+        self.features = list(generate())
+
+
+def _from_shapely(
+    shapely_geometry, copy_metadata_from: Geospatial | None = None
+) -> Generator[CartesianLocation, None, None]:
+    """Constructs an appropriate geometry from a Shapely geometry object.
+
+    Args:
+        shapely_geometry: The geometry to convert. Supported types are Point, LineString, Polygon, and MultiPolygon.
+        copy_metadata_from: The geometry to copy metadata from, or None to not copy metadata.
+
+    Returns:
+        The constructed geometry.
+    """
+    reference = copy_metadata_from or CartesianLocation(0, 0)  # for defaults
+
+    match shapely_geometry:
+        case Point(x=x, y=y):
+            yield CartesianLocation(
+                east=x,
+                north=y,
+                name=reference.name,
+                location_type=reference.location_type,
+                identifier=reference.identifier,
+            )
+        case LineString(coords=coords):
+            yield CartesianRoute.from_numpy(
+                array(coords),
+                name=reference.name,
+                location_type=reference.location_type,
+                identifier=reference.identifier,
+            )
+        case MultiLineString(geoms=geoms):
+            for line in geoms:
+                yield from from_shapely(line, reference)
+        case Polygon(exterior=exterior, interiors=interiors):
+            yield CartesianPolygon.from_numpy(
+                array(exterior.coords).T,
+                holes=[array(ring.coords).T for ring in interiors],
+                name=reference.name,
+                location_type=reference.location_type,
+                identifier=reference.identifier,
+            )
+        case MultiPolygon(geoms=geoms):
+            for polygon in geoms:
+                yield from from_shapely(polygon, reference)
+        case _:
+            raise NotImplementedError(f"Cannot handle geometry type {shapely_geometry.geom_type}")
