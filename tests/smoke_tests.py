@@ -63,10 +63,6 @@ class TestBasics(TestCase):
         origin = PolarLocation(latitude=49.878091, longitude=8.654052)
         width, height = 100.0, 50.0
         number_of_random_maps = 3
-        # support = CartesianCollection(origin, number_of_random_maps)
-        # support.append_with_default(
-        #     PolarRasterBand(origin, (10, 10), width, height).to_polar_locations(), zeros((0, 0))
-        # )
         support = PolarRasterBand(origin, (10, 10), width, height).to_cartesian()
         target = PolarRasterBand(origin, (250, 250), width, height).to_cartesian()
         alternative = CartesianCollection(origin)
