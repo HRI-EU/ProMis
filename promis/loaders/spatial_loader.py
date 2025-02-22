@@ -69,7 +69,7 @@ class SpatialLoader(ABC):
             dimensions: The width and height of the map in meters
 
         Returns:
-            Southern latitude, western longitude, northern latitude and eastern longitude
+            The box as a polygon
         """
 
         width, height = dimensions
@@ -81,5 +81,6 @@ class SpatialLoader(ABC):
                 CartesianLocation(east=origin.east + width / 2, north=origin.north + height / 2),
                 CartesianLocation(east=origin.east + width / 2, north=origin.north - height / 2),
                 CartesianLocation(east=origin.east - width / 2, north=origin.north - height / 2),
-            ]
+            ],
+            origin=origin,
         )
