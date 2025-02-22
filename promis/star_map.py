@@ -267,28 +267,22 @@ class StaRMap:
         relations: dict[str, set[str | None]] = defaultdict(set)
 
         for name, arity in self.relation_arities.items():
+            # Assume the ternary relation "between(X, anchorage, port)".
+            # Then, this pattern matches ", anchorage, port", i.e., what X relates to.
             realtes_to = ",".join([r"\s*((?:'\w*')|(?:\w+))\s*"] * (arity - 1))
-
-            # Prepend comma to first element if not empty
             if realtes_to:
+                # Prepend comma to first element if not empty
                 realtes_to = "," + realtes_to
 
             for match in finditer(rf"({name})\(X{realtes_to}\)", logic):
-                name = match.group(1)
-                if name == "landscape":
-                    # TODO really?
-                    continue  # Ignore landscape relation since it is not part of the StaRMap
-
-                for_relation = relations[name]
-
                 match arity:
                     case 1:
-                        for_relation.add(None)
+                        relations[name].add(None)
                     case 2:
                         location_type = match.group(2)
                         if location_type[0] in "'\"":  # Remove quotes
                             location_type = location_type[1:-1]
-                        for_relation.add(location_type)
+                        relations[name].add(location_type)
                     case _:
                         raise Exception(f"Only arity 1 and 2 are supported, but got {arity}")
 
