@@ -8,16 +8,13 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
-# Third Party
-from numpy import ndarray
-
 # Geometry
-from shapely import Point, within
 from shapely.strtree import STRtree
 
 # ProMis
-from .relation import Relation
 from promis.geo import CartesianLocation
+
+from .relation import Relation
 
 
 class Over(Relation):

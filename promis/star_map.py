@@ -32,8 +32,7 @@ from promis.geo import CartesianCollection, CartesianLocation, CartesianMap, Ras
 from promis.logic.spatial import Depth, Distance, Over, Relation
 
 
-# TODO make Private?
-class RelationInformation(TypedDict):
+class _RelationInformation(TypedDict):
     collection: CartesianCollection
     approximator: None | object
 
@@ -72,7 +71,7 @@ class StaRMap:
         self.method = method
 
         # Each relation is stored as collection of support points and fitted approximator
-        self.relations: dict[str, dict[str | None, RelationInformation]]
+        self.relations: dict[str, dict[str | None, _RelationInformation]]
         self.clear_relations()
 
     def initialize(self, support: CartesianCollection, number_of_random_maps: int, logic: str):
@@ -91,13 +90,14 @@ class StaRMap:
     def clear_relations(self):
         """Clear out the stored relations data."""
 
+        # Keep in sync with relation_name_to_class()
         self.relations = {
             "over": defaultdict(self._empty_relation),
             "distance": defaultdict(self._empty_relation),
             "depth": defaultdict(self._empty_relation),
         }
 
-    def _empty_relation(self) -> RelationInformation:
+    def _empty_relation(self) -> _RelationInformation:
         return {
             # Two values for storing mean and variance
             "collection": CartesianCollection(self.target.origin, 2),
@@ -106,10 +106,7 @@ class StaRMap:
 
     @staticmethod
     def relation_name_to_class(relation: str) -> Relation:
-        if relation not in ["over", "distance", "depth"]:
-            raise NotImplementedError(f'Requested unknown relation "{relation}" from StaR Map')
-
-        # TODO: make more elegant/extensible
+        # Keep in sync with clear_relations()
         match relation:
             case "over":
                 return Over
@@ -117,6 +114,8 @@ class StaRMap:
                 return Distance
             case "depth":
                 return Depth
+            case _:
+                raise NotImplementedError(f'Requested unknown relation "{relation}" from StaR Map')
 
     @property
     def relation_types(self) -> set[str]:
@@ -446,7 +445,7 @@ class StaRMap:
             r_trees = [instance.to_rtree() for instance in random_maps]
             locations = support.to_cartesian_locations()
 
-            # TODO: This could be parallelized, as each relation and location type is independent
+            # This could be parallelized, as each relation and location type is independent
             # from all others.
             for relation, types in what.items():
                 if relation not in what or location_type not in types:

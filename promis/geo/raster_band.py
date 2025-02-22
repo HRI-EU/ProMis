@@ -93,7 +93,8 @@ class RasterBand(ABC):
         all_features = [
             feature
             for feature in map.features
-            # TODO: Only considers polygons right now
+            # TODO: Only considers polygons right now since they are the only ones that implement
+            # the plot method.
             if feature.location_type in location_types and isinstance(feature, CartesianPolygon)
         ]
 

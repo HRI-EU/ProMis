@@ -8,17 +8,12 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
-# Third Party
-from numpy import clip, sqrt, ndarray
-from scipy.stats import norm
-from shapely.strtree import STRtree
-
 # Geometry
-from shapely import Point, distance
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianLocation, RasterBand
+from promis.geo import CartesianCollection, CartesianLocation
+
 from .relation import ScalarRelation
 
 

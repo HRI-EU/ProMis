@@ -15,7 +15,7 @@ from matplotlib.colors import CenteredNorm
 
 # Third Party
 from numpy import array, full_like, ndarray
-from shapely import Point, STRtree
+from shapely import STRtree
 
 # ProMis
 from promis.geo import CartesianGeometry, CartesianMap, CartesianPolygon, CartesianRoute
@@ -40,8 +40,8 @@ class Depth(ScalarRelation):
         super().__init__(parameters, location_type=None, problog_name="depth")
 
     @staticmethod
-    def compute_relation(locations: ndarray[Point], r_tree: STRtree) -> float:
-        # TODO what?
+    def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
+        # If would be cumbersome to implement this for a single location
         raise NotImplementedError("Please use the compute_relations method instead.")
 
     @staticmethod
@@ -54,7 +54,7 @@ class Depth(ScalarRelation):
         data_map: CartesianMap,
         support: CartesianCollection,
         uniform_variance: float = DEFAULT_UNIFORM_VARIANCE,
-    ) -> array:
+    ) -> ndarray:
         """Compute the depth values for the requested support locations.
 
         Args:
@@ -108,6 +108,7 @@ def feature_to_depth(feature: CartesianGeometry, land_height: float = DEFAULT_LA
         NotImplementedError: If the feature is not a :class:`CartesianPolygon` or if
             the location type is neither `'water'` nor `'land'`.
     """
+
     match feature:
         case CartesianLocation() | CartesianRoute() | CartesianPolygon():
             match feature.location_type:
@@ -116,7 +117,7 @@ def feature_to_depth(feature: CartesianGeometry, land_height: float = DEFAULT_LA
                     # We parse the depth from the name of the feature:
                     return -float(feature.name.split("Depth=")[1].split("m")[0])
                 case "land":
-                    # We could use LNDELV for hight contours, but we don't really care about that now
+                    # We could use LNDELV for hight contours, but this is not implemented yet
                     return land_height
                 case _:
                     raise NotImplementedError(

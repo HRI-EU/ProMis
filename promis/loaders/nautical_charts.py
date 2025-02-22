@@ -238,11 +238,10 @@ class S57ChartHandler:
         Returns:
             (1) A location or polygon that represents an obstacle
             (2) A (not necessarily unique) feature ID (32 bit) for that obstacle; but unique per chart file
-
-        TODO: the feature ID is not unique across even in one chart file since we support multi-part geometries
         """
 
         # This ID is guaranteed to be unique within the chart file and composed of AGEN, FIDN, and FIDS
+        # It is not nessesarily unique even within one chart file since we support multi-part geometries.
         feature_id: str = feature["LNAM"]
         assert feature_id is not None, "the LNAM field is mandatory for all objects"
 

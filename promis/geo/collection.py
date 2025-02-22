@@ -242,8 +242,8 @@ class CartesianCollection(Collection):
         """
 
         # Create interpolator
-        # TODO We'd ideally like to interpolate linearly within the
-        # support points, but with "nearest" outside of them.
+        # TODO We'd ideally like to interpolate linearly within the support points,
+        # but with "nearest" outside of them.
         match method:
             case "linear":
                 return LinearNDInterpolator(self.coordinates(), self.values())

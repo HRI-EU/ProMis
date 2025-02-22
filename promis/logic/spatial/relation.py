@@ -15,19 +15,12 @@ from pickle import dump, load
 from typing import TypeVar
 
 # Third Party
-from numpy import array, mean, var, vstack
-from shapely.strtree import STRtree
-
-# ProMis
-from promis.geo import CartesianCollection, CartesianLocation
 from numpy import array, clip, mean, sqrt, var, vstack
-from numpy import array, clip, mean, ndarray, sqrt, var, vstack
 from scipy.stats import norm
-from shapely import Point
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, RasterBand
+from promis.geo import CartesianCollection, CartesianLocation, CartesianRasterBand
 
 #: Helper to define derived relations within base class
 DerivedRelation = TypeVar("DerivedRelation", bound="Relation")
@@ -187,7 +180,6 @@ class ScalarRelation(Relation):
 
         self.problog_name = problog_name
 
-        # TODO: Find better treatment of zero variance
         self.parameters.data["v1"] = clip(self.parameters.data["v1"], enforced_min_variance, None)
 
     def __lt__(self, value: float) -> CartesianCollection:
@@ -195,14 +187,15 @@ class ScalarRelation(Relation):
         stds = self.parameters.data["v1"]
         cdf = norm.cdf(value, loc=means, scale=sqrt(stds))
 
-        if isinstance(self.parameters, RasterBand):
-            probabilities = RasterBand(
+        if isinstance(self.parameters, CartesianRasterBand):
+            # Maintain the efficient raster representation
+            probabilities = CartesianRasterBand(
                 self.parameters.origin,
                 self.parameters.resolution,
                 self.parameters.width,
                 self.parameters.height,
+                number_of_values=1,
             )
-
             probabilities.data["v0"] = cdf
         else:
             probabilities = CartesianCollection(self.parameters.origin)
