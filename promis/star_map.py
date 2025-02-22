@@ -48,7 +48,8 @@ class StaRMap:
     When solving a ProMis problem, the solution is computed at the target points.
 
     Note:
-        For efficiency reasons, support points can only be given as a regular grid.
+        Adding support points as CartesianRasterBands can be more efficient than adding an arbitraty
+        CartesianCollection.
 
     Args:
         target: The collection of points to output for each relation
@@ -75,7 +76,7 @@ class StaRMap:
         self.clear_relations()
 
     def initialize(self, support: CartesianCollection, number_of_random_maps: int, logic: str):
-        """Setup the StaRMap for a given set of support points, number of samples and set of constraints.
+        """Setup the StaRMap for a given set of support points, number of samples and logic.
 
         Args:
             support: The support points to be computed
@@ -341,10 +342,24 @@ class StaRMap:
         number_of_improvement_points: int,
         relations: list[str],
         location_types: list[str],
-    ):
-        assert isinstance(self.target, RasterBand), (
-            "StaRMap auto_improve() currently only works with RasterBand targets!"
-        )
+    ) -> None:
+        """Automatically add support points at locations where the uncertainty is high.
+
+        Warning:
+            Currently only works with RasterBand targets!
+
+        Args:
+            number_of_random_maps: How often to sample from map data in order to
+                compute statistics of spatial relations
+            number_of_improvement_points: How many points to add to improve the map
+            relations: The spatial relations to compute
+            location_types: The location types to compute
+        """
+
+        if not isinstance(self.target, RasterBand):
+            raise NotImplementedError(
+                "StaRMap auto_improve() currently only works with RasterBand targets"
+            )
 
         for relation, location_type in product(relations, location_types):
             gaussian_process, scaler = self.relations[relation][location_type]["approximator"]
@@ -431,6 +446,8 @@ class StaRMap:
             r_trees = [instance.to_rtree() for instance in random_maps]
             locations = support.to_cartesian_locations()
 
+            # TODO: This could be parallelized, as each relation and location type is independent
+            # from all others.
             for relation, types in what.items():
                 if relation not in what or location_type not in types:
                     continue
@@ -443,7 +460,6 @@ class StaRMap:
                         support.coordinates(),
                         self.relation_name_to_class(relation).empty_map_parameters(),
                     )
-
                     continue
 
                 try:
@@ -469,45 +485,7 @@ class StaRMap:
                         self.relation_name_to_class(relation).empty_map_parameters(),
                     )
 
-        # TODO: see if this is still required
-        # # TODO: This could be parallelized, as each relation is independent from the others.
-
-        # Version NEWER ...
-        # # TODO: this is a bit of a hack and should be done more elegantly
-        # self._support_resolution = support.resolution
-        # support_coordinates = support.coordinates()
-        # support_points = array([location.geometry for location in support.to_cartesian_locations()])
-
-        # if relations is None:
-        #     relations = self.relations.keys()
-
-        # if location_types is None:
-        #     location_types = self.location_types
-
-        # @cache
-        # def sampled_rtrees_for(location_type: str | None) -> list[STRtree]:
-        #     filtered_map: CartesianMap = self.uam.filter(location_type)
-        #     return [
-        #         random_map.to_rtree() for random_map in filtered_map.sample(number_of_random_maps)
-        #     ]
-        # ... Version NEWER END
-
-        # support_coordinates = support.coordinates()
-        # support_points = array([location.geometry for location in support.to_cartesian_locations()])
-
-        # if relations is None:
-        #     relations = self.relations.keys()
-
-        # if location_types is None:
-        #     location_types = self.location_types
-
-        # @cache
-        # def sampled_rtrees_for(location_type: str | None) -> list[STRtree]:
-        #     filtered_map: CartesianMap = self.uam.filter(location_type)
-        #     return [
-        #         random_map.to_rtree() for random_map in filtered_map.sample(number_of_random_maps)
-        #     ]
-
+        # TODO: decide if this is necessary
         # for relation, location_type in product(relations, location_types):
         #     # Get all relevant features from map
         #     if location_type is None:
