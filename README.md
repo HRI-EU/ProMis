@@ -136,6 +136,4 @@ To view the documentation, open the file `ProMis/doc/build/html/index.html` usin
 
 ## Quality Assurance
 
-This projects is setup to be checked against `black` and `ruff`.
-For ease of use, they can both be called by running `check.sh` in the ProMis root directory.
-For tests with `pytest`, we employ `Hypothesis` to enhance coverage.
+This projects is setup to be checked with `ruff` and `pytest`.
