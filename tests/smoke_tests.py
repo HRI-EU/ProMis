@@ -108,6 +108,4 @@ class TestBasics(TestCase):
 
 
 if __name__ == "__main__":
-    # main()
-
-    TestBasics().test_example_notebook()
+    main()

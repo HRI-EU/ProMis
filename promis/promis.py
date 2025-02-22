@@ -16,7 +16,6 @@ from typing import Literal
 # Third Party
 from numpy import array
 from rich.progress import track
-from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 # ProMis
 from promis.geo import CartesianCollection
@@ -119,26 +118,20 @@ class ProMis:
             ):
                 flattened_data.extend(batch)
 
-        # Write results to CartesianCollection and return
-        inference_results = deepcopy(target)
-        match method:
-            case "linear":
-                inference_results.data["v0"] = LinearNDInterpolator(
-                    support.coordinates(), array(flattened_data)
-                )(target.coordinates())
-            case "nearest":
-                inference_results.data["v0"] = NearestNDInterpolator(
-                    support.coordinates(), array(flattened_data)
-                )(target.coordinates())
-            case _:
-                raise NotImplementedError(
-                    f"Unsupported interpolation method {method} chosen for solving"
-                )
+        # Write results to the CartesianCollection where the tata is known
+        inference_results = deepcopy(support)
+        inference_results.data["v0"] = array(flattened_data)
+
+        # Interpolate the results to the target of the StaRMap
+        target_results = deepcopy(target)
+        target_results.data["v0"] = inference_results.get_interpolator(method)(
+            target_results.coordinates()
+        )
 
         # Restore prior target of StaRMap
         self.star_map.target = target
 
-        return inference_results
+        return target_results
 
     @staticmethod
     def _run_inference(solver: Solver) -> list[float]:

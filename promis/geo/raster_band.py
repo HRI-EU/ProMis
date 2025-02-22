@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 
 # Third Party
-from numpy import array, concatenate, float32, linspace, meshgrid, ravel, vstack, zeros
+from numpy import array, concatenate, float32, linspace, meshgrid, ndarray, ravel, vstack, zeros
 from pandas import DataFrame
 from scipy.interpolate import RegularGridInterpolator
 from sklearn.preprocessing import MinMaxScaler
@@ -173,15 +173,23 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
         CartesianCollection.__init__(self, origin, number_of_values)
 
         # Compute coordinates from spatial dimensions and resolution
-        x_coordinates = linspace(-self.width / 2, self.width / 2, self.resolution[0])
-        y_coordinates = linspace(-self.height / 2, self.height / 2, self.resolution[1])
-        raster_coordinates = vstack(list(map(ravel, meshgrid(x_coordinates, y_coordinates)))).T
+        raster_coordinates = vstack(
+            list(map(ravel, meshgrid(self._x_coordinates, self._y_coordinates)))
+        ).T
 
         # Put coordinates and default value 0 together into matrix and set DataFrame
         raster_entries = concatenate(
             (raster_coordinates, zeros((raster_coordinates.shape[0], number_of_values))), axis=1
         )
         self.data = DataFrame(raster_entries, columns=self.data.columns)
+
+    @property
+    def _x_coordinates(self) -> ndarray:
+        return linspace(-self.width / 2, self.width / 2, self.resolution[0])
+
+    @property
+    def _y_coordinates(self) -> ndarray:
+        return linspace(-self.height / 2, self.height / 2, self.resolution[1])
 
     # This overrides the more general CartesianCollection.to_polar() to maintain the RasterBand type
     def to_polar(self) -> "PolarRasterBand":
@@ -196,7 +204,7 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
         band.data.iloc[:, 2:] = self.data.iloc[:, 2:]
         return band
 
-    # A more efficient implementation than the default one
+    # A more efficient implementation than the generic one of CartesianCollection
     def get_interpolator(self, method: str = "linear") -> RegularGridInterpolator:
         """Get an interpolator for the raster band.
 
@@ -207,20 +215,11 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
             A callable interpolator function
         """
 
-        # Get coordinates
-        all_coordinates = self.coordinates().reshape(*self.resolution, 2)
-        x = all_coordinates[:, 0, 0]
-        y = all_coordinates[0, :, 1]
-
-        # Get values
-        values = self.values().reshape(*self.resolution, self.dimensions)
-
-        # Create interpolator
         # TODO We'd ideally like to interpolate linearly within the
         # support points, but with "nearest" outside of them.
         return RegularGridInterpolator(
-            (x, y),
-            values,
+            points=(self._x_coordinates, self._y_coordinates),
+            values=self.values().reshape(*self.resolution, self.number_of_values),
             method=method,
             bounds_error=False,
             fill_value=None,
