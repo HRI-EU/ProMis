@@ -183,7 +183,7 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
         )
         self.data = DataFrame(raster_entries, columns=self.data.columns)
 
-    # Provide a spcific implementation to maintain the RasterBand type
+    # This overrides the more general CartesianCollection.to_polar() to maintain the RasterBand type
     def to_polar(self) -> "PolarRasterBand":
         band = PolarRasterBand(
             self.origin,
@@ -287,7 +287,7 @@ class PolarRasterBand(RasterBand, PolarCollection):
 
         return image
 
-    # Provide a spcific implementation to maintain the RasterBand type
+    # This overrides the more general PolarCollection.to_cartesian() to maintain the RasterBand type
     def to_cartesian(self) -> "CartesianRasterBand":
         band = CartesianRasterBand(
             self.origin,
