@@ -444,3 +444,33 @@ class CartesianPolygon(Polygon):
     def __str__(self) -> str:
         # This is required to override shapely.geometry.Polygon.__str__()
         return self.__repr__()
+
+    @classmethod
+    def make_centered_box(
+        cls,
+        width: float,
+        height: float,
+        offset: CartesianLocation = CartesianLocation(0, 0),
+        **kwargs,
+    ) -> "CartesianPolygon":
+        """Generates a box centered around a given offset.
+
+        Args:
+            width: The width of the map in meters
+            height: The height of the map in meters
+            kwargs: Additional keyword arguments to pass to the polygon, such as an origin
+
+        Returns:
+            The box as a polygon
+        """
+
+        return cls(
+            [
+                # clockwise: top-left, ...
+                CartesianLocation(east=offset.east - width / 2, north=offset.north + height / 2),
+                CartesianLocation(east=offset.east + width / 2, north=offset.north + height / 2),
+                CartesianLocation(east=offset.east + width / 2, north=offset.north - height / 2),
+                CartesianLocation(east=offset.east - width / 2, north=offset.north - height / 2),
+            ],
+            **kwargs,
+        )

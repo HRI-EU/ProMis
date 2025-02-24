@@ -335,11 +335,9 @@ class NauticalChartLoader(SpatialLoader):
     def load(self, feature_description=None) -> None:
         handler = S57ChartHandler()
 
-        # This is in local coordinates realtive to `origin`,
-        # so we can just use a simple bounding box
-        bounding_box = SpatialLoader.compute_cartesian_bounding_box(
-            CartesianLocation(0, 0), self.dimensions
-        )
+        # Everything is in local coordinates, so we can just use a simple bounding box
+        width, height = self.dimensions
+        bounding_box = CartesianPolygon.make_centered_box(width, height, origin=self.origin)
 
         def generate() -> Generator[PolarChartGeometry, None, None]:
             # TODO: This is quite slow and could easily be parallelized

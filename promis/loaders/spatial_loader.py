@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 # ProMis
-from promis.geo import CartesianLocation, CartesianMap, CartesianPolygon, PolarLocation, PolarMap
+from promis.geo import CartesianLocation, CartesianMap, PolarLocation, PolarMap
 
 
 class SpatialLoader(ABC):
@@ -61,30 +61,3 @@ class SpatialLoader(ABC):
         south_west = CartesianLocation(-width / 2.0, -height / 2.0).to_polar(origin)
 
         return south_west.latitude, south_west.longitude, north_east.latitude, north_east.longitude
-
-    @staticmethod
-    def compute_cartesian_bounding_box(
-        origin: CartesianLocation, dimensions: tuple[float, float]
-    ) -> CartesianPolygon:
-        """Computes the north, east, south and west limits of the area to be loaded.
-
-        Args:
-            origin: A point that defines the center of the map
-            dimensions: The width and height of the map in meters
-
-        Returns:
-            The box as a polygon
-        """
-
-        width, height = dimensions
-
-        return CartesianPolygon(
-            [
-                # clockwise: top-left, ...
-                CartesianLocation(east=origin.east - width / 2, north=origin.north + height / 2),
-                CartesianLocation(east=origin.east + width / 2, north=origin.north + height / 2),
-                CartesianLocation(east=origin.east + width / 2, north=origin.north - height / 2),
-                CartesianLocation(east=origin.east - width / 2, north=origin.north - height / 2),
-            ],
-            origin=origin,
-        )
