@@ -263,8 +263,7 @@ class StaRMap:
             A list of the (relation_type, location_type) pairs mentioned in the program
         """
 
-        # TODO can it really be None?
-        relations: dict[str, set[str | None]] = defaultdict(set)
+        relations: dict[str, set[str]] = defaultdict(set)
 
         for name, arity in self.relation_arities.items():
             # Assume the ternary relation "between(X, anchorage, port)".
@@ -277,14 +276,16 @@ class StaRMap:
             for match in finditer(rf"({name})\(X{realtes_to}\)", logic):
                 match arity:
                     case 1:
-                        relations[name].add(None)
+                        raise Exception(
+                            "Arity 1 is not supported because it always needs a location type"
+                        )
                     case 2:
                         location_type = match.group(2)
                         if location_type[0] in "'\"":  # Remove quotes
                             location_type = location_type[1:-1]
                         relations[name].add(location_type)
                     case _:
-                        raise Exception(f"Only arity 1 and 2 are supported, but got {arity}")
+                        raise Exception(f"Only arity 2 is supported, but got {arity}")
 
         return relations
 
