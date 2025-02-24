@@ -39,7 +39,7 @@ class ProMis:
         self,
         support: CartesianCollection,
         logic: str,
-        n_jobs: int = None,
+        n_jobs: int | None = None,
         batch_size: int = 1,
         method: Literal["linear", "nearest"] = "linear",
         show_progress: bool = False,

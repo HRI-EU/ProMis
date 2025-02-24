@@ -194,6 +194,7 @@ class CartesianCollection(Collection):
     def _columns(number_of_values: int) -> list[str]:
         return ["east", "north"] + [f"v{i}" for i in range(number_of_values)]
 
+    @property
     def dimensions(self) -> tuple[float, float]:
         """Get the dimensions of this Collection in meters.
 
@@ -261,6 +262,7 @@ class PolarCollection(Collection):
     def _columns(number_of_values: int) -> list[str]:
         return ["longitude", "latitude"] + [f"v{i}" for i in range(number_of_values)]
 
+    @property
     def dimensions(self) -> tuple[float, float]:
         """Get the dimensions of this Collection in meters.
 
@@ -268,7 +270,7 @@ class PolarCollection(Collection):
             The dimensions of this Collection in meters
         """
 
-        return self.to_cartesian().dimensions()
+        return self.to_cartesian().dimensions
 
     def to_polar_locations(self) -> list[PolarLocation]:
         coordinates = self.coordinates()

@@ -22,7 +22,9 @@ import os
 import os.path
 import sys
 from collections.abc import Generator, Mapping
+from functools import partial
 from hashlib import sha1
+from multiprocessing import Pool
 from pathlib import Path
 from warnings import catch_warnings, simplefilter, warn
 
@@ -33,11 +35,12 @@ from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, P
 
 # ProMis
 from promis.geo import (
+    CartesianGeometry,
     CartesianLocation,
-    CartesianMap,
     CartesianPolygon,
     CartesianRoute,
     Geospatial,
+    PolarGeometry,
     PolarLocation,
     PolarPolygon,
     PolarRoute,
@@ -62,10 +65,6 @@ except ImportError as _error:  # pragma: no cover
 else:
     _OSGEO_PRESENT = True
     ogr.UseExceptions()
-
-
-#: Currently there are only locations and polygons, see :meth:`S57ChartHandler._create_obstacle`
-PolarChartGeometry = PolarLocation | PolarPolygon
 
 
 class S57ChartHandler:
@@ -146,13 +145,11 @@ class S57ChartHandler:
                     yield Path(root) / file
                 # else: ignore the file
 
-    def read_chart_file(
-        self, path: str | os.PathLike[str]
-    ) -> Generator[PolarChartGeometry, None, None]:
+    def read_chart_file(self, path: str | os.PathLike[str]) -> Generator[PolarGeometry, None, None]:
         """Reads a chart file and converts the relevant layers/features into ChartObstacles.
 
         Args:
-            path: The path to the S-57 chart file (e.g. ``something.000``)
+            path: The path to the S-57 chart file (e.g., ``something.000``)
 
         Returns:
             All relevant obstacles with globally unique and deterministic names
@@ -194,8 +191,8 @@ class S57ChartHandler:
     @staticmethod
     def _convert_layer_to_obstacles(
         layer: ogr.Layer,
-    ) -> Generator[tuple[PolarChartGeometry, str], None, None]:
-        """Converts the relevant obstacles of a layer into :attr:`s57_files.PolarChartGeometry`.
+    ) -> Generator[tuple[PolarGeometry, str], None, None]:
+        """Converts the relevant obstacles of a layer into polar gemewtries.
 
         Args:
             layer: The layer to search in
@@ -227,7 +224,7 @@ class S57ChartHandler:
         feature: ogr.Feature,
         human_readable_type: str,
         location_type: str,
-    ) -> Generator[tuple[PolarChartGeometry, str], None, None]:
+    ) -> Generator[tuple[PolarGeometry, str], None, None]:
         """Creates a point or area obstacle from a given feature.
 
         Args:
@@ -332,31 +329,42 @@ class NauticalChartLoader(SpatialLoader):
         if not chart_root.is_dir():
             raise NotADirectoryError(f"chart_root must be a directory, but got {chart_root}")
 
-    def load(self, feature_description=None) -> None:
+    def load(self, feature_description=None, n_jobs: int | None = None) -> None:
         handler = S57ChartHandler()
 
         # Everything is in local coordinates, so we can just use a simple bounding box
         width, height = self.dimensions
         bounding_box = CartesianPolygon.make_centered_box(width, height, origin=self.origin)
 
-        def generate() -> Generator[PolarChartGeometry, None, None]:
-            # TODO: This is quite slow and could easily be parallelized
-            for file in handler.find_chart_files(self.chart_root):
-                for geo_object in handler.read_chart_file(file):
-                    geometry = geo_object.to_cartesian(origin=self.origin)
+        with Pool(n_jobs) as pool:
+            for sublist in pool.imap_unordered(
+                partial(
+                    process_file, handler=handler, origin=self.origin, bounding_box=bounding_box
+                ),
+                handler.find_chart_files(self.chart_root),
+            ):
+                self.features.extend(sublist)
 
-                    # Make sure to only return the objects that are within the relevant bounding box
-                    cropped = intersection(bounding_box.geometry, geometry.geometry)
 
-                    if not cropped.is_empty:
-                        yield from _from_shapely(cropped, copy_metadata_from=geometry)
+def process_file(
+    file: Path, handler: S57ChartHandler, origin: PolarLocation, bounding_box: CartesianPolygon
+) -> list[CartesianGeometry]:
+    results = []
+    for geo_object in handler.read_chart_file(file):
+        geometry = geo_object.to_cartesian(origin=origin)
 
-        self.features = list(generate())
+        # Make sure to only return the objects that are within the relevant bounding box
+        cropped = intersection(bounding_box.geometry, geometry.geometry)
+
+        if not cropped.is_empty:
+            results.extend(_from_shapely(cropped, copy_metadata_from=geometry))
+
+    return results
 
 
 def _from_shapely(
     shapely_geometry, copy_metadata_from: Geospatial | None = None
-) -> Generator[CartesianLocation, None, None]:
+) -> Generator[PolarGeometry, None, None]:
     """Constructs an appropriate geometry from a Shapely geometry object.
 
     Args:
@@ -386,7 +394,7 @@ def _from_shapely(
             )
         case MultiLineString(geoms=geoms):
             for line in geoms:
-                yield from from_shapely(line, reference)
+                yield from _from_shapely(line, reference)
         case Polygon(exterior=exterior, interiors=interiors):
             yield CartesianPolygon.from_numpy(
                 array(exterior.coords).T,
@@ -397,6 +405,6 @@ def _from_shapely(
             )
         case MultiPolygon(geoms=geoms):
             for polygon in geoms:
-                yield from from_shapely(polygon, reference)
+                yield from _from_shapely(polygon, reference)
         case _:
             raise NotImplementedError(f"Cannot handle geometry type {shapely_geometry.geom_type}")
