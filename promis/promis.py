@@ -40,7 +40,7 @@ class ProMis:
         support: CartesianCollection,
         logic: str,
         n_jobs: int | None = None,
-        batch_size: int = 1,
+        batch_size: int = 10,
         method: Literal["linear", "nearest"] = "linear",
         show_progress: bool = False,
         print_first: bool = False,
@@ -107,7 +107,7 @@ class ProMis:
             batched_results = pool.imap(
                 ProMis._run_inference,
                 solvers,
-                # chunksize=10 if len(solvers) > 1000 else 1,
+                chunksize=10 if len(solvers) > 1000 else 1,
             )
 
             for batch in track(

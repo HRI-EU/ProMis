@@ -20,7 +20,7 @@ from scipy.stats import norm
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianLocation, CartesianRasterBand
+from promis.geo import CartesianCollection, CartesianLocation, CartesianMap, CartesianRasterBand
 
 #: Helper to define derived relations within base class
 DerivedRelation = TypeVar("DerivedRelation", bound="Relation")
@@ -100,12 +100,15 @@ class Relation(ABC):
 
     @staticmethod
     @abstractmethod
-    def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
+    def compute_relation(
+        location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
+    ) -> float:
         """Compute the value of this Relation type for a specific location and map.
 
         Args:
             location: The location to evaluate in Cartesian coordinates
             r_tree: The map represented as r-tree
+            original_geometries: The geometries indexed by the STRtree
 
         Returns:
             The value of this Relation for the given location and map
@@ -117,24 +120,37 @@ class Relation(ABC):
         """Return the arity of the relation."""
 
     @classmethod
-    def compute_parameters(cls, location: CartesianLocation, r_trees: list[STRtree]) -> array:
+    def compute_parameters(
+        cls,
+        location: CartesianLocation,
+        r_trees: list[STRtree],
+        original_geometries: list[CartesianMap],
+    ) -> array:
         """Compute the parameters of this Relation type for a specific location and set of maps.
 
         Args:
             location: The location to evaluate in Cartesian coordinates
             r_trees: The set of generated maps represented as r-tree
+            original_geometries: The geometries indexed by the STRtrees
 
         Returns:
             The parameters of this Relation for the given location and maps
         """
 
-        relation_data = [cls.compute_relation(location, r_tree) for r_tree in r_trees]
+        relation_data = [
+            cls.compute_relation(location, r_tree, geometries)
+            for r_tree, geometries in zip(r_trees, original_geometries)
+        ]
 
         return array([mean(relation_data, axis=0), var(relation_data, axis=0)]).T
 
     @classmethod
     def from_r_trees(
-        cls, support: CartesianCollection, r_trees: list[STRtree], location_type: str
+        cls,
+        support: CartesianCollection,
+        r_trees: list[STRtree],
+        location_type: str,
+        original_geometries: list[CartesianMap],
     ) -> DerivedRelation:
         """Compute relation for a Cartesian collection of points and a set of R-trees.
 
@@ -142,19 +158,28 @@ class Relation(ABC):
             support: The collection of Cartesian points to compute Over for
             r_trees: Random variations of the features of a map indexible by an STRtree each
             location_type: The type of features this relates to
+            original_geometries: The geometries indexed by the STRtrees
 
         Returns:
             The computed relation
         """
 
+        # TODO if `support` is a RasterBand, we could make parameters a RasterBand as well
+        # to maintain the efficient raster representation
+
         # Compute Over over support points
         locations = support.to_cartesian_locations()
         statistical_moments = vstack(
-            [cls.compute_parameters(location, r_trees) for location in locations]
+            [
+                cls.compute_parameters(location, r_trees, original_geometries)
+                for location in locations
+            ]
         )
 
         # Setup parameter collection and return relation
-        parameters = CartesianCollection(support.origin, dimensions=2)
+        parameters = CartesianCollection(
+            support.origin, number_of_values=statistical_moments.shape[1]
+        )
         parameters.append(locations, statistical_moments)
 
         return cls(parameters, location_type)
@@ -167,6 +192,7 @@ class ScalarRelation(Relation):
         parameters: A collection of points with each having values as [mean, variance]
         location_type: The name of the locations this distance relates to
         problog_name: The name of the relation in Problog
+        enforced_min_variance: The minimum variance enforced for the distribution by clipping
     """
 
     def __init__(

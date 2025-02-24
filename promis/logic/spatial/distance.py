@@ -12,7 +12,7 @@
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianLocation
+from promis.geo import CartesianCollection, CartesianLocation, CartesianMap
 
 from .relation import ScalarRelation
 
@@ -29,7 +29,9 @@ class Distance(ScalarRelation):
         super().__init__(parameters, location_type, problog_name="distance")
 
     @staticmethod
-    def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
+    def compute_relation(
+        location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
+    ) -> float:
         return location.geometry.distance(r_tree.geometries.take(r_tree.nearest(location.geometry)))
 
     @staticmethod

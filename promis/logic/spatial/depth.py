@@ -14,11 +14,10 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import CenteredNorm
 
 # Third Party
-from numpy import array, full_like, ndarray
 from shapely import STRtree
 
 # ProMis
-from promis.geo import CartesianGeometry, CartesianMap
+from promis.geo import CartesianGeometry, CartesianMap, CartesianRasterBand
 from promis.geo.collection import CartesianCollection
 from promis.geo.location import CartesianLocation
 from promis.logic.spatial.relation import ScalarRelation
@@ -42,51 +41,57 @@ class Depth(ScalarRelation):
             warn(f"Depth relation is usually only used for water locations, not {location_type}")
 
     @staticmethod
-    def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
-        # If would be cumbersome to implement this for a single location
-        raise NotImplementedError("Please use the compute_relations method instead.")
+    def compute_relation(
+        location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
+    ) -> float:
+        nearest_geometry_idx = r_tree.nearest(location.geometry)
+        nearest_geometry = original_geometries.features[nearest_geometry_idx]
+        return feature_to_depth(nearest_geometry)
 
     @staticmethod
     def empty_map_parameters() -> list[float]:
         # By default, let's assume a uniform distribution of depth values at sea level
         return [0, DEFAULT_UNIFORM_VARIANCE]
 
-    @classmethod
-    def compute_parameters(
-        cls,
-        data_map: CartesianMap,
-        support: CartesianCollection,
-        uniform_variance: float = DEFAULT_UNIFORM_VARIANCE,
-    ) -> ndarray:
-        """Compute the depth values for the requested support locations.
-
-        Args:
-            data_map: The map containing the depth information.
-            support: The Collection of points for which the depth will be computed
-            uniform_variance: The variance of the depth values for all points
-        """
-
-        depth_values = list(map(feature_to_depth, data_map.features))
-        r_tree = data_map.to_rtree()
-
-        # Indices of the nearest features (this will raise an error if no features are found)
-        all_nearest = r_tree.nearest(
-            [location.geometry for location in support.to_cartesian_locations()]
-        )
-
-        mean = depth_values[all_nearest]
-        variance = full_like(mean, uniform_variance)
-        return array([mean, variance])
-
     @staticmethod
     def arity() -> int:
         return 2
 
-    def plot(self, resolution: tuple[int, int], value_index: int = 0, axis=None, **kwargs) -> None:
+    # @classmethod
+    # def compute_parameters(
+    #     cls,
+    #     location: CartesianLocation,
+    #     r_trees: list[STRtree],
+    #     original_geometries: list[CartesianMap],
+    #     uniform_variance: float = DEFAULT_UNIFORM_VARIANCE,
+    # ) -> ndarray:
+    #     """Compute the depth values for the requested support locations.
+    #
+    #     Args:
+    #         data_map: The map containing the depth information.
+    #         support: The Collection of points for which the depth will be computed
+    #         uniform_variance: The variance of the depth values for all points
+    #     """
+    #
+    #     # Compute them just once for all locations so it is not repeated in compute_relation
+    #     any_map = original_geometries[0]
+    #     depth_values = array([feature_to_depth(feature) for feature in any_map.features])
+    #
+    #     # TODO implement the rest ot drop this special case entirely
+
+    def plot(
+        self, value_index: int = 0, axis=None, resolution: tuple[int, int] | None = None, **kwargs
+    ) -> None:
         if axis is None:
             axis = plt
 
-        color = self.parameters.values()[:, value_index].reshape(resolution).T
+        if resolution is None:
+            if isinstance(self.parameters, CartesianRasterBand):
+                resolution = (self.parameters.resolution, self.parameters.resolution)
+            else:
+                raise ValueError("Resolution must be provided for non-raster data")
+
+        color = self.parameters.values()[:, value_index].reshape(self.parameters.resolution).T
         # Use a diverging colormap with sea level (depth 0.0) as the center point
         axis.imshow(color, norm=CenteredNorm(vcenter=0.0), cmap="BrBG_r", origin="lower", **kwargs)
         axis.colorbar()

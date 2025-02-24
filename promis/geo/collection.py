@@ -23,7 +23,7 @@ from pandas import DataFrame, concat
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 # ProMis
-from promis.geo.map import CartesianLocation, PolarLocation
+from promis.geo.location import CartesianLocation, PolarLocation
 
 
 class Collection(ABC):
@@ -170,7 +170,7 @@ class Collection(ABC):
         if plot_basemap:
             # Get OpenStreetMap and crop to relevant area
             south, west, north, east = SpatialLoader.compute_polar_bounding_box(
-                self.origin, self.dimensions()
+                self.origin, self.dimensions
             )
             map = smopy.Map((south, west, north, east), z=zoom)
             left, bottom = map.to_pixels(south, west)

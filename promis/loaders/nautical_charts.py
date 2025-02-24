@@ -135,10 +135,8 @@ class S57ChartHandler:
     }
 
     @staticmethod
-    def find_chart_files(
-        search_path: str | os.PathLike[str],
-    ) -> Generator[Path, None, None]:
-        for root, _, files in os.walk(str(search_path), followlinks=True):
+    def find_chart_files(search_path: str | os.PathLike[str]) -> Generator[Path, None, None]:
+        for root, _, files in os.walk(search_path, followlinks=True):
             for file in files:
                 if file.endswith(".000"):
                     # assume it is an IHO S-57 file
@@ -192,7 +190,7 @@ class S57ChartHandler:
     def _convert_layer_to_obstacles(
         layer: ogr.Layer,
     ) -> Generator[tuple[PolarGeometry, str], None, None]:
-        """Converts the relevant obstacles of a layer into polar gemewtries.
+        """Converts the relevant obstacles of a layer into polar geometries.
 
         Args:
             layer: The layer to search in

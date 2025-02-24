@@ -12,17 +12,17 @@ coordinates using shapely."""
 # Standard Library
 from abc import ABC
 from pickle import dump, load
-from typing import Any, TypeVar
+from typing import TypeVar
 
 # Third Party
 from geojson import Feature, FeatureCollection, dumps
 from numpy import ndarray
 from shapely import STRtree
 
-# ProMis
-from promis.geo.location import CartesianLocation, PolarLocation
+# ProMis (need to avoid circular imports)
+import promis.geo
+from promis.geo.location import PolarLocation
 from promis.geo.polygon import CartesianPolygon, PolarPolygon
-from promis.geo.route import CartesianRoute, PolarRoute
 
 #: Helper to define <Polar|Cartesian>Map operatios within base class
 DerivedMap = TypeVar("DerivedMap", bound="Map")
@@ -39,11 +39,11 @@ class Map(ABC):
     def __init__(
         self,
         origin: PolarLocation,
-        features: list[Any] | None = None,
+        features: "list[promis.geo.CartesianGeometry | promis.geo.PolarGeometry] | None" = None,
     ) -> None:
         # Attributes setup
         self.origin = origin
-        self.features: list[Any] | None = features if features is not None else []
+        self.features = features or []
 
     @staticmethod
     def load(path) -> "Map":
@@ -184,9 +184,11 @@ class PolarMap(Map):
     def __init__(
         self,
         origin: PolarLocation,
-        features: list[PolarLocation | PolarRoute | PolarPolygon] = None,
+        features: "list[promis.geo.PolarGeometry] | None" = None,
     ) -> None:
         super().__init__(origin, features)
+
+        self.features: "list[promis.geo.PolarGeometry]"
 
     def to_cartesian(self) -> "CartesianMap":
         """Projects this map to a cartesian representation according to its global reference.
@@ -211,9 +213,11 @@ class CartesianMap(Map):
     def __init__(
         self,
         origin: PolarLocation,
-        features: list[CartesianLocation | CartesianRoute | CartesianPolygon] | None = None,
+        features: "list[promis.geo.CartesianGeometry] | None" = None,
     ) -> None:
         super().__init__(origin, features)
+
+        self.features: "list[promis.geo.CartesianGeometry]"
 
     def to_polar(self) -> PolarMap:
         """Projects this map to a polar representation according to the map's global reference.

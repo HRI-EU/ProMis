@@ -17,10 +17,12 @@ from itertools import product
 from pickle import dump, load
 from re import finditer
 from time import time
+from traceback import format_exception
 from typing import TypedDict
+from warnings import warn
 
 # Third Party
-from numpy import array, sort, unique, vstack
+from numpy import array, sort, unique
 from numpy.random import choice
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -124,6 +126,10 @@ class StaRMap:
     @property
     def relation_and_location_types(self) -> dict[str, set[str]]:
         return {name: set(info.keys()) for name, info in self.relations.items()}
+
+    @property
+    def location_types(self) -> set[str]:
+        return {location_type for info in self.relations.values() for location_type in info.keys()}
 
     @property
     def relation_arities(self) -> dict[str, int]:
@@ -253,7 +259,7 @@ class StaRMap:
             for relation, location_type in product(relations, location_types)
         ]
 
-    def _get_mentioned_relations(self, logic: str) -> dict[str, set[str | None]]:
+    def _get_mentioned_relations(self, logic: str) -> dict[str, set[str]]:
         """Get all relations mentioned in a logic program.
 
         Args:
@@ -268,12 +274,15 @@ class StaRMap:
         for name, arity in self.relation_arities.items():
             # Assume the ternary relation "between(X, anchorage, port)".
             # Then, this pattern matches ", anchorage, port", i.e., what X relates to.
-            realtes_to = ",".join([r"\s*((?:'\w*')|(?:\w+))\s*"] * (arity - 1))
-            if realtes_to:
+            relates_to = ",".join([r"\s*((?:'\w*')|(?:\w+))\s*"] * (arity - 1))
+            if relates_to:
                 # Prepend comma to first element if not empty
-                realtes_to = "," + realtes_to
+                relates_to = "," + relates_to
 
-            for match in finditer(rf"({name})\(X{realtes_to}\)", logic):
+            # Matches something like "distance(X, land)"
+            full_pattern = rf"({name})\(X{relates_to}\)"
+
+            for match in finditer(full_pattern, logic):
                 match arity:
                     case 1:
                         raise Exception(
@@ -439,91 +448,49 @@ class StaRMap:
 
         for location_type in all_location_types:
             # Get all relevant features from map
-            typed_map = self.uam.filter(location_type)
+            typed_map: CartesianMap = self.uam.filter(location_type)
 
             # Setup data structures
+            # TODO: this is very slow, ways to speed up? It is parallelizable, at least.
             random_maps = typed_map.sample(number_of_random_maps)
             r_trees = [instance.to_rtree() for instance in random_maps]
-            locations = support.to_cartesian_locations()
 
             # This could be parallelized, as each relation and location type is independent
             # from all others.
             for relation, types in what.items():
                 if relation not in what or location_type not in types:
                     continue
-                else:
-                    info = self.relations[relation][location_type]
 
-                # If map had no relevant features, fill with default values
+                # Determine relation class and collection to write to
+                relation_class = self.relation_name_to_class(relation)
+                info = self.relations[relation][location_type]
+                value_collection = info["collection"]
+
+                # If the map had no relevant features, fill with default values
                 if not typed_map.features:
-                    info["collection"].append_with_default(
-                        support.coordinates(),
-                        self.relation_name_to_class(relation).empty_map_parameters(),
+                    value_collection.append_with_default(
+                        support.coordinates(), relation_class.empty_map_parameters()
                     )
+                    warn(f"no features for relation {relation} for location type {location_type}")
                     continue
 
                 try:
-                    values = vstack(
-                        [
-                            self.relation_name_to_class(relation).compute_parameters(
-                                location, r_trees
-                            )
-                            for location in locations
-                        ]
+                    # Compute the relation value for each support point
+                    instantiated_relation: Relation = relation_class.from_r_trees(
+                        support, r_trees, location_type, original_geometries=random_maps
                     )
+                    values = instantiated_relation.parameters
+                    value_collection.append(values.coordinates(), values.values())
 
-                    # Add to collections
-                    info["collection"].append(locations, values)
                 except Exception as e:
-                    print(
-                        f"""StaR Map encountered excpetion {e};
-                        {relation} for {location_type} will use default parameters!"""
+                    warn(
+                        f"StaR Map encountered excpetion! "
+                        f"Relation {relation} for {location_type} will use default parameters. "
+                        f"Error was:\n{''.join(format_exception(e))}"
                     )
 
-                    info["collection"].append_with_default(
-                        support.coordinates(),
-                        self.relation_name_to_class(relation).empty_map_parameters(),
+                    value_collection.append_with_default(
+                        support.coordinates(), relation_class.empty_map_parameters()
                     )
-
-        # TODO: decide if this is necessary
-        # for relation, location_type in product(relations, location_types):
-        #     # Get all relevant features from map
-        #     if location_type is None:
-        #         continue  # Skip depth, as it is handled separately below
-        #     r_trees = sampled_rtrees_for(location_type)
-
-        #     # If map had no relevant features, fill with default values
-        #     if r_trees[0].geometries.size == 0:
-        #         self.relations[relation][location_type]["collection"].append_with_default(
-        #             support_coordinates, (None, None)
-        #         )
-        #     else:
-        #         match relation:
-        #             case "distance" | "over":
-        #                 # Setup data structures
-        #                 values = self.relation_name_to_class(relation).compute_parameters(
-        #                     support_points, r_trees
-        #                 )
-
-        #                 # Add to collections
-        #                 self.relations[relation][location_type]["collection"].append(
-        #                     support_coordinates, values
-        #                 )
-        #             case "depth":
-        #                 pass  # Nothing to do here per location_type, it's handled specially below
-        #             case _:
-        #                 raise ValueError(f"Requested unknown relation '{relation}' from StaR Map")
-
-        # # Depth is a special case, as it is not dependent on the location type
-        # if any(
-        #     location_type in self.location_types for location_type in Depth.RELEVANT_LOCATION_TYPES
-        # ):
-        #     self.relations["depth"][None]["collection"].append(
-        #         support_coordinates, Depth.compute_parameters(self.uam, support).T
-        #     )
-        # else:
-        #     self.relations["depth"][None]["collection"].append_with_default(
-        #         support_coordinates, (None, None)
-        #     )
 
         self.fit(what)
