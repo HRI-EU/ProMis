@@ -91,7 +91,7 @@ class Depth(ScalarRelation):
             else:
                 raise ValueError("Resolution must be provided for non-raster data")
 
-        color = self.parameters.values()[:, value_index].reshape(self.parameters.resolution).T
+        color = self.parameters.values()[:, value_index].reshape(self.parameters.resolution)
         # Use a diverging colormap with sea level (depth 0.0) as the center point
         axis.imshow(color, norm=CenteredNorm(vcenter=0.0), cmap="BrBG_r", origin="lower", **kwargs)
         axis.colorbar()
