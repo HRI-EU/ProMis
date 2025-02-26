@@ -460,8 +460,7 @@ class StaRMap:
             typed_map: CartesianMap = self.uam.filter(location_type)
 
             # Setup data structures
-            # TODO: this is very slow, ways to speed up? It is parallelizable, at least.
-            random_maps = typed_map.sample(number_of_random_maps)
+            random_maps = typed_map.sample(number_of_random_maps, n_jobs=8)
             r_trees = [instance.to_rtree() for instance in random_maps]
 
             # This could be parallelized, as each relation and location type is independent

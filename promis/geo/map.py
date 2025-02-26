@@ -11,16 +11,20 @@ coordinates using shapely."""
 
 # Standard Library
 from abc import ABC
+from itertools import repeat
+from multiprocessing import Pool
 from pickle import dump, load
 from typing import TypeVar
 
 # Third Party
 from geojson import Feature, FeatureCollection, dumps
 from numpy import ndarray
+from rich.progress import track
 from shapely import STRtree
 
 # ProMis (need to avoid circular imports)
 import promis.geo
+from promis.geo.geospatial import Geospatial
 from promis.geo.location import PolarLocation
 from promis.geo.polygon import CartesianPolygon, PolarPolygon
 
@@ -124,23 +128,39 @@ class Map(ABC):
             )
         )
 
-    def sample(self, number_of_samples: int = 1) -> list[DerivedMap]:
+    @staticmethod
+    def _sample_features(features: list[Geospatial]) -> list[Geospatial]:
+        return [feature.sample()[0] for feature in features]
+
+    def sample(
+        self, number_of_samples: int = 1, n_jobs: int = 1, show_progress: bool = True
+    ) -> list[DerivedMap]:
         """Sample random maps given this maps's feature's uncertainty.
 
         Args:
             number_of_samples: How many samples to draw
+            n_jobs: The number of parallel jobs to use for sampling
+            show_progress: Whether to show a progress bar
 
         Returns:
             The set of sampled maps with the individual features being sampled according
             to their uncertainties and underlying sample methods
         """
 
-        return [
-            type(self)(
-                self.origin,
-                [feature.sample()[0] for feature in self.features],
+        with Pool(n_jobs) as pool:
+            sampled_feature_lists = list(
+                track(
+                    pool.imap_unordered(
+                        Map._sample_features, repeat(self.features, number_of_samples), chunksize=1
+                    ),
+                    description=f"Resampling Map {number_of_samples} times",
+                    total=number_of_samples,
+                    disable=not show_progress,
+                )
             )
-            for _ in range(number_of_samples)
+
+        return [
+            type(self)(self.origin, sampled_features) for sampled_features in sampled_feature_lists
         ]
 
     def apply_covariance(self, covariance: ndarray | dict | None):
@@ -188,7 +208,7 @@ class PolarMap(Map):
     ) -> None:
         super().__init__(origin, features)
 
-        self.features: "list[promis.geo.PolarGeometry]"
+        self.features: list[promis.geo.PolarGeometry]
 
     def to_cartesian(self) -> "CartesianMap":
         """Projects this map to a cartesian representation according to its global reference.
@@ -217,7 +237,7 @@ class CartesianMap(Map):
     ) -> None:
         super().__init__(origin, features)
 
-        self.features: "list[promis.geo.CartesianGeometry]"
+        self.features: list[promis.geo.CartesianGeometry]
 
     def to_polar(self) -> PolarMap:
         """Projects this map to a polar representation according to the map's global reference.
