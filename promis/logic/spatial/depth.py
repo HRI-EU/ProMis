@@ -57,28 +57,6 @@ class Depth(ScalarRelation):
     def arity() -> int:
         return 2
 
-    # @classmethod
-    # def compute_parameters(
-    #     cls,
-    #     location: CartesianLocation,
-    #     r_trees: list[STRtree],
-    #     original_geometries: list[CartesianMap],
-    #     uniform_variance: float = DEFAULT_UNIFORM_VARIANCE,
-    # ) -> ndarray:
-    #     """Compute the depth values for the requested support locations.
-    #
-    #     Args:
-    #         data_map: The map containing the depth information.
-    #         support: The Collection of points for which the depth will be computed
-    #         uniform_variance: The variance of the depth values for all points
-    #     """
-    #
-    #     # Compute them just once for all locations so it is not repeated in compute_relation
-    #     any_map = original_geometries[0]
-    #     depth_values = array([feature_to_depth(feature) for feature in any_map.features])
-    #
-    #     # TODO implement the rest ot drop this special case entirely
-
     def plot(
         self, value_index: int = 0, axis=None, resolution: tuple[int, int] | None = None, **kwargs
     ) -> None:

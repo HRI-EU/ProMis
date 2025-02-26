@@ -125,7 +125,7 @@ class StaRMap:
 
     @property
     def relation_and_location_types(self) -> dict[str, set[str]]:
-        return {name: set(info.keys()) for name, info in self.relations.items()}
+        return {name: set(info.keys()) for name, info in self.relations.items() if info}
 
     @property
     def location_types(self) -> set[str]:
@@ -233,6 +233,11 @@ class StaRMap:
         coordinates = parameters.coordinates()
 
         info = self.relations[relation][location_type]
+        if info["approximator"] is None:
+            raise ValueError(
+                f'Relation "{relation}" for location type "{location_type}" has not been fitted yet.'
+            )
+
         if self.method == "gaussian_process":
             gp, scaler = info["approximator"]
             approximated = gp.predict(scaler.transform(coordinates))
@@ -442,6 +447,10 @@ class StaRMap:
                 compute statistics of spatial relations
             what: The spatial relations to compute, as a mapping of relation names to location types
         """
+
+        # TODO: It would be convenient to have StaRMap store the support points such that user
+        # code does not have to keep track of them.
+        # This would also allow for a simpler Promis.solve().
 
         what = self.relation_and_location_types if what is None else what
         all_location_types = [location_type for types in what.values() for location_type in types]

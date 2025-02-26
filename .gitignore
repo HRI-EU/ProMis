@@ -284,3 +284,4 @@ data/
 examples/**/*.gif
 examples/**/*.png
 examples/**/*.pdf
+examples/**/*.csv
