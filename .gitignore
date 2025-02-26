@@ -279,9 +279,6 @@ dist
 data/
 
 # Folders with derived content
-.promis_cache/
 **.pkl
 examples/**/*.gif
-examples/**/*.png
-examples/**/*.pdf
-examples/**/*.csv
+examples/cofi-exports/**
