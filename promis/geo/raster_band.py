@@ -192,18 +192,19 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
     def _y_coordinates(self) -> ndarray:
         return linspace(-self.height / 2, self.height / 2, self.resolution[1])
 
-    # This overrides the more general CartesianCollection.to_polar() to maintain the RasterBand type
-    def to_polar(self) -> "PolarRasterBand":
-        band = PolarRasterBand(
-            self.origin,
-            self.resolution,
-            self.width,
-            self.height,
-            self.number_of_values,
-        )
-        # copy all but the first two columns of the data
-        band.data.iloc[:, 2:] = self.data.iloc[:, 2:]
-        return band
+    # TODO add back after debugging
+    # # This overrides the more general CartesianCollection.to_polar() to maintain the RasterBand type
+    # def to_polar(self) -> "PolarRasterBand":
+    #     band = PolarRasterBand(
+    #         self.origin,
+    #         self.resolution,
+    #         self.width,
+    #         self.height,
+    #         self.number_of_values,
+    #     )
+    #     # copy all but the first two columns of the data
+    #     band.data.iloc[:, 2:] = self.data.iloc[:, 2:]
+    #     return band
 
     # A more efficient implementation than the generic one of CartesianCollection
     def get_interpolator(self, method: str = "linear") -> RegularGridInterpolator:
@@ -287,15 +288,15 @@ class PolarRasterBand(RasterBand, PolarCollection):
 
         return image
 
-    # This overrides the more general PolarCollection.to_cartesian() to maintain the RasterBand type
-    def to_cartesian(self) -> "CartesianRasterBand":
-        band = CartesianRasterBand(
-            self.origin,
-            self.resolution,
-            self.width,
-            self.height,
-            self.number_of_values,
-        )
-        # copy all but the first two columns of the data
-        band.data.iloc[:, 2:] = self.data.iloc[:, 2:]
-        return band
+    # # This overrides the more general PolarCollection.to_cartesian() to maintain the RasterBand type
+    # def to_cartesian(self) -> "CartesianRasterBand":
+    #     band = CartesianRasterBand(
+    #         self.origin,
+    #         self.resolution,
+    #         self.width,
+    #         self.height,
+    #         self.number_of_values,
+    #     )
+    #     # copy all but the first two columns of the data
+    #     band.data.iloc[:, 2:] = self.data.iloc[:, 2:]
+    #     return band

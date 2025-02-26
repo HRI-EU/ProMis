@@ -15,8 +15,8 @@ ENV PIP_BREAK_SYSTEM_PACKAGES=1
 RUN pip install pyro-ppl graphviz
 RUN pip install --upgrade --force-reinstall --no-deps --no-binary :all: pysdd
 
-# Clone and install Problog with distributional clauses
-# This contains bugfixes that are not part of the official release yet
+# Install Problog with distributional clauses
+# This specific repo contains bugfixes that are not part of the official release yet
 RUN pip install git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
 
 # Get clone of repository

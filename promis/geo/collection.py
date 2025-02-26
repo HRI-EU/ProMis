@@ -199,7 +199,7 @@ class CartesianCollection(Collection):
         """Get the dimensions of this Collection in meters.
 
         Returns:
-            The dimensions of this Collection in meters
+            The dimensions of this Collection in meters as ``(width, height)``.
         """
 
         west, east, south, north = self.extent()
@@ -267,7 +267,7 @@ class PolarCollection(Collection):
         """Get the dimensions of this Collection in meters.
 
         Returns:
-            The dimensions of this Collection in meters
+            The dimensions of this Collection in meters as ``(width, height)``.
         """
 
         return self.to_cartesian().dimensions
