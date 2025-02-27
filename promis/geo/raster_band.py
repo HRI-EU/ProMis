@@ -192,7 +192,7 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
     def _y_coordinates(self) -> ndarray:
         return linspace(-self.height / 2, self.height / 2, self.resolution[1])
 
-    # TODO add back after debugging
+    # TODO add back after thorough testing
     # # This overrides the more general CartesianCollection.to_polar() to maintain the RasterBand type
     # def to_polar(self) -> "PolarRasterBand":
     #     band = PolarRasterBand(
@@ -207,25 +207,26 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
     #     return band
 
     # A more efficient implementation than the generic one of CartesianCollection
-    def get_interpolator(self, method: str = "linear") -> RegularGridInterpolator:
-        """Get an interpolator for the raster band.
+    # TODO fix coordinate handling
+    # def get_interpolator(self, method: str = "linear") -> RegularGridInterpolator:
+    #     """Get an interpolator for the raster band.
 
-        Args:
-            method: The interpolation method to use
+    #     Args:
+    #         method: The interpolation method to use
 
-        Returns:
-            A callable interpolator function
-        """
+    #     Returns:
+    #         A callable interpolator function
+    #     """
 
-        # TODO We'd ideally like to interpolate linearly within the
-        # support points, but with "nearest" outside of them.
-        return RegularGridInterpolator(
-            points=(self._x_coordinates, self._y_coordinates),
-            values=self.values().reshape(*self.resolution, self.number_of_values),
-            method=method,
-            bounds_error=False,
-            fill_value=None,
-        )
+    #     # TODO We'd ideally like to interpolate linearly within the
+    #     # support points, but with "nearest" outside of them.
+    #     return RegularGridInterpolator(
+    #         points=(self._x_coordinates, self._y_coordinates),
+    #         values=self.values().reshape(*self.resolution, self.number_of_values),
+    #         method=method,
+    #         bounds_error=False,
+    #         fill_value=None,
+    #     )
 
 
 class PolarRasterBand(RasterBand, PolarCollection):
@@ -288,6 +289,7 @@ class PolarRasterBand(RasterBand, PolarCollection):
 
         return image
 
+    # TODO add back after thorough testing
     # # This overrides the more general PolarCollection.to_cartesian() to maintain the RasterBand type
     # def to_cartesian(self) -> "CartesianRasterBand":
     #     band = CartesianRasterBand(

@@ -53,8 +53,8 @@ class ProMis:
         into fewer solver invocations to speed up computations.
 
         Args:
-            support: The points to compute exactly, with the output being interpolated to the same target as
-                the employed StaRMap
+            support: The points to compute exactly, with the output being interpolated to the same
+                target as the employed StaRMap
             logic: The constraints of the landscape(X) predicate, including its definition
             n_jobs: How many workers to use in parallel
             batch_size: How many pixels to infer at once

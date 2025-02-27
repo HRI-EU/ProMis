@@ -28,7 +28,7 @@ class SpatialLoader(ABC):
         return PolarMap(self.origin, self.features)
 
     def to_cartesian_map(self) -> CartesianMap:
-        return CartesianMap(self.origin, self.features)
+        return self.to_polar_map().to_cartesian()
 
     @abstractmethod
     def load(self, feature_description: dict[str, Any] | None = None) -> None:

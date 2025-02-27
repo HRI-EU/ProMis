@@ -92,7 +92,7 @@ class Relation(ABC):
 
     @abstractmethod
     def index_to_distributional_clause(self, index: int) -> str:
-        """Express a single index of this  Relation as distributional clause.
+        """Express a single index of this Relation as a distributional clause.
 
         Returns:
             The distributional clause representing the respective entry of this Relation

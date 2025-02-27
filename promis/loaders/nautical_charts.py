@@ -346,7 +346,7 @@ class NauticalChartLoader(SpatialLoader):
 
 def process_file(
     file: Path, handler: S57ChartHandler, origin: PolarLocation, bounding_box: CartesianPolygon
-) -> list[CartesianGeometry]:
+) -> list[PolarGeometry]:
     results = []
     for geo_object in handler.read_chart_file(file):
         geometry = geo_object.to_cartesian(origin=origin)
@@ -355,14 +355,17 @@ def process_file(
         cropped = intersection(bounding_box.geometry, geometry.geometry)
 
         if not cropped.is_empty:
-            results.extend(_from_shapely(cropped, copy_metadata_from=geometry))
+            results.extend(
+                it.to_polar(origin=origin)
+                for it in _from_shapely(cropped, copy_metadata_from=geometry)
+            )
 
     return results
 
 
 def _from_shapely(
     shapely_geometry, copy_metadata_from: Geospatial | None = None
-) -> Generator[PolarGeometry, None, None]:
+) -> Generator[CartesianGeometry, None, None]:
     """Constructs an appropriate geometry from a Shapely geometry object.
 
     Args:
