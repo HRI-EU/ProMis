@@ -194,12 +194,11 @@ class Collection(ABC):
             ax = plt.gca()
 
         if plot_basemap:
-            if basemap is None:
-                region = self.get_basemap(zoom)
-            else:
-                region = basemap
+            if self.basemap is None:
+                self.basemap = self.get_basemap(zoom)
+                
             # Render base map
-            ax.imshow(region, extent=self.extent())
+            ax.imshow(self.basemap, extent=self.extent())
 
         # Scatter collection data
         coordinates = self.coordinates()
