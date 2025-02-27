@@ -59,6 +59,7 @@ setuptools.setup(
         # probabilistic logic and modelling
         "pyro-ppl",
         "pysdd",
+        "problog @ git+https://github.com/simon-kohaut/problog.git@dcproblog_develop",
         # plotting and visualization
         "fastapi[standard]",
         "graphviz",
