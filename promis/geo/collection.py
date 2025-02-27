@@ -45,6 +45,7 @@ class Collection(ABC):
         # Attributes setup
         self.data = data
         self.origin = origin
+        self.basemap = None
 
     @staticmethod
     def load(path) -> "Collection":
@@ -140,6 +141,9 @@ class Collection(ABC):
                 [self.data, DataFrame(new_entries, columns=self.data.columns)], ignore_index=True
             )
 
+        # Reset basemap since new data is added
+        self.basemap = None
+
     def append_with_default(
         self,
         coordinates: NDArray[Any] | list[PolarLocation | CartesianLocation],
@@ -196,7 +200,7 @@ class Collection(ABC):
         if plot_basemap:
             if self.basemap is None:
                 self.basemap = self.get_basemap(zoom)
-                
+
             # Render base map
             ax.imshow(self.basemap, extent=self.extent())
 
