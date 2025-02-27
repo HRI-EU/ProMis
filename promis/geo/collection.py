@@ -155,6 +155,15 @@ class Collection(ABC):
         self.append(coordinates, values=repeat(atleast_2d(value), len(coordinates), axis=0))
 
     def get_basemap(self, zoom=16):
+        """Obtain the OSM basemap image of the collection's area.
+        
+        Args:
+            zoom: The zoom level requested from OSM
+        
+        Returns:
+            The basemap image
+        """
+        
         # Would cause circular import if done at module scope
         from promis.loaders import OsmLoader
 
@@ -164,6 +173,7 @@ class Collection(ABC):
         left, bottom = map.to_pixels(south, west)
         right, top = map.to_pixels(north, east)
         region = map.img.crop((left, top, right, bottom))
+        
         return region
 
     def scatter(
