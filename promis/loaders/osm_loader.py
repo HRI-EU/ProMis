@@ -73,25 +73,26 @@ class OsmLoader(SpatialLoader):
                         out geom{bounding_box};>;out;
                     """
                 )
+
+                self.features += [
+                    PolarRoute(
+                        [
+                            PolarLocation(
+                                latitude=float(node.lat), longitude=float(node.lon), location_type=name
+                            )
+                            for node in way.nodes
+                        ],
+                        location_type=name,
+                    )
+                    for way in result.ways
+                ]
             except (OverpassGatewayTimeout, OverpassTooManyRequests):
                 print(f"OSM query failed, sleeping {timeout}s...")
                 sleep(timeout)
+            except AttributeError:
+                break
             else:
                 break
-
-        # Add to features
-        self.features += [
-            PolarRoute(
-                [
-                    PolarLocation(
-                        latitude=float(node.lat), longitude=float(node.lon), location_type=name
-                    )
-                    for node in way.nodes
-                ],
-                location_type=name,
-            )
-            for way in result.ways
-        ]
 
     def _load_polygons(
         self,
@@ -125,24 +126,25 @@ class OsmLoader(SpatialLoader):
                         out geom{bounding_box};>;out;
                     """
                 )
+
+                self.features += [
+                    PolarPolygon(
+                        [
+                            PolarLocation(latitude=float(node.lat), longitude=float(node.lon))
+                            for node in way.nodes
+                        ],
+                        location_type=name,
+                    )
+                    for way in way_result.ways
+                    if len(way.nodes) > 2
+                ]
             except (OverpassGatewayTimeout, OverpassTooManyRequests):
                 print(f"OSM query failed, sleeping {timeout}s...")
                 sleep(timeout)
+            except AttributeError:
+                break
             else:
                 break
-
-        if way_result:
-            self.features += [
-                PolarPolygon(
-                    [
-                        PolarLocation(latitude=float(node.lat), longitude=float(node.lon))
-                        for node in way.nodes
-                    ],
-                    location_type=name,
-                )
-                for way in way_result.ways
-                if len(way.nodes) > 2
-            ]
 
         while True:
             try:
@@ -153,17 +155,18 @@ class OsmLoader(SpatialLoader):
                         out geom{bounding_box};>;out;
                     """
                 )
+
+                self.features += [
+                    self.relation_to_polygon(relation, location_type=name)
+                    for relation in relation_result.relations
+                ]
             except (OverpassGatewayTimeout, OverpassTooManyRequests):
                 print(f"OSM query failed, sleeping {timeout}s...")
                 sleep(timeout)
+            except AttributeError:
+                break
             else:
                 break
-
-        if relation_result:
-            self.features += [
-                self.relation_to_polygon(relation, location_type=name)
-                for relation in relation_result.relations
-            ]
 
     @staticmethod
     def relation_to_polygon(relation: Relation, **kwargs) -> PolarPolygon:
