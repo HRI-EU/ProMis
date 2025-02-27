@@ -177,7 +177,7 @@ class Collection(ABC):
         return region
 
     def scatter(
-        self, value_index: int = 0, plot_basemap=True, basemap=None, ax=None, zoom=16, **kwargs
+        self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs
     ):
         """Create a scatterplot of this Collection.
 
