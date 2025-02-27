@@ -182,7 +182,6 @@ class Collection(ABC):
         """Create a scatterplot of this Collection.
 
         Args:
-            basemap:
             value_index: Which value of the
             plot_basemap: Whether an OpenStreetMap tile shall be rendered below
             ax: The axis to plot to, default pyplot context if None
