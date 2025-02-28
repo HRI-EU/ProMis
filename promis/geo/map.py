@@ -171,6 +171,8 @@ class Map(ABC):
                 mapping location_type to covariance matrix
         """
 
+        # TODO: investigae how the covariance of the final relation is computed
+
         if isinstance(covariance, dict):
             for feature in self.features:
                 if feature.location_type in covariance.keys():

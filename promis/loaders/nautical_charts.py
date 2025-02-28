@@ -116,9 +116,9 @@ class S57ChartHandler:
         "FLODOC": ("obstruction", "Floating Dock"),
         "DYKCON": ("obstruction", "Dyke/Levee"),
         #
-        "DWRTCL": ("water_route", "Deep Water Centerline"),
-        "DWRTPT": ("water_route", "Deep Water Way"),
-        "FAIRWY": ("water_route", "Fairway"),
+        "DWRTCL": ("waterway", "Deep Water Centerline"),
+        "DWRTPT": ("waterway", "Deep Water Way"),
+        "FAIRWY": ("waterway", "Fairway"),
         #
         "HRBARE": ("harbor", "Harbor area (administrative)"),
         #
@@ -126,9 +126,9 @@ class S57ChartHandler:
         # "TSEZNE": ("TSEZNE", "TSEZNE"),
         # "TSSBND": ("TSSBND", "TSSBND"),
         # "TSSLPT": ("TSSLPT", "TSSLPT"),
-        "RECTRC": ("water_route", "RECTRC"),
-        "RCTLPT": ("water_route", "RCTLPT"),
-        "RCRTCL": ("water_route", "RCRTCL"),
+        "RECTRC": ("waterway", "RECTRC"),
+        "RCTLPT": ("waterway", "RCTLPT"),
+        "RCRTCL": ("waterway", "RCRTCL"),
         #
         "ACHARE": ("anchorage", "Anchorage area"),
         "ACHBRT": ("anchorage", "Anchor berth (single)"),
