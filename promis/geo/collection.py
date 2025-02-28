@@ -65,13 +65,14 @@ class Collection(ABC):
         """Get the extent of this collection, i.e., the min and max coordinates.
 
         Returns:
-            The minimum and maximum coordinates in order west, east, south, north
+            The minimum and maximum coordinates in order ``west, east, south, north``
         """
 
-        west = min(self.data[self.data.columns[1]])
-        east = max(self.data[self.data.columns[1]])
-        south = min(self.data[self.data.columns[0]])
-        north = max(self.data[self.data.columns[0]])
+        # TODO this might fail near the international date line for polar coordinates
+        west = min(self.data[self.data.columns[0]])
+        east = max(self.data[self.data.columns[0]])
+        south = min(self.data[self.data.columns[1]])
+        north = max(self.data[self.data.columns[1]])
 
         return west, east, south, north
 
