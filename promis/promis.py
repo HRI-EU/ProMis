@@ -101,22 +101,32 @@ class ProMis:
             if print_first and index == 0:
                 print(program)
 
-        # Solve in parallel with pool of workers
-        flattened_data = []
-        with Pool(n_jobs) as pool:
-            batched_results = pool.imap(
-                ProMis._run_inference,
+        if n_jobs is None:
+            flattened_data = []
+            for solver in track(
                 solvers,
-                chunksize=10 if len(solvers) > 1000 else 1,
-            )
-
-            for batch in track(
-                batched_results,
-                total=len(solvers),
                 description="Inference",
                 disable=not show_progress,
             ):
+                batch = ProMis._run_inference(solver)
                 flattened_data.extend(batch)
+        else:
+            # Solve in parallel with pool of workers
+            flattened_data = []
+            with Pool(n_jobs) as pool:
+                batched_results = pool.imap(
+                    ProMis._run_inference,
+                    solvers,
+                    chunksize=10 if len(solvers) > 1000 else 1,
+                )
+
+                for batch in track(
+                    batched_results,
+                    total=len(solvers),
+                    description="Inference",
+                    disable=not show_progress,
+                ):
+                    flattened_data.extend(batch)
 
         # Write results to the CartesianCollection where the tata is known
         inference_results = deepcopy(support)
