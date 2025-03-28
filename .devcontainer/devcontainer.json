@@ -1,0 +1,28 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/alpine
+{
+	"name": "ProMis Development",
+	"build": {
+		"dockerfile": "../Dockerfile",
+		"context": ".."
+	},
+	"postCreateCommand": "pip install -e '.[doc,dev]'",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-toolsai.jupyter",
+				"ms-python.python",
+				"GitHub.copilot",
+				"rebornix.prolog",
+				"mechatroner.rainbow-csv",
+				"tamasfe.even-better-toml",
+				"charliermarsh.ruff"
+			],
+			"settings": {
+				"files.associations": {
+					"*.pl": "prolog"
+				}
+			}
+		}
+	}
+}

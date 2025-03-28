@@ -21,7 +21,6 @@ from promis.loaders.spatial_loader import SpatialLoader
 
 
 class OsmLoader(SpatialLoader):
-
     """A loader for spatial data from OpenStreetMaps (OSM) via the overpy package."""
 
     def __init__(
@@ -37,12 +36,12 @@ class OsmLoader(SpatialLoader):
         if feature_description is not None:
             self.load(feature_description)
 
-    def load(self, feature_description: dict):
+    def load(self, feature_description: dict[str, str]) -> None:
         for location_type, osm_filter in feature_description.items():
-            self.load_routes(osm_filter, location_type)
-            self.load_polygons(osm_filter, location_type)
+            self._load_routes(osm_filter, location_type)
+            self._load_polygons(osm_filter, location_type)
 
-    def load_routes(
+    def _load_routes(
         self,
         filters: str,
         name: str,
@@ -61,39 +60,41 @@ class OsmLoader(SpatialLoader):
         """
 
         # Compute bounding box and format it for Overpass
-        south, west, north, east = self.compute_bounding_box(self.origin, self.dimensions)
+        south, west, north, east = self.compute_polar_bounding_box(self.origin, self.dimensions)
         bounding_box = f"({south:.4f}, {west:.4f}, {north:.4f}, {east:.4f})"
 
         # Load data via Overpass
-        try:
-            result = self.overpass_api.query(
-                f"""
-                    [out:json];
-                    way{filters}{bounding_box};
-                    out geom{bounding_box};>;out;
-                """
-            )
-        except (OverpassGatewayTimeout, OverpassTooManyRequests):
-            print(f"OSM query failed, sleeping {timeout}s...")
-            sleep(timeout)
-        except Exception:
-            result = []
+        while True:
+            try:
+                result = self.overpass_api.query(
+                    f"""
+                        [out:json];
+                        way{filters}{bounding_box};
+                        out geom{bounding_box};>;out;
+                    """
+                )
 
-        # Add to features
-        self.features += [
-            PolarRoute(
-                [
-                    PolarLocation(
-                        latitude=float(node.lat), longitude=float(node.lon), location_type=name
+                self.features += [
+                    PolarRoute(
+                        [
+                            PolarLocation(
+                                latitude=float(node.lat), longitude=float(node.lon), location_type=name
+                            )
+                            for node in way.nodes
+                        ],
+                        location_type=name,
                     )
-                    for node in way.nodes
-                ],
-                location_type=name,
-            )
-            for way in result.ways
-        ]
+                    for way in result.ways
+                ]
+            except (OverpassGatewayTimeout, OverpassTooManyRequests):
+                print(f"OSM query failed, sleeping {timeout}s...")
+                sleep(timeout)
+            except AttributeError:
+                break
+            else:
+                break
 
-    def load_polygons(
+    def _load_polygons(
         self,
         filters: str,
         name: str,
@@ -112,21 +113,21 @@ class OsmLoader(SpatialLoader):
         """
 
         # Compute bounding box and format it for Overpass
-        south, west, north, east = self.compute_bounding_box(self.origin, self.dimensions)
+        south, west, north, east = self.compute_polar_bounding_box(self.origin, self.dimensions)
         bounding_box = f"({south:.4f}, {west:.4f}, {north:.4f}, {east:.4f})"
 
         # Load data via Overpass
-        try:
-            way_result = self.overpass_api.query(
-                f"""
-                    [out:json];
-                    way{filters}{bounding_box};
-                    out geom{bounding_box};>;out;
-                """
-            )
+        while True:
+            try:
+                way_result = self.overpass_api.query(
+                    f"""
+                        [out:json];
+                        way{filters}{bounding_box};
+                        out geom{bounding_box};>;out;
+                    """
+                )
 
-            way_polygons = (
-                [
+                self.features += [
                     PolarPolygon(
                         [
                             PolarLocation(latitude=float(node.lat), longitude=float(node.lon))
@@ -137,39 +138,35 @@ class OsmLoader(SpatialLoader):
                     for way in way_result.ways
                     if len(way.nodes) > 2
                 ]
-                if way_result
-                else []
-            )
-        except (OverpassGatewayTimeout, OverpassTooManyRequests):
-            print(f"OSM query failed, sleeping {timeout}s...")
-            sleep(timeout)
-        except Exception:
-            way_polygons = []
+            except (OverpassGatewayTimeout, OverpassTooManyRequests):
+                print(f"OSM query failed, sleeping {timeout}s...")
+                sleep(timeout)
+            except AttributeError:
+                break
+            else:
+                break
 
-        try:
-            relation_result = self.overpass_api.query(
-                f"""
-                    [out:json];
-                    relation{filters}{bounding_box};
-                    out geom{bounding_box};>;out;
-                """
-            )
+        while True:
+            try:
+                relation_result = self.overpass_api.query(
+                    f"""
+                        [out:json];
+                        relation{filters}{bounding_box};
+                        out geom{bounding_box};>;out;
+                    """
+                )
 
-            relation_polygons = (
-                [
+                self.features += [
                     self.relation_to_polygon(relation, location_type=name)
                     for relation in relation_result.relations
                 ]
-                if relation_result
-                else []
-            )
-        except (OverpassGatewayTimeout, OverpassTooManyRequests):
-            print(f"OSM query failed, sleeping {timeout}s...")
-            sleep(timeout)
-        except Exception:
-            relation_polygons = []
-
-        self.features += relation_polygons + way_polygons
+            except (OverpassGatewayTimeout, OverpassTooManyRequests):
+                print(f"OSM query failed, sleeping {timeout}s...")
+                sleep(timeout)
+            except AttributeError:
+                break
+            else:
+                break
 
     @staticmethod
     def relation_to_polygon(relation: Relation, **kwargs) -> PolarPolygon:

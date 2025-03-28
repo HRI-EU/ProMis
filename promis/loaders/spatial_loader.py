@@ -10,14 +10,13 @@
 
 # Standard Library
 from abc import ABC, abstractmethod
+from typing import Any
 
-# Third Party
 # ProMis
 from promis.geo import CartesianLocation, CartesianMap, PolarLocation, PolarMap
 
 
 class SpatialLoader(ABC):
-
     """A base class for loaders of geospatial objects from differents sources and interfaces."""
 
     def __init__(self, origin: PolarLocation, dimensions: tuple[float, float]):
@@ -29,14 +28,19 @@ class SpatialLoader(ABC):
         return PolarMap(self.origin, self.features)
 
     def to_cartesian_map(self) -> CartesianMap:
-        return PolarMap(self.origin, self.features).to_cartesian()
+        return self.to_polar_map().to_cartesian()
 
     @abstractmethod
-    def load(self, feature_description: dict):
-        pass
+    def load(self, feature_description: dict[str, Any] | None = None) -> None:
+        """Populates :attr:`~SpatialLoader.features` with from a source.
+
+        Args:
+            feature_description: A mapping of location types to loader specific descriptions.
+                Passing None can be valid for loaders with a fixed set of features.
+        """
 
     @staticmethod
-    def compute_bounding_box(
+    def compute_polar_bounding_box(
         origin: PolarLocation, dimensions: tuple[float, float]
     ) -> tuple[float, float, float, float]:
         """Computes the north, east, south and west limits of the area to be loaded.

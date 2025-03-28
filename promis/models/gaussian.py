@@ -28,7 +28,7 @@ class Gaussian:
         >>> mean = vstack([0.0, 0.0])
         >>> covariance = array([[1.0, 0.0], [0.0, 1.0]])
         >>> N = Gaussian(mean, covariance, weight=1.0)
-        >>> N(vstack([0.0, 0.0]))  # doctest: +ELLIPSIS
+        >>> N(vstack([0.0, 0.0])).item()  # doctest: +ELLIPSIS
         0.159...
 
         Two Gaussians are equal if and only if all attributes are equal:
@@ -37,7 +37,7 @@ class Gaussian:
         True
         >>> other_covariance = array([[99.0, 0.0], [0.0, 99.0]])
         >>> other_N = Gaussian(mean, other_covariance, weight=1.0)
-        >>> other_N(vstack([10.0, 10.0]))  # doctest: +ELLIPSIS
+        >>> other_N(vstack([10.0, 10.0])).item()  # doctest: +ELLIPSIS
         0.000585...
         >>> N == other_N
         False
@@ -147,7 +147,7 @@ class Gaussian:
         """
 
         return (
-            cast(bool, (self.mean == other.mean).all())
-            and cast(bool, (self.covariance == other.covariance).all())
+            cast(bool, (self.mean == other.mean).all().item())
+            and cast(bool, (self.covariance == other.covariance).all().item())
             and self.weight == other.weight
         )

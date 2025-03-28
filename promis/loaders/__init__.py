@@ -9,6 +9,8 @@
 #
 
 # ProMis
+from promis.loaders.nautical_charts import NauticalChartLoader
 from promis.loaders.osm_loader import OsmLoader
+from promis.loaders.spatial_loader import SpatialLoader
 
-__all__ = ["OsmLoader"]
+__all__ = ["NauticalChartLoader", "OsmLoader", "SpatialLoader"]
