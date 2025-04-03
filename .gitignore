@@ -281,4 +281,5 @@ data/
 # Folders with derived content
 **.pkl
 examples/**/*.gif
+examples/**/*.mp4
 examples/cofi-exports/**
