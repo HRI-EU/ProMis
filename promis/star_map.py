@@ -479,7 +479,9 @@ class StaRMap:
                     value_collection.append_with_default(
                         support.coordinates(), relation_class.empty_map_parameters()
                     )
-                    warn(f"no features for relation {relation} for location type {location_type}")
+                    warn(
+                        f'no features for relation "{relation}" for location type "{location_type}"'
+                    )
                     continue
 
                 try:

@@ -5,20 +5,20 @@ from unittest import TestCase, main
 
 from numpy import eye, isfinite
 
+from promis import ProMis, StaRMap
+from promis.geo import (
+    CartesianCollection,
+    CartesianLocation,
+    CartesianMap,
+    Collection,
+    PolarLocation,
+    PolarRasterBand,
+)
+from promis.loaders import OsmLoader
+
 
 class TestBasics(TestCase):
     def test_example_notebook(self):
-        from promis import ProMis, StaRMap
-        from promis.geo import (
-            CartesianCollection,
-            CartesianLocation,
-            CartesianMap,
-            Collection,
-            PolarLocation,
-            PolarRasterBand,
-        )
-        from promis.loaders import OsmLoader
-
         feature_description = {
             "primary": "['highway' = 'primary']",
         }
@@ -85,8 +85,6 @@ class TestBasics(TestCase):
 
             print("Done StaRMap initialization")
 
-            # optional: add support points
-            # star_map.add_support_points(alternative, number_of_random_maps)
             star_map.save(tmpdir / "star_map.pkl")
 
             print("Done support points")
@@ -95,7 +93,6 @@ class TestBasics(TestCase):
 
             print("Done ProMis initialization")
 
-            # landscape = promis.solve(support, logic, n_jobs=4, batch_size=1)
             landscape = promis.solve(
                 support, logic, n_jobs=None, batch_size=2, print_first=True, show_progress=True
             )
