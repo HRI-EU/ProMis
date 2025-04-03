@@ -8,11 +8,6 @@
 .hammett-db
 .mutmut-cache
 
-# Folders with derived content
-external/
-output/
-examples/
-
 # Node.js package lock
 package-lock.json
 
@@ -278,3 +273,13 @@ dist
 
 # Pycharm
 .idea
+
+######################
+
+data/
+
+# Folders with derived content
+**.pkl
+examples/**/*.gif
+examples/**/*.mp4
+examples/cofi-exports/**

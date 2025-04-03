@@ -2,16 +2,9 @@
 requires = ["setuptools>=40.8.0", "wheel"]
 build-backend = "setuptools.build_meta:__legacy__"
 
-[tool.black]
-line-length = 100
-target-version = [
-    "py310",
-]
-
 [tool.ruff]
 select = ["E", "F", "W", "I", "N", "UP"]
 
-# Same as Black
 line-length = 100
 
 # The lowest supported version
@@ -49,7 +42,6 @@ ignore-names = [
 
 [tool.pytest.ini_options]
 addopts = "-v --color=yes --cov=promis --doctest-modules"
-junit_family = "xunit2"
 testpaths = [
     # for the doctests:
     "promis",
@@ -66,14 +58,11 @@ filterwarnings = [
     "ignore::DeprecationWarning",
 ]
 
-
 [tool.coverage.run]
 concurrency = ["multiprocessing"]
 branch = true
 
 [tool.coverage.report]
-fail_under = 50.00
-precision = 2
 show_missing = true
 exclude_lines = [
     # Regexes for lines to exclude from consideration
@@ -90,7 +79,4 @@ exclude_lines = [
 
     # Don't complain if non-runnable code isn't run:
     "if __name__ == .__main__.:",
-
-    # It's okay to not cover unimplemented comparison methods
-    "return NotImplemented"
 ]

@@ -128,7 +128,6 @@ class Polygon(Geospatial):
 
 
 class PolarPolygon(Polygon):
-
     """A polygon based on WGS84 coordinates.
 
     An object with only a single point may be represented by
@@ -258,7 +257,6 @@ class PolarPolygon(Polygon):
 
 
 class CartesianPolygon(Polygon):
-
     """A cartesian polygon based on local coordinates with an optional global reference.
 
     Examples:
@@ -360,6 +358,14 @@ class CartesianPolygon(Polygon):
         assert data.shape[0] == 2
         assert isfinite(data).all()
 
+        # Transform the holes too, if given
+        if args and isinstance(args[0], list):
+            args[0] = [[CartesianLocation(x, y) for x, y in hole.T] for hole in args[0]]
+        elif "holes" in kwargs:
+            kwargs["holes"] = [
+                [CartesianLocation(x, y) for x, y in hole.T] for hole in kwargs["holes"]
+            ]
+
         # Return appropriate polygon type
         return cls(
             [CartesianLocation(x, y) for (x, y) in data.T],
@@ -438,3 +444,33 @@ class CartesianPolygon(Polygon):
     def __str__(self) -> str:
         # This is required to override shapely.geometry.Polygon.__str__()
         return self.__repr__()
+
+    @classmethod
+    def make_centered_box(
+        cls,
+        width: float,
+        height: float,
+        offset: CartesianLocation = CartesianLocation(0, 0),
+        **kwargs,
+    ) -> "CartesianPolygon":
+        """Generates a box centered around a given offset.
+
+        Args:
+            width: The width of the map in meters
+            height: The height of the map in meters
+            kwargs: Additional keyword arguments to pass to the polygon, such as an origin
+
+        Returns:
+            The box as a polygon
+        """
+
+        return cls(
+            [
+                # clockwise: top-left, ...
+                CartesianLocation(east=offset.east - width / 2, north=offset.north + height / 2),
+                CartesianLocation(east=offset.east + width / 2, north=offset.north + height / 2),
+                CartesianLocation(east=offset.east + width / 2, north=offset.north - height / 2),
+                CartesianLocation(east=offset.east - width / 2, north=offset.north - height / 2),
+            ],
+            **kwargs,
+        )

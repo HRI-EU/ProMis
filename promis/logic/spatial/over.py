@@ -8,11 +8,11 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
-# Third Party
+# Geometry
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianLocation
+from promis.geo import CartesianLocation, CartesianMap
 
 from .relation import Relation
 
@@ -22,9 +22,15 @@ class Over(Relation):
         return f"{self.parameters.data['v0'][index]}::over(x_{index}, {self.location_type}).\n"
 
     @staticmethod
-    def compute_relation(location: CartesianLocation, r_tree: STRtree) -> float:
+    def compute_relation(
+        location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
+    ) -> float:
         return location.geometry.within(r_tree.geometries.take(r_tree.nearest(location.geometry)))
 
     @staticmethod
     def empty_map_parameters() -> list[float]:
         return [0.0, 0.0]
+
+    @staticmethod
+    def arity() -> int:
+        return 2

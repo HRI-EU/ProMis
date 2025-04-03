@@ -60,13 +60,6 @@ source venv/bin/activate    # Linux
 # Install ProMis dependencies
 pip install .
 
-# Clone and install Problog with distributional clauses
-# This includes some bug-fixes not yet part of the official ProbLog distribution
-cd external
-git clone -b dcproblog_develop https://github.com/simon-kohaut/problog.git
-cd problog 
-pip install .
-
 # Return to ProMis directory
 cd ../..
 ```
@@ -136,6 +129,4 @@ To view the documentation, open the file `ProMis/doc/build/html/index.html` usin
 
 ## Quality Assurance
 
-This projects is setup to be checked against `black` and `ruff`.
-For ease of use, they can both be called by running `check.sh` in the ProMis root directory.
-For tests with `pytest`, we employ `Hypothesis` to enhance coverage.
+This projects is setup to be checked with `ruff` and `pytest`.
