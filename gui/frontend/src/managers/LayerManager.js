@@ -1,7 +1,7 @@
 import Layer from "../models/Layer.js";
 import { C } from "./Core.js";
 import { RenderMode } from "./MapManager.js";
-import { updateConfig } from "../utils/Utility.js";
+import { updateTotalConfig, updateLayerConfig, deleteLayerConfig, randomId } from "../utils/Utility.js";
 
 class LayerManager {
   constructor() {
@@ -22,7 +22,7 @@ class LayerManager {
   //Import all layers from json file
   importAllLayers(layers) {
     for (let i = 0; i < layers.length; i++) {
-      if (layers[i].renderMode == undefined)
+      if (layers[i].renderMode === undefined)
         layers[i].renderMode = RenderMode.Voronoi;
       layers[i].markerLayer = null;
       layers[i].leafletOverlays = [];
@@ -42,23 +42,23 @@ class LayerManager {
    * @param {*} fileInfo file information to get name
    */
   importLayer(data, fileInfo) {
-    const uniqueId = Date.now();
+    const uniqueId = randomId();
     const layer = Layer.parseLayer(uniqueId, data, 180.0, fileInfo.name, 5);
     this.layers.push(layer);
     this.hideAllLayers = false;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    updateLayerConfig(layer);
   }
 
   importLayerFromSourceCode(data, fileInfo) {
-    const uniqueId = Date.now();
+    const uniqueId = randomId();
     const layer = Layer.parseLayer(uniqueId, data, 180.0, fileInfo.name, 5, true);
     this.layers.splice(0, 0, layer);
     this.hideAllLayers = false;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    updateTotalConfig(this.layers);
   }
 
   /**
@@ -68,18 +68,19 @@ class LayerManager {
     this.layers = [];
     C().updateSidebarRight();
     C().mapMan.refreshMap();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    updateTotalConfig(this.layers);
   }
 
   //Delete layer with this layerId
   deleteLayer(layerId) {
     C().mapMan.removeMarkers();
+    var pos = LayerManager.findLayerPos(this.layers, layerId);
     this.layers = this.layers.filter((layer) => layer.id !== layerId);
     // check if all layers are hidden
     this.hideAllLayers = this.layers.every((layer) => !layer.visible);
     C().updateSidebarRight();
     C().mapMan.refreshMap();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    deleteLayerConfig(pos);
   }
 
   //Change layer name
@@ -88,7 +89,7 @@ class LayerManager {
     this.layers[pos].editName = !this.layers[pos].editName;
     this.layers[pos].name = layerName;
     C().updateSidebarRight();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    updateLayerConfig(this.layers[pos]);
   }
 
   //Toggle layer visibility
@@ -96,14 +97,14 @@ class LayerManager {
     if (visible) {
       this.hideAllLayers = false;
     }
-    if (!visible && this.layers.every((layer) => (layer.id == layerId) || !layer.visible)) {
+    if (!visible && this.layers.every((layer) => (layer.id === layerId) || !layer.visible)) {
       this.hideAllLayers = true;
     }
     var pos = LayerManager.findLayerPos(this.layers, layerId);
     this.layers[pos].visible = visible;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    updateLayerConfig(this.layers[pos]);
   }
 
   //Toggle settings menu
@@ -142,7 +143,7 @@ class LayerManager {
     this.layers[pos].opacity = opacity;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    updateLayerConfig(this.layers[pos]);
   }
 
   //Change layer render mode
@@ -151,7 +152,7 @@ class LayerManager {
     this.layers[pos].renderMode = renderMode;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    updateLayerConfig(this.layers[pos]);
   }
 
   //Change layer radius
@@ -163,7 +164,7 @@ class LayerManager {
     this.layers[pos].markerDstLng = markerDst[1];
     C().updateSidebarRight();
     C().mapMan.refreshMap();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    updateLayerConfig(this.layers[pos]);
   }
 
   //Change layer value range
@@ -172,7 +173,7 @@ class LayerManager {
     this.layers[pos].valueRange = valueRange;
     C().updateSidebarRight();
     C().mapMan.refreshMap();
-    updateConfig(this.layers, C().mapMan.getMarkers());
+    updateLayerConfig(this.layers[pos]);
   }
 
   //If within bounds, switch layer with previous in array (moves layer in sidebar upwards)
@@ -193,7 +194,7 @@ class LayerManager {
       //this.layers[pos-1] = lay;
       C().updateSidebarRight();
       C().mapMan.refreshMap();
-      updateConfig(this.layers, C().mapMan.getMarkers());
+      updateTotalConfig(this.layers);
     }
   }
 
@@ -215,7 +216,7 @@ class LayerManager {
       //this.layers[pos+1] = lay;
       C().updateSidebarRight();
       C().mapMan.refreshMap();
-      updateConfig(this.layers, C().mapMan.getMarkers());
+      updateTotalConfig(this.layers);
     }
   }
 
@@ -266,7 +267,7 @@ class LayerManager {
     };
     this.layers.forEach((layer) => {
       // ignore hided layers
-      if (layer.markerLayer == null) {
+      if (layer.markerLayer === null) {
         return;
       }
       geoJSON.features.push(...layer.markerLayer.toGeoJSON().features);

@@ -52,7 +52,7 @@ class Polygon(Geospatial):
             self.locations.append(locations[0])
         for hole in self.holes:
             if hole[0].x != hole[-1].x or hole[0].y != hole[-1].y:
-                hole.append(locations[0])
+                hole.append(hole[0])
 
         # Setup Gaussian distribution for sampling the polygon
         self.covariance = covariance
@@ -428,6 +428,9 @@ class CartesianPolygon(Polygon):
 
     def distance(self, other: Any) -> float:
         return self.geometry.distance(other.geometry)
+    
+    def send_to_gui(self, url = "http://localhost:8000/add_geojson", timeout = 1):
+        raise NotImplementedError("Cartesian Polygon does not have geospatial feature to send to gui!")
 
     def __repr__(self) -> str:
         origin = f", origin={self.origin}" if self.origin is not None else ""

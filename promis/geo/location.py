@@ -402,6 +402,9 @@ class CartesianLocation(Location):
 
     def distance(self, other: Any) -> float:
         return cast(float, self.geometry.distance(other.geometry))
+    
+    def send_to_gui(self, url = "http://localhost:8000/add_geojson", timeout = 1):
+        raise NotImplementedError("Cartesian Location does not have geospatial feature to send to gui!")
 
     def __repr__(self) -> str:
         origin = f", origin={self.origin}" if self.origin is not None else ""

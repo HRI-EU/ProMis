@@ -10,12 +10,19 @@ from promis.loaders import OsmLoader
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
-from .models.Config import Config, DynamicLayer
-from .models.LocationTypeTable import LocationTypeTable
+from uuid import uuid4
+
+from .models.Config import LayerConfig, DynamicLayer, LocationTypeTable
+from .models.Marker import Marker
 from .models.Line import Line
 from .models.Polygon import Polygon
+from .models.Layer import Layer
 from .models.RunRequest import RunRequest
+from .models.LocationTypeTable import LocationTypeEntry
+from .models.Colors import get_random_color
+from geojson_pydantic import Feature
 
+# typing
 
 
 app = FastAPI()
@@ -34,34 +41,53 @@ app.add_middleware(
 def find_necessary_type(source: str) -> Set[str]:
     spatial_relation = r"(distance|over)"
 
-    p = re.compile(spatial_relation +  r"(\(\s*[A-Z],\s*[A-Z],\s*)([\w]*)(\))")
+    p = re.compile(spatial_relation +  r"(\(\s*[A-Z],\s*)([\w]*)(\))")
 
     maches = p.findall(source)
     location_types = [match[2] for match in maches]
     return set(location_types)
 
-def myHash(text:str):
+def create_hash(text:str):
   hash=0
   for ch in text:
     hash = ( hash*281  ^ ord(ch)*997) & 0xFFFFFFFF
   return hash
 
-def _get_config():
-    config = None
+def _get_config() -> LayerConfig:
+    config = LayerConfig([])
     try:
         with open('./config/config.json', 'r') as f:
             config = f.read()
             try:
-                config = Config.model_validate_json(config)
+                config = LayerConfig.model_validate_json(config)
             except ValidationError as e:
                 print(e)
                 raise HTTPException(status_code=500, detail="fail to parse config file")
-    except FileNotFoundError:
-        config = Config(layers=[], markers=[])
+    except FileNotFoundError as er:
+        # create an empty file in place
+        with open('./config/config.json', 'w', encoding='utf-8') as f:
+            f.write(config.model_dump_json(indent=2))
+        
     return config
 
-def _get_location_type_table():
-    location_type_table = None
+def _get_dynamic_layer() -> DynamicLayer:
+    dynamic_layer = DynamicLayer(markers=[], polylines=[], polygons=[])
+    try:
+        with open('./config/dynamic_layer.json', 'r') as f:
+            dynamic_layer = f.read()
+            try:
+                dynamic_layer = DynamicLayer.model_validate_json(dynamic_layer)
+            except ValidationError as e:
+                print(e)
+                raise HTTPException(status_code=500, detail="fail to parse dynamic layer")
+    except FileNotFoundError as e:
+        # create an empty file in place non file found
+        with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
+            f.write(dynamic_layer.model_dump_json(indent=2))
+    return dynamic_layer
+
+def _get_location_type_table() -> LocationTypeTable:
+    location_type_table = LocationTypeTable([])
     try:
         with open('./config/location_type_table.json', 'r') as f:
             location_type_table = f.read()
@@ -69,47 +95,59 @@ def _get_location_type_table():
                 location_type_table = LocationTypeTable.model_validate_json(location_type_table)
             except ValidationError as e:
                 print(e)
-                raise HTTPException(status_code=500, detail="fail to parse config file")
-    except FileNotFoundError:
-        location_type_table = LocationTypeTable(table=[])
+                raise HTTPException(status_code=500, detail="fail to parse location type table file")
+    except FileNotFoundError as e:
+        # create an empty file in place non file found
+        with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
+            f.write(location_type_table.model_dump_json(indent=2))
     return location_type_table
+
+def _rm_unnecessary_loc_type(table: LocationTypeTable, source: str):
+    needed_loc_type = find_necessary_type(source)
+    locations_to_remove = []
+    for location_type, filter in table.items():
+        if filter == "" or location_type not in needed_loc_type:
+            locations_to_remove.append(location_type)
+    for loc_type in locations_to_remove:
+        del table[loc_type]
+
 
 def create_hash_uam(req: RunRequest):
     # prepare for hash
     reqDict = req.model_dump()
+    _rm_unnecessary_loc_type(reqDict["location_types"], reqDict["source"])
     del reqDict["source"]
     del reqDict["resolutions"]
     del reqDict["support_resolutions"]
     del reqDict["sample_size"]
     del reqDict["interpolation"]
-    locations_to_remove = []
-    for location_type, filter in reqDict["location_types"].items():
-        if filter == "":
-            locations_to_remove.append(location_type)
-    for loc_type in locations_to_remove:
-        del reqDict["location_types"][loc_type]
 
-    return myHash(repr(reqDict))
+    return create_hash(repr(reqDict))
 
-def create_hash_starmap(req: RunRequest, dynamic_layers: DynamicLayer, hashVal: int):
+def create_hash_starmap(req: RunRequest, dynamic_layer: DynamicLayer, hashVal: int):
     # prepare for hash
     reqDict = req.model_dump()
     del reqDict["source"]
     reqDict["hashVal"] = hashVal
-    reqDict["dynamic_layers"] = dynamic_layers
+    reqDict["dynamic_layer"] = dynamic_layer
 
-    return myHash(repr(reqDict))
+    return create_hash(repr(reqDict))
 
 @app.post("/loadmapdata")
 def load_map_data(req: RunRequest):
     mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     width, height = req.dimensions
+    source = req.source
 
     # We load geographic features from OpenStreetMap using a range of filters
     feature_description = req.location_types
 
     # prepare for hash
     hashVal = create_hash_uam(req)
+
+    # remove all location type with empty filter
+
+    _rm_unnecessary_loc_type(feature_description, source)
     # load the cache info
     try:
         with open(f"./cache/uam_{hashVal}.pickle", 'rb') as f:
@@ -135,25 +173,22 @@ def calculate_star_map(req: RunRequest, hashVal: int):
     interpolation = req.interpolation
     logic = req.source
 
-    # We load geographic features from OpenStreetMap using a range of filters
-    location_types = req.location_types
     # load the cache info
     try:
         with open(f"./cache/uam_{hashVal}.pickle", 'rb') as f:
             polar_map = PolarMap.load(f"./cache/uam_{hashVal}.pickle")
-            print("found cache map data in starmap")
+
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="No map data found on this request.")
     
     # get dynamic markers, line and polygons
-    map_config = _get_config()
-    markers = map_config.markers
-    polylines = map_config.polylines
-    polygons = map_config.polygons
+    dynamic_layer = _get_dynamic_layer()
+    
+    markers = dynamic_layer.markers
+    polylines = dynamic_layer.polylines
+    polygons = dynamic_layer.polygons
 
-    dynamic_layers = DynamicLayer(markers=markers, polylines=polylines, polygons=polygons)
-
-    star_map_hash_val = create_hash_starmap(req, dynamic_layers, hashVal)
+    star_map_hash_val = create_hash_starmap(req, dynamic_layer, hashVal)
 
     # load the cache info
     #try:
@@ -166,7 +201,9 @@ def calculate_star_map(req: RunRequest, hashVal: int):
     for marker in markers:
         if marker.location_type == "":
             continue
-        polar_map.features.append(PolarLocation(marker.latlng[1], marker.latlng[0], location_type=marker.location_type))
+        polar_marker = PolarLocation(marker.latlng[1], marker.latlng[0], location_type=marker.location_type)
+        polar_map.features.append(polar_marker)
+    
     for polyline in polylines:
         if polyline.location_type == "":
             continue
@@ -175,12 +212,14 @@ def calculate_star_map(req: RunRequest, hashVal: int):
             locations.append(PolarLocation(location[1], location[0]))
         polyline_feature = PolarRoute(locations, location_type=polyline.location_type)
         polar_map.features.append(polyline_feature)
+
     for polygon in polygons:
         if polygon.location_type == "":
             continue
         locations = []
         for location in polygon.latlngs:
             locations.append(PolarLocation(location[1], location[0]))
+        
         polygon_feature = PolarPolygon(locations, location_type=polygon.location_type)
         polar_map.features.append(polygon_feature)
 
@@ -189,10 +228,12 @@ def calculate_star_map(req: RunRequest, hashVal: int):
     # apply covariance
     loc_type_table = _get_location_type_table()
     loc_to_uncertainty = dict()
-    for entry in loc_type_table.table:
-        loc_to_uncertainty[entry.location_type] = entry.uncertainty * eye(2)
+    for entry in loc_type_table:
+        if entry.uncertainty != 0:
+            loc_to_uncertainty[entry.location_type] = entry.uncertainty * eye(2)
     
     uam.apply_covariance(loc_to_uncertainty)
+
     # We create a statistical relational map (StaR Map) to represent the 
     # stochastic relationships in the environment, computing a raster of 1000 x 1000 points
     # using linear interpolation of a sample set
@@ -249,52 +290,159 @@ def inference(req: RunRequest, hashVal: int):
     return data
 
 
-@app.post("/config")
-def update_config(config: Config):
-    config_old = _get_config()
-
-    if config_old:
-        config.polygons = config_old.polygons
-        config.polylines = config_old.polylines
+@app.post("/update_total_layer_config")
+def update_total_layer_config(layer_config: LayerConfig):
     with open('./config/config.json', 'w', encoding='utf-8') as f:
-        f.write(config.model_dump_json(indent=2))
+        f.write(layer_config.model_dump_json(indent=2))
 
-@app.post("/config_polylines")
-def update_config_polylines(polylines: list[Line]):
-    config = _get_config()
-    config.polylines = polylines
+@app.post("/update_layer_config_entry")
+def update_layer_config_entry(layer: Layer):
+    layer_config = _get_config()
+    already_existed = False
+    # compare with old layer config to find match to update
+    for index, layer_entry in enumerate(layer_config):
+        if layer_entry.id == layer.id:
+            layer_config[index] = layer
+            already_existed = True
+            break
+
+    if not already_existed:
+        layer_config.append(layer)
     with open('./config/config.json', 'w', encoding='utf-8') as f:
-        f.write(config.model_dump_json(indent=2))
+        f.write(layer_config.model_dump_json(indent=2))
 
-@app.post("/config_polygons")
-def update_config_polygons(polygons: list[Polygon]):
-    config = _get_config()
-    config.polygons = polygons
+@app.post("/delate_layer_config_entry/{layer_pos}")
+def delete_layer_config_entry(layer_pos: int):
+    layer_config = _get_config()
+    layer_config.remove(layer_pos)
     with open('./config/config.json', 'w', encoding='utf-8') as f:
-        f.write(config.model_dump_json(indent=2))
+        f.write(layer_config.model_dump_json(indent=2))
 
-@app.post("/config_dynamic_layers")
-def update_config_dynamic(dynamic_layers: DynamicLayer):
-    markers = dynamic_layers.markers
-    polylines = dynamic_layers.polylines
-    polygons = dynamic_layers.polygons
+@app.post("/update_total_dynamic_layer")
+def update_total_dynamic_layer(dynamic_layer: DynamicLayer):
+    with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
+        f.write(dynamic_layer.model_dump_json(indent=2))
 
-    config = _get_config()
-    config.markers = markers
-    config.polylines = polylines
-    config.polygons = polygons
+@app.post("/update_dynamic_layer_entry")
+def update_dynamic_layer_entry(entry: Marker | Line | Polygon):
+    dynamic_layer = _get_dynamic_layer()
+    dynamic_layer.update_or_add_entry(entry)
+    with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
+        f.write(dynamic_layer.model_dump_json(indent=2))
 
-    with open('./config/config.json', 'w', encoding='utf-8') as f:
-        f.write(config.model_dump_json(indent=2))
+@app.post("/delete_dynamic_layer_entry")
+def delete_dynamic_layer_entry(entry: Marker | Line | Polygon):
+    dynamic_layer = _get_dynamic_layer()
+    dynamic_layer.delete_entry(entry)
+    with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
+        f.write(dynamic_layer.model_dump_json(indent=2))
 
-@app.post("/location_type_table")
-def update_location_type_table(location_type_table: LocationTypeTable):
+@app.post("/update_total_location_type_table")
+def update_total_location_type_table(location_type_table: LocationTypeTable):
     with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
         f.write(location_type_table.model_dump_json(indent=2))
 
-
-@app.get("/config")
-def get_config():
-    config = _get_config()
+@app.post("/update_location_type_entry")
+def update_location_type_entry(location_type_entry: LocationTypeEntry):
     location_type_table = _get_location_type_table()
-    return config, location_type_table
+    already_existed = False
+    # compare with old layer config to find match to update
+    for index, table_entry in enumerate(location_type_table):
+        if table_entry.id == location_type_entry.id:
+            location_type_table[index] = location_type_entry
+            already_existed = True
+            break
+
+    if not already_existed:
+        location_type_table.append(location_type_entry)
+    with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
+        f.write(location_type_table.model_dump_json(indent=2))
+
+@app.get("/app_config")
+def get_config() -> tuple[LayerConfig, DynamicLayer, LocationTypeTable]:
+    config = _get_config()
+    dynamic_layer = _get_dynamic_layer()
+    location_type_table = _get_location_type_table()
+    return config, dynamic_layer, location_type_table
+
+
+@app.post("/add_geojson")
+def add_geo_object(new_obj: Feature):
+    location_type = new_obj.properties["location_type"] if "location_type" in new_obj.properties else ""
+    loc_type_table = _get_location_type_table()
+    loc_type_entry = loc_type_table.find(location_type)
+    color = get_random_color()
+    if not hasattr(app, 'temp_dyn_obj_and_loc_type'):
+        app.temp_dyn_obj_and_loc_type = dict()
+        app.temp_dyn_obj_and_loc_type["markers"] = []
+        app.temp_dyn_obj_and_loc_type["polylines"] = []
+        app.temp_dyn_obj_and_loc_type["polygons"] = []
+        app.temp_dyn_obj_and_loc_type["loc_type_entries"] = []
+
+    if loc_type_entry is None:
+        new_loc_type_entry = LocationTypeEntry(id=uuid4().int % 2**31,
+                                               location_type=location_type,
+                                               color=color)
+        update_location_type_entry(new_loc_type_entry)
+        app.temp_dyn_obj_and_loc_type["loc_type_entries"].append(new_loc_type_entry)
+    else:
+        color = loc_type_entry.color
+    
+    coords = new_obj.geometry.coordinates
+
+    match new_obj.geometry.type:
+        case "Point":
+            marker = Marker(id=new_obj.id, 
+                            latlng=[coords[1], coords[0]] , 
+                            shape=new_obj.properties["shape"] if "shape" in new_obj.properties else 'defaultMarker',
+                            name=new_obj.properties["name"] if "name" in new_obj.properties else '3rd Party',
+                            location_type=location_type,
+                            color=color)
+            update_dynamic_layer_entry(marker)
+            app.temp_dyn_obj_and_loc_type["markers"].append(marker)
+        case "LineString":
+            line = Line(id=new_obj.id, 
+                        latlngs=[[loc[1], loc[0]] for loc in coords],
+                        location_type=location_type,
+                        color=color)
+            update_dynamic_layer_entry(line)
+            app.temp_dyn_obj_and_loc_type["polylines"].append(line)
+        case "Polygon":
+            latlngs = [(loc[1], loc[0]) for loc in coords[0]] if len(coords) >= 1 else []
+            latlngs = latlngs[:-1]
+            holes = []
+            if len(coords) >= 2:
+                for ind in range(1, len(coords)):
+                    hole = [(loc[1], loc[0]) for loc in coords[ind]]
+                    hole = hole[:-1]
+                    holes.append(hole)
+            polygon = Polygon(id=new_obj.id, 
+                              latlngs=latlngs,
+                              holes=holes,
+                              location_type=location_type,
+                              color=color)
+            update_dynamic_layer_entry(polygon)
+            app.temp_dyn_obj_and_loc_type["polygons"].append(polygon)
+
+@app.post("/add_geojson_map")
+def add_geo_objects(new_objs: list[Feature]):
+    for feature in new_objs:
+        add_geo_object(feature)
+
+@app.get("/external_update")
+def fetch_external_update():
+    if not hasattr(app, 'temp_dyn_obj_and_loc_type'):
+        app.temp_dyn_obj_and_loc_type = dict()
+        app.temp_dyn_obj_and_loc_type["markers"] = []
+        app.temp_dyn_obj_and_loc_type["polylines"] = []
+        app.temp_dyn_obj_and_loc_type["polygons"] = []
+        app.temp_dyn_obj_and_loc_type["loc_type_entries"] = []
+    result = app.temp_dyn_obj_and_loc_type.copy()
+    # clean up
+    app.temp_dyn_obj_and_loc_type["markers"] = []
+    app.temp_dyn_obj_and_loc_type["polylines"] = []
+    app.temp_dyn_obj_and_loc_type["polygons"] = []
+    app.temp_dyn_obj_and_loc_type["loc_type_entries"] = []
+    return result
+    
+

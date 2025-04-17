@@ -3,7 +3,7 @@ import "leaflet.heat";
 import * as turf from "@turf/turf";
 
 import ColorHelper from "../utils/ColorHelper.js";
-import { updateConfig, updateConfigPolygons, updateConfigPolylines, updateConfigDynamicLayers } from "../utils/Utility.js";
+import { updateDynamicLayerEntry, deleteDynamicLayerEntry, updateConfigDynamicLayers, randomId } from "../utils/Utility.js";
 
 import { C } from "./Core.js";
 import { getDefaultMarker, getDroneIcon, getLandingPadIcon } from "../utils/getIcons.js";
@@ -29,11 +29,33 @@ class MapManager {
     this.dynamicFeatureGroup = null;
     
     this.nameNumber = 1;
-    this._isinitMarker = false;
-    this._isinitLine = false;
-    this._isinitPolygon = false;
     this._onClickFunction = new Map();
     this.bBoxFeatureGroup = null;
+    this.svgElement = null;
+    this.svgOverlay = null;
+  }
+
+  getDynamicLayer(layer) {
+    if (layer.feature.properties["shape"] === "Line") {
+      return this.getPolyline(layer);
+    }
+    else if (layer.feature.properties["shape"] === "Polygon") {
+      return this.getPolygon(layer);
+    }
+    else {
+      return this.getMarker(layer);
+    }
+  }
+
+  getMarker(layer) {
+    return {
+      id: layer.feature.properties["id"],
+      name: layer.feature.properties["name"],
+      latlng: [layer.getLatLng().lat, layer.getLatLng().lng],
+      shape: layer.feature.properties["shape"],
+      location_type: layer.feature.properties["locationType"],
+      color: layer.feature.properties["color"],
+    }
   }
 
   // get markers from map
@@ -44,17 +66,20 @@ class MapManager {
       return markers;
     } 
     this.dynamicFeatureGroup.eachLayer((layer) => {
-      if (layer.options.pane == "markerPane") {
-        markers.push({
-          name: layer.feature.properties["name"],
-          latlng: [layer.getLatLng().lat, layer.getLatLng().lng],
-          shape: layer.feature.properties["shape"],
-          location_type: layer.feature.properties["locationType"],
-          color: layer.feature.properties["color"],
-        });
+      if (layer.options.pane === "markerPane") {
+        markers.push(this.getMarker(layer));
       }
     });
     return markers;
+  }
+
+  getPolyline(layer) {
+    return {
+      id: layer.feature.properties["id"],
+      latlngs: layer.getLatLngs().map((latlng) => [latlng.lat, latlng.lng]),
+      location_type: layer.feature.properties["locationType"],
+      color: layer.feature.properties["color"],
+    }
   }
 
   getPolylines() {
@@ -64,14 +89,24 @@ class MapManager {
     }
     this.dynamicFeatureGroup.eachLayer((layer) => {
       if (layer.feature.properties["shape"] === "Line") {
-        polylines.push({
-          latlngs: layer.getLatLngs().map((latlng) => [latlng.lat, latlng.lng]),
-          location_type: layer.feature.properties["locationType"],
-          color: layer.feature.properties["color"],
-        });
+        polylines.push(this.getPolyline(layer));
       }
     });
     return polylines;
+  }
+
+  getPolygon(layer) {
+    let holes = [];
+    if (layer.getLatLngs().length > 1) {
+      holes = layer.getLatLngs().slice(1).map((latlngs) => latlngs.map((latlng) => [latlng.lat, latlng.lng]));
+    }
+    return {
+      id: layer.feature.properties["id"],
+      latlngs: layer.getLatLngs()[0].map((latlng) => [latlng.lat, latlng.lng]),
+      holes: holes,
+      location_type: layer.feature.properties["locationType"],
+      color: layer.feature.properties["color"],
+    }
   }
 
   getPolygons() {
@@ -81,11 +116,7 @@ class MapManager {
     }
     this.dynamicFeatureGroup.eachLayer((layer) => {
       if (layer.feature.properties["shape"] === "Polygon") {
-        polygons.push({
-          latlngs: layer.getLatLngs()[0].map((latlng) => [latlng.lat, latlng.lng]),
-          location_type: layer.feature.properties["locationType"],
-          color: layer.feature.properties["color"],
-        });
+        polygons.push(this.getPolygon(layer));
       }
     });
     return polygons;
@@ -139,22 +170,22 @@ class MapManager {
     this.map.pm.addControls(options);
 
     this.map.on("pm:create", function ({ shape, layer }) {
-      if (layer.options.pane == "markerPane") {
+      if (layer.options.pane === "markerPane") {
         MapManager._onCreatedMarker(shape, layer);
       }
-      else if (shape == "Line"){
+      else if (shape === "Line"){
         MapManager._onCreatedLine(shape, layer);
         
-      } else if (shape == "Polygon") {  
+      } else if (shape === "Polygon") {  
         MapManager._onCreatedPolygon(shape, layer);
       }
     });
     this.map.on("pm:remove", function ({ shape, layer }) {
-      if (layer.options.pane == "markerPane") {
+      if (layer.options.pane === "markerPane") {
         // update origin from source when the removed drone marker is the origin
         if (layer.feature.properties["name"] === C().sourceMan.origin) {
           // find the first marker and set it as the new origin
-          const markers = C().mapMan.listMarkers();
+          const markers = C().mapMan.listOriginMarkers();
           if (markers.length > 0) {
             C().sourceMan.updateOrigin(markers[0].feature.properties["name"]);
           } else {
@@ -167,12 +198,12 @@ class MapManager {
         }
         
         // update the configuration data on the backend
-        updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+        deleteDynamicLayerEntry(C().mapMan.getMarker(layer));
       }
-      else if (shape == "Line"){
-        updateConfigPolylines(C().mapMan.getPolylines());
-      } else if (shape == "Polygon") {  
-        updateConfigPolygons(C().mapMan.getPolygons());
+      else if (shape === "Line"){
+        deleteDynamicLayerEntry(C().mapMan.getPolyline(layer));
+      } else if (shape === "Polygon") {  
+        deleteDynamicLayerEntry(C().mapMan.getPolygon(layer));
       }
     });
 
@@ -303,10 +334,18 @@ class MapManager {
     const markerName = "Marker " + C().mapMan.nameNumber++;
     //console.log(layer);
     // add properties to the marker
-    MapManager._initLayerProperties(layer, markerName, shape);
+    if (shape === "landingSiteMarker") {
+      const color = C().sourceMan.getDefaultLocationTypesRows().find((row) => row.locationType === "VERTIPORT").color;
+      MapManager._initLayerProperties(layer, markerName, shape, "VERTIPORT", color);
+      layer.setIcon(MapManager.icons[shape](color));
+    } else {
+      const color = C().sourceMan.getDefaultLocationTypesRows().find((row) => row.locationType === "UNKNOWN").color;
+      MapManager._initLayerProperties(layer, markerName, shape, "UNKNOWN", color);
+      layer.setIcon(MapManager.icons[shape](color));
+    }
     // listen to the edit event to update the configuration data on the backend
     layer.on("pm:edit", function () {
-      updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+      updateDynamicLayerEntry(C().mapMan.getMarker(layer));
       //console.log(C().mapMan.getMarkers());
       console.log("marker edited now");
     });
@@ -315,38 +354,45 @@ class MapManager {
     C().updateBottomBar();
 
     // update the configuration data on the backend
-    updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+    updateDynamicLayerEntry(C().mapMan.getMarker(layer));
   }
 
   static _onCreatedLine(shape, layer) {
     // add properties
-    MapManager._initLayerProperties(layer, "", shape);
+    const color = C().sourceMan.getDefaultLocationTypesRows().find((row) => row.locationType === "UNKNOWN").color;
+    MapManager._initLayerProperties(layer, "", shape, "UNKNOWN", color);
     // listen to the edit event to update the configuration data on the backend
     layer.on("pm:edit", function () {
       console.log("line edited")
-      updateConfigPolylines(C().mapMan.getPolylines());
+      updateDynamicLayerEntry(C().mapMan.getPolyline(layer));
     });
-    layer.setStyle({ color: "#000000" });
+    layer.setStyle({ color: color });
     // update the configuration data on the backend
-    updateConfigPolylines(C().mapMan.getPolylines());
+    updateDynamicLayerEntry(C().mapMan.getPolyline(layer));
   }
 
   static _onCreatedPolygon(shape, layer) {
     // add properties
-    MapManager._initLayerProperties(layer, "", shape);
+    const color = C().sourceMan.getDefaultLocationTypesRows().find((row) => row.locationType === "UNKNOWN").color;
+    MapManager._initLayerProperties(layer, "", shape, "UNKNOWN", color);
     // listen to the edit event to update the configuration data on the backend
     layer.on("pm:edit", function () {
-      updateConfigPolygons(C().mapMan.getPolygons());
+      updateDynamicLayerEntry(C().mapMan.getPolygon(layer));
     });
-    layer.setStyle({ color: "#000000" });
+    layer.setStyle({ color: color });
     // update the configuration data on the backend
-    updateConfigPolygons(C().mapMan.getPolygons());
+    updateDynamicLayerEntry(C().mapMan.getPolygon(layer));
   }
 
-  static _initLayerProperties(layer, name, shape, locationType = "", color = "#000000") {
+  static _initLayerProperties(layer, name, shape, locationType = "UNKNOWN", color = "black", id = null) {
     layer.feature = layer.feature || {};
     layer.feature.type = "Feature";
     layer.feature.properties = layer.feature.properties || {};
+    if (id) {
+      layer.feature.properties["id"] = id;
+    } else {
+      layer.feature.properties["id"] = randomId();
+    }
     layer.feature.properties["shape"] = shape;
     layer.feature.properties["name"] = name;
     layer.feature.properties["locationType"] = locationType;
@@ -397,7 +443,7 @@ class MapManager {
     //Draw all layers (in reversed order to draw top layer (position 0) last)
     C()
       .layerMan.layers.toReversed()
-      .map((currentLayer, layerIndex) => {
+      .forEach((currentLayer, layerIndex) => {
         //console.log("renderLayers currentLayer: ", currentLayer);
         if (!C().layerMan.hideAllLayers && currentLayer.visible) {
           console.log("renderLayers currentLayer...");
@@ -642,7 +688,17 @@ class MapManager {
     if (!this.dynamicFeatureGroup) {
       return markers;
     }
-    return this.dynamicFeatureGroup.getLayers().filter((layer) => layer.options.pane == "markerPane");
+    return this.dynamicFeatureGroup.getLayers().filter((layer) => layer.options.pane === "markerPane");
+  }
+
+  listOriginMarkers() {
+    let markers = [];
+    if (!this.dynamicFeatureGroup) {
+      return markers;
+    }
+    return this.dynamicFeatureGroup.getLayers().filter((layer) => {
+      return layer.options.pane === "markerPane" && layer.feature.properties["locationType"] === "ORIGIN";
+    });
   }
   
   listDroneMarkers() {
@@ -689,11 +745,9 @@ class MapManager {
     if (!this.dynamicFeatureGroup) {
       return;
     }
-    if (this._isinitMarker) {
-      return;
-    }
     // add markers
     markers.forEach((marker) => {
+      const markerId = marker.id;
       const markerName = marker.name;
       const markerPosition = marker.latlng;
       const markerShape = marker.shape;
@@ -702,24 +756,59 @@ class MapManager {
       const markerLayer = new L.marker(markerPosition, { icon: MapManager.icons[markerShape](markerColor) });
       markerLayer.on("pm:edit", function() {
         // update the configuration data on the backend
-        updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+        updateDynamicLayerEntry(C().mapMan.getMarker(markerLayer));
         console.log("marker edited");
       });
-      MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor);
+      MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor, markerId);
       this.dynamicFeatureGroup.addLayer(markerLayer);
 
       // update number of markers to avoid name conflicts
-      this.nameNumber = Math.max(this.nameNumber, parseInt(markerName.split(" ")[1]) + 1);
+      // ignore if marker name is not in the format "Marker x" with x is a number
+      if (markerName.startsWith("Marker ")) {
+        const number = parseInt(markerName.split(" ")[1]);
+        // check if the number is greater than the current nameNumber and number is a valid number
+        if (!isNaN(number) && number >= this.nameNumber) {
+          this.nameNumber = number + 1;
+        }
+      }
     });
-    this._isinitMarker = true;
   }
+
+  _cleanupDynamicLayer(layers){
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    // remove all dynamic layers that have the same id as the layers in the list
+    layers.forEach((layer) => {
+      this.dynamicFeatureGroup.eachLayer((existingLayer) => {
+        if (existingLayer.feature.properties["id"] === layer.id) {
+          this.dynamicFeatureGroup.removeLayer(existingLayer);
+        }
+      });
+    });
+  }
+
+  // import all external layers from backend type=1: marker, type=2: polyline, type=3: polygon
+  importExternal(dynamicLayers) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+
+    this._cleanupDynamicLayer(dynamicLayers.markers);
+    this._cleanupDynamicLayer(dynamicLayers.polylines);
+    this._cleanupDynamicLayer(dynamicLayers.polygons);
+    
+    // import markers, polylines and polygons
+    this.importMarkers(dynamicLayers.markers);
+    this.importPolylines(dynamicLayers.polylines);
+    this.importPolygons(dynamicLayers.polygons);
+
+  }
+
 
   // import all polylines from json config file
   importPolylines(polylines) {
     if (!this.dynamicFeatureGroup) {
-      return;
-    }
-    if (this._isinitLine) {
       return;
     }
     // add polylines
@@ -727,9 +816,9 @@ class MapManager {
       const polylineLayer = new L.polyline(polyline.latlngs);
       polylineLayer.on("pm:edit", function() {
         // update the configuration data on the backend
-        updateConfigPolylines(C().mapMan.getPolylines());
+        updateDynamicLayerEntry(C().mapMan.getPolyline(polylineLayer));
       });
-      MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color);
+      MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id);
       // add color style to the line
       if (polyline.color) {
         polylineLayer.setStyle({
@@ -739,7 +828,6 @@ class MapManager {
 
       this.dynamicFeatureGroup.addLayer(polylineLayer);
     });
-    this._isinitLine = true;
   }
 
   // import all polygons from json config file
@@ -747,17 +835,20 @@ class MapManager {
     if (!this.dynamicFeatureGroup) {
       return;
     }
-    if (this._isinitPolygon) {
-      return;
-    }
     // add polygons
     polygons.forEach((polygon) => {
-      const polygonLayer = new L.polygon(polygon.latlngs);
+      let polygonLatlngs = [];
+      polygonLatlngs.push(polygon.latlngs);
+      // add holes to the polygon
+      if (polygon.holes) {
+        polygonLatlngs = polygonLatlngs.concat(polygon.holes);
+      }
+      const polygonLayer = new L.polygon(polygonLatlngs);
       polygonLayer.on("pm:edit", function() {
         // update the configuration data on the backend
-        updateConfigPolygons(C().mapMan.getPolygons());
+        updateDynamicLayerEntry(C().mapMan.getPolygon(polygonLayer));
       });
-      MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color);
+      MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color, polygon.id);
       // add color style to the polygon
       if (polygon.color) {
         polygonLayer.setStyle({
@@ -769,11 +860,11 @@ class MapManager {
       this.dynamicFeatureGroup.addLayer(polygonLayer);
     });
     //console.log("polygon added!!")
-    this._isinitPolygon = true;
   }
 
   // initialize the location type click event listeners
-  setLocationTypeOnClick(locationType, color) {
+  // type: all, marker, polyline, polygon, vertiport
+  setLocationTypeOnClick(locationType, color, type="all") {
     if (!this.dynamicFeatureGroup) {
       return;
     }
@@ -803,8 +894,18 @@ class MapManager {
         }
 
         // update the configuration data on the backend
-        updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
+        updateDynamicLayerEntry(C().mapMan.getDynamicLayer(layer));
       };
+      if (type === "marker"){
+        if (layer.feature.properties["shape"] === "Line" || layer.feature.properties["shape"] === "Polygon") {
+          return;
+        }
+      }
+      if (type === "vertiport"){
+        if (layer.feature.properties["shape"] !== "landingSiteMarker") {
+          return;
+        }
+      }
       layer.on("click", onClickFunc);
       this._onClickFunction.set(layer, onClickFunc);
     });
@@ -957,11 +1058,78 @@ class MapManager {
     //this.map.fitBounds(bbox);
   }
 
+
+  highlightBoundaryAlter(origin,
+    dimensionWidth, 
+    dimensionHeight, 
+    resolutionWidth, 
+    resolutionHeight,
+    supportResolutionWidth,
+    supportResolutionHeight,
+  ) {
+     // do nothing if origin is not selected or any of the dimension or resolution is not set
+     if (origin === "") {
+      return;
+    }
+    // remove the old bounding box layer
+    this.unhighlightBoundaryAlter();
+
+    // calculate the bounding box
+    const originLatlng = C().mapMan.latlonFromMarkerName(origin);
+    const bbox = this._getBBox(originLatlng, dimensionWidth, dimensionHeight);
+
+    // create the svg overlay
+    let svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svgElement.setAttribute('xmlns', "http://www.w3.org/2000/svg");
+    svgElement.setAttribute('viewBox', "0 0 " + dimensionWidth + " " + dimensionHeight);
+
+    const cellWidth = 1 / resolutionWidth;
+    const cellHeight = 1 / resolutionHeight;
+    const cellWidthSupport = 1 / supportResolutionWidth;
+    const cellHeightSupport = 1 / supportResolutionHeight;
+
+    const strokeWidth = 1 / (Math.max(resolutionWidth, resolutionHeight) * 50);
+    const strokeWidthSupport = 1 / (Math.max(supportResolutionWidth, supportResolutionHeight) * 25);
+
+    svgElement.innerHTML = `
+      <defs>
+
+        <pattern id="Pattern1" width="${cellWidth}" height="${cellHeight}" patternContentUnits="objectBoundingBox">
+            <rect x="0" y="0" width="${cellWidth}" height="${cellHeight}" fill="#d9a766" stroke="brown" stroke-width="${strokeWidth}" fill-opacity="0.2" stroke-opacity="1"></rect>
+        </pattern>
+
+        <pattern id="Pattern2" width="${cellWidthSupport}" height="${cellHeightSupport}" patternContentUnits="objectBoundingBox">
+            <rect x="0" y="0" width="${cellWidthSupport}" height="${cellHeightSupport}" fill="#31e30e" stroke="green" stroke-width="${strokeWidthSupport}" fill-opacity="0" stroke-opacity="1"></rect>
+        </pattern>
+
+      </defs>
+
+      <rect fill="url(#Pattern1)" width="${dimensionWidth}" height="${dimensionHeight}"></rect>
+      <rect fill="url(#Pattern2)" width="${dimensionWidth}" height="${dimensionHeight}"></rect>
+    `;
+    // create the svg overlay
+    this.svgOverlay = L.svgOverlay(svgElement, bbox).addTo(this.map);
+
+    this.svgElement = svgElement;
+  }
+
   // remove the bounding box feature group if it exists
   unhighlightBoundary() {
     if (this.bBoxFeatureGroup) {
       console.log("unhighlightBoundary");
       this.map.removeLayer(this.bBoxFeatureGroup);
+    }
+  }
+
+  unhighlightBoundaryAlter() {
+    console.log("unhighlightBoundaryAlter");
+    if (this.svgElement) {
+      this.svgElement.remove();
+      this.svgElement = null;
+    }
+    if (this.svgOverlay) {
+      this.map.removeLayer(this.svgOverlay);
+      this.svgOverlay = null;
     }
   }
 
