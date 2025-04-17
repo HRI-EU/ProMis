@@ -13,6 +13,14 @@ class SourceCodeManager {
     this.interpolation = "linear";
   }
 
+  getDefaultLocationTypesRows() {
+    return this.locationTypes.filter((row) => {
+      const defaultLocationType = ["UNKNOWN", "ORIGIN", "VERTIPORT"];
+      return defaultLocationType.includes(row.locationType);
+    })
+  }
+
+
   getRequestBody({
     dimensionWidth
     , dimensionHeight
@@ -87,7 +95,6 @@ class SourceCodeManager {
     const body = this.getRequestBody(bodyParams);
     //Run the source code
     const url = "http://localhost:8000/" + endpoint + (hashValue === -1 ? "" : "/" + hashValue);
-    console.log(url);
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -169,6 +176,8 @@ class SourceCodeManager {
     updateConfigLocationTypes(locationTypes);
     // TODOS: update polygons and polylines and marker appropriately
   }
+
+  
 }
 
 export default SourceCodeManager;

@@ -56,7 +56,7 @@ export function randomId() {
 
 // function to get configuration json data from backend
 export async function getConfig() {
-  const url = "http://localhost:8000/config";
+  const url = "http://localhost:8000/app_config";
   // fetch configuration data from backend, convert to json, handle errors
   let config = null;
   try {
@@ -73,24 +73,91 @@ export async function getConfig() {
   return config;
 }
 
+function prepareLayer(layer){
+  layer.markerLayer = null;
+  layer.leafletOverlays = [];
+}
+
 function prepareLayers(layers){
   layers.forEach((layer) => {
-    layer.markerLayer = null;
-    layer.leafletOverlays = [];
+    prepareLayer(layer);
   });
+}
+
+function revertLayer(layer, markerLayer, leafletOverlays){
+  layer.markerLayer = markerLayer;
+  layer.leafletOverlays = leafletOverlays;
 }
 
 function revertLayers(layers, markerLayers, leafletOverlays){
   // add markerLayer back to layers
   layers.forEach((layer, index) => {
-    layer.markerLayer = markerLayers[index];
-    layer.leafletOverlays = leafletOverlays[index];
+    revertLayer(layer, markerLayers[index], leafletOverlays[index]);
   });
 }
 
 // function to update the configuration data on the backend
-export async function updateConfig(layers, markers) {
-  const url = "http://localhost:8000/config";
+export async function updateLayerConfig(layer) {
+  const url = "http://localhost:8000/update_layer_config_entry";
+  
+  // prepare layer for serialization
+  const markerLayer = layer.markerLayer;
+  const leafletOverlay = layer.leafletOverlays;
+  prepareLayer(layer);
+
+  const layerCpy = structuredClone(layer);
+
+  // revert layer back to original state
+  revertLayer(layer, markerLayer, leafletOverlay);
+  
+  // send the updated configuration data to the backend
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(layerCpy, null, 2),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update layer config entry");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+  
+}
+
+// function to delete the configuration data on the backend
+export async function deleteLayerConfig(layerPos) {
+  const url = "http://localhost:8000/delate_layer_config_entry";
+
+  // add layer position as path parameter
+  const urlWithPos = url + "/" + layerPos;
+  
+  
+  // send the updated configuration data to the backend
+  try {
+    const response = await fetch(urlWithPos, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to delete layer config entry");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+  
+}
+
+// function to update the configuration data on the backend
+export async function updateTotalConfig(layers) {
+  const url = "http://localhost:8000/update_total_layer_config";
   
   // prepare layers for serialization
   const markerLayers = layers.map((layer) => layer.markerLayer);
@@ -102,15 +169,12 @@ export async function updateConfig(layers, markers) {
   // revert layers back to original state
   revertLayers(layers, markerLayers, leafletOverlays);
   // create the configuration data
-  const config = {
-    layers: layersCpy,
-    markers: markers
-  };
+
   // send the updated configuration data to the backend
   try {
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify(config, null, 2),
+      body: JSON.stringify(layersCpy, null, 2),
       headers: {
         "Content-Type": "application/json",
       },
@@ -125,12 +189,12 @@ export async function updateConfig(layers, markers) {
   
 }
 
-export async function updateConfigPolylines(polylines){
-  const url = "http://localhost:8000/config_polylines";
+export async function updateDynamicLayerEntry(entry){
+  const url = "http://localhost:8000/update_dynamic_layer_entry";
   try {
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify(polylines, null, 2),
+      body: JSON.stringify(entry, null, 2),
       headers: {
         "Content-Type": "application/json",
       },
@@ -144,12 +208,12 @@ export async function updateConfigPolylines(polylines){
   }
 }
 
-export async function updateConfigPolygons(polygons){
-  const url = "http://localhost:8000/config_polygons";
+export async function deleteDynamicLayerEntry(entry){
+  const url = "http://localhost:8000/delete_dynamic_layer_entry";
   try {
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify(polygons, null, 2),
+      body: JSON.stringify(entry, null, 2),
       headers: {
         "Content-Type": "application/json",
       },
@@ -162,9 +226,11 @@ export async function updateConfigPolygons(polygons){
     console.error(error.message);
   }
 }
+
+
 
 export async function updateConfigDynamicLayers(markers, polylines, polygons){
-  const url = "http://localhost:8000/config_dynamic_layers";
+  const url = "http://localhost:8000/update_total_dynamic_layer";
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -183,7 +249,7 @@ export async function updateConfigDynamicLayers(markers, polylines, polygons){
 }
 
 export async function updateConfigLocationTypes(locationTypes){
-  const url = "http://localhost:8000/location_type_table";
+  const url = "http://localhost:8000/update_total_location_type_table";
   //console.log(locationTypes);
   const locationTypesCpy = structuredClone(locationTypes);
   // iterate over locationTypes and change locationType field to location_type
@@ -194,7 +260,7 @@ export async function updateConfigLocationTypes(locationTypes){
   try {
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify({"table": locationTypesCpy}, null, 2),
+      body: JSON.stringify(locationTypesCpy, null, 2),
       headers: {
         "Content-Type": "application/json",
       },
@@ -203,6 +269,22 @@ export async function updateConfigLocationTypes(locationTypes){
     if (!response.ok) {
       throw new Error("Failed to update configuration data");
     }
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+
+export async function checkExternalUpdate() {
+  const url = "http://localhost:8000/external_update";
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error("Failed to check for external update");
+    }
+
+    const json = await response.json();
+    return json;
   } catch (error) {
     console.error(error.message);
   }

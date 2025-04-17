@@ -18,6 +18,7 @@ from typing import Any, TypeVar
 from geojson import Feature, FeatureCollection, dumps
 from numpy import ndarray
 from shapely import STRtree
+from requests import post
 
 # ProMis
 from promis.geo.location import CartesianLocation, PolarLocation
@@ -187,7 +188,28 @@ class PolarMap(Map):
         cartesian_features = [feature.to_cartesian(self.origin) for feature in self.features]
 
         return CartesianMap(self.origin, cartesian_features)
+    
+    def send_to_gui(self, url: str ="http://localhost:8000/add_geojson_map", timeout: int = 10):
+        """Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.
 
+        Args:
+            url: url of the backend
+            timeout: request timeout in second
+
+        Raise:
+            :class:`~requests.HTTPError`: When the HTTP request returned an unsuccessful status code
+            :class:`~requests.ConnectionError`: If the request fails due to connection issues
+        """
+        if self.features is None:
+            return
+        data = "["
+        for feature in self.features:
+            data += feature.to_geo_json()
+            data += ','
+        data = data[:-1]
+        data += ']'
+        r = post(url=url, data=data, timeout=timeout)
+        r.raise_for_status()
 
 class CartesianMap(Map):
 

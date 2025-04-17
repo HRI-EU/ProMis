@@ -88,6 +88,7 @@ intersphinx_mapping = {
     "pytest": ("https://docs.pytest.org/en/stable", None),
     "pytest-cov": ("https://pytest-cov.readthedocs.io/en/stable", None),
     "hypothesis": ("https://hypothesis.readthedocs.io/en/latest", None),
+    'requests': ('https://requests.readthedocs.io/en/latest/', None),
 }
 
 nitpicky = False

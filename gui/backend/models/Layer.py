@@ -1,5 +1,10 @@
 from pydantic import BaseModel
-from .Point import Point
+
+
+class Point(BaseModel):
+    position: tuple[float, float]
+    probability: float
+    radius: float
 
 class Layer(BaseModel):
     id: int

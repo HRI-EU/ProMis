@@ -15,6 +15,7 @@ from uuid import uuid4
 
 # Third Party
 from geojson import Feature, dumps
+from requests import post
 
 
 class Geospatial(ABC):
@@ -122,6 +123,22 @@ class Geospatial(ABC):
                 **kwargs,
             ),
         )
+    
+    def send_to_gui(self, url: str ="http://localhost:8000/add_geojson", timeout: int = 1):
+        """Send an HTTP POST-request to the GUI backend.
+
+        Args:
+            url: url of the backend
+            timeout: request timeout in second
+
+        Raise:
+            :class:`~requests.HTTPError`: When the HTTP request returned an unsuccessful status code
+            :class:`~requests.ConnectionError`: If the request fails due to connection issues
+        """
+
+        data = self.to_geo_json()
+        r = post(url=url, data=data, timeout=timeout)
+        r.raise_for_status()
 
     @property
     @abstractmethod

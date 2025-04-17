@@ -56,6 +56,8 @@ export default function LocationTypeSetting({ initialRows }) {
   const [rowModesModel, setRowModesModel] = React.useState({});
   const [chooseRow, setChooseRow] = React.useState(null);
 
+  const defaultLocationType = ["UNKNOWN", "ORIGIN", "VERTIPORT"];
+
   LocationTypeSetting.propTypes = {
     initialRows: PropTypes.array.isRequired,
   };
@@ -63,6 +65,10 @@ export default function LocationTypeSetting({ initialRows }) {
   React.useEffect(() => {
     C().sourceMan.updateLocationTypes(rows);
   }, [rows]);
+
+  React.useEffect(() => {
+    setRows(C().sourceMan.locationTypes);
+  }, [C().sourceMan.locationTypes]);
 
   React.useEffect(() => {
     return () => {
@@ -111,8 +117,15 @@ export default function LocationTypeSetting({ initialRows }) {
     const chosenRow = rows.find((row) => row.id === id);
     const locationType = chosenRow.locationType;
     const color = chosenRow.color;
+    let type = "all";
+    if (locationType === "ORIGIN") {
+      type = "marker";
+    }
+    else if (locationType === "VERTIPORT") {
+      type = "vertiport";
+    }
     // call the map manager to set the location type and color
-    C().mapMan.setLocationTypeOnClick(locationType, color);
+    C().mapMan.setLocationTypeOnClick(locationType, color, type);
   }
 
   const handleUnchooseClick = () => () => {
@@ -124,20 +137,38 @@ export default function LocationTypeSetting({ initialRows }) {
   const processRowUpdate = (newRow) => {
     const updatedRow = { ...newRow, isNew: false };
     const oldRow = rows.find((row) => row.id === newRow.id);
-    // check if updatedRow.color changed
-    if (updatedRow.color !== oldRow.color) {
-      // call the map manager to update the color of the location type
-      C().mapMan.updateLocationTypeColor(oldRow.locationType, updatedRow.color);
-    }
     // check if updatedRow.locationType changed
     if (oldRow.locationType !== updatedRow.locationType) {
+      // check if the new location type already exists or is empty
+      const locationTypeExists = rows.some((row) => row.locationType === updatedRow.locationType);
+      if (locationTypeExists) {
+        // if it exists, returns
+        return;
+      }
       // call the map manager to update the location type
       C().mapMan.updateLocationType(updatedRow.locationType, oldRow.locationType);
     }
-    // make sure the row has a color (default to random chroma color)
+    // make sure the row has a unique color (default to random chroma color)
     if (updatedRow.color === undefined || updatedRow.color === "") {
       const length = Color.simpleValues.length;
-      updatedRow.color = Color.simpleValues[Math.floor(Math.random() * length)].name;
+      let newColor = Color.simpleValues[Math.floor(Math.random() * length)].name;
+      let colorExists = rows.some((row) => row.color === newColor);
+      while (colorExists) {
+        newColor = Color.simpleValues[Math.floor(Math.random() * length)].name;
+        colorExists = rows.some((row) => row.color === newColor);
+      }
+      updatedRow.color = newColor;
+    }
+    // check if updatedRow.color changed
+    if (updatedRow.color !== oldRow.color) {
+      // check if the new color already exists
+      const colorExists = rows.some((row) => row.color === updatedRow.color);
+      if (colorExists) {
+        // if it exists, returns
+        return;
+      }
+      // call the map manager to update the color of the location type
+      C().mapMan.updateLocationTypeColor(oldRow.locationType, updatedRow.color);
     }
     // make sure the row has a filter (default to empty string)
     if (updatedRow.filter === undefined) {
@@ -172,6 +203,13 @@ export default function LocationTypeSetting({ initialRows }) {
       cellClassName: 'actions',
       getActions: ({ id }) => {
         const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
+        const row = rows.find((row) => row.id === id);
+        let isDefaultRow = false;
+        defaultLocationType.forEach((element) => {
+          if (row.locationType === element) {
+            isDefaultRow = true;
+          }
+        });
 
         if (isInEditMode) {
           return [
@@ -193,6 +231,10 @@ export default function LocationTypeSetting({ initialRows }) {
               color="inherit"
             />,
           ];
+        }
+
+        if (isDefaultRow) {
+          return [];
         }
 
         return [
@@ -264,8 +306,21 @@ export default function LocationTypeSetting({ initialRows }) {
       <DataGrid
         rows={rows}
         columns={columns}
-        editMode="row"
         rowModesModel={rowModesModel}
+        isCellEditable={(params) => 
+          {
+            let isEditable = true;
+            defaultLocationType.forEach((element) => {
+              if (params.value === element) {
+                isEditable = false;
+              }
+              if (params.field === "filter" && params.row.locationType === element) {
+                isEditable = false;
+              }
+            });
+            return isEditable;
+          }
+        }
         onRowModesModelChange={handleRowModesModelChange}
         onRowEditStop={handleRowEditStop}
         processRowUpdate={processRowUpdate}
