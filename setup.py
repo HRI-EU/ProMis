@@ -42,41 +42,45 @@ setuptools.setup(
     ],
     python_requires=">=3.9",
     install_requires=[
-        # => libraries for actual functionality
-        #   -> general tools
-        "dataclasses; python_version < '3.7'",
-        "types-dataclasses; python_version < '3.7'",
-        "typing-extensions; python_version < '3.8'",
-        #   -> generic scientific
+        # general tools
+        "rich",
+        # generic scientific
         "numpy",
         "scipy",
         "scikit-learn",
         "pandas",
         "matplotlib",
-        #   -> geospatial / GIS tools
+        # geospatial / GIS tools
         "pyproj",
         "geojson",
         "geopy",
         "shapely",
         "overpy",
-        #   -> probabilistic logic and modelling
+        # probabilistic logic and modelling
         "pyro-ppl",
         "pysdd",
-        #   -> plotting and visualization
+        "problog @ git+https://github.com/simon-kohaut/problog.git@dcproblog_develop",
+        # plotting and visualization
         "fastapi[standard]",
         "graphviz",
         "seaborn",
         "smopy",
-        # => testing and code quality
-        #   -> static code analysis
-        "black",
-        "ruff",
-        #   -> dynamic code analysis
-        "hypothesis",
-        "pytest",
-        "pytest-cov",
     ],
     extras_require={
-        "doc": ["sphinx", "sphinx-markdown-builder", "sphinx_rtd_theme", "sphinxcontrib-programoutput"]
+        "doc": [
+            "sphinx",
+            "sphinx-markdown-builder",
+            "sphinx_rtd_theme",
+            "sphinxcontrib-programoutput",
+        ],
+        "dev": [
+            # static code analysis
+            "black",
+            "ruff",
+            # dynamic code analysis
+            "pytest",
+            "pytest-cov",
+            "pytest-sugar",
+        ],
     },
 )
