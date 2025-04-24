@@ -95,6 +95,7 @@ We also provide Dockerfiles for backend and frontend for an automated setup:
 
 ```bash
 cd gui
+docker compose build
 docker compose up
 ```
 

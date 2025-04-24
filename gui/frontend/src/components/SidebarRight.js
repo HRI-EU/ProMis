@@ -4,7 +4,7 @@ import CSVFileReader from "./CSVFileReader.js";
 import { styled } from "@mui/material/styles";
 import { C } from "../managers/Core.js";
 import { RenderMode } from "../managers/MapManager.js";
-import { updateConfig } from "../utils/Utility.js";
+import { updateLayerConfig } from "../utils/Utility.js";
 
 //Local
 import "./SidebarRight.css";
@@ -152,7 +152,7 @@ export default class SidebarRight extends React.Component {
               m={0}
               style={{ marginLeft: "24px" }}
             >
-              <h4>Layers</h4>
+              <h4>Collections</h4>
 
               <IconButton
                 onClick={() => {
@@ -271,9 +271,16 @@ class SidebarRightItem extends React.Component {
   }
 
   // change the hue of the layer when the hue slider is changed
-  hueSliderChanged = (selectedLayerId, hue) => {
-    C().layerMan.changeLayerColor(selectedLayerId, hue);
+  hueSliderChanged = (layer, hue) => {
+    C().layerMan.changeLayerColor(layer.id, hue);
   };
+
+  // change the hue of the layer when the hue slider is changed
+  commitHueSliderChanged = (layer, hue) => {
+    C().layerMan.changeLayerColor(layer.id, hue);
+    updateLayerConfig(layer);
+  };
+
 
   // change the opacity of the layer when the opacity slider is changed
   opacitySliderChanged = (selectedLayerId, opacityRange) => {
@@ -333,11 +340,11 @@ class SidebarRightItem extends React.Component {
   // return the name of the render mode
   getRenderModeName(renderMode) {
     switch (renderMode) {
-      case RenderMode.HEATMAP_RECT:
+      case RenderMode.HeatmapRect:
         return "Heatmap (Squares)";
-      case RenderMode.HEATMAP_CIRCLE:
+      case RenderMode.HeatmapCircle:
         return "Heatmap (Circles)";
-      case RenderMode.VORONOI:
+      case RenderMode.Voronoi:
         return "Voronoi";
     }
   }
@@ -495,7 +502,7 @@ class SidebarRightItem extends React.Component {
                 />)
                 :
                 (<ListItemText
-                  primary={layer.name == "" ? "Untitled" : layer.name}
+                  primary={layer.name === "" ? "Untitled" : layer.name}
                   style={{
                     textAlign: "left",
                     marginTop: "0px",
@@ -612,8 +619,7 @@ class SidebarRightItem extends React.Component {
             >
               <IconButton
                 onClick={() => {
-                  this.hueSliderChanged(layer.id, 0);
-                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+                  this.commitHueSliderChanged(layer, 0);
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
                 aria-label="Toggle all layers"
@@ -637,8 +643,7 @@ class SidebarRightItem extends React.Component {
 
               <IconButton
                 onClick={() => {
-                  this.hueSliderChanged(layer.id, 72);
-                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+                  this.commitHueSliderChanged(layer, 72);
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
                 aria-label="Toggle all layers"
@@ -663,8 +668,7 @@ class SidebarRightItem extends React.Component {
 
               <IconButton
                 onClick={() => {
-                  this.hueSliderChanged(layer.id, 144);
-                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+                  this.commitHueSliderChanged(layer, 144);
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
                 aria-label="Toggle all layers"
@@ -688,8 +692,7 @@ class SidebarRightItem extends React.Component {
 
               <IconButton
                 onClick={() => {
-                  this.hueSliderChanged(layer.id, 216);
-                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+                  this.commitHueSliderChanged(layer, 216);
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
                 aria-label="Toggle all layers"
@@ -714,8 +717,7 @@ class SidebarRightItem extends React.Component {
 
               <IconButton
                 onClick={() => {
-                  this.hueSliderChanged(layer.id, 288);
-                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+                  this.commitHueSliderChanged(layer, 288);
                 }}
                 style={{ color: "#ffffff", fontSize: 12 }}
                 aria-label="Toggle all layers"
@@ -751,11 +753,10 @@ class SidebarRightItem extends React.Component {
                 max={359}
                 value={layer.hue}
                 onChangeCommitted={(event, newValue) => {
-                  this.hueSliderChanged(layer.id, newValue);
-                  updateConfig(C().layerMan.layers, C().mapMan.getMarkers());
+                  this.commitHueSliderChanged(layer, newValue);
                 }}
                 onChange={(event, newValue) => {
-                  this.hueSliderChanged(layer.id, newValue);
+                  this.hueSliderChanged(layer, newValue);
                 }}
                 valueLabelDisplay="auto"
                 style={{
@@ -924,7 +925,7 @@ class SidebarRightItem extends React.Component {
                       if (str.slice(-1) !== ".") {
                         this.radiusChanged(
                           layer.id,
-                          str != "" ? parseFloat(str) : 0,
+                          str !== "" ? parseFloat(str) : 0,
                         );
                       }
                     }}
@@ -1015,7 +1016,7 @@ class SidebarRightItem extends React.Component {
                     this.setState({ textfieldRangeMinStr: str });
                     if (str.slice(-1) !== ".") {
                       this.valueRangeChanged(layer.id, [
-                        str != "" ? parseFloat(str) : 0,
+                        str !== "" ? parseFloat(str) : 0,
                         layer.valueRange[1],
                       ]);
                     }
@@ -1068,7 +1069,7 @@ class SidebarRightItem extends React.Component {
                     if (str.slice(-1) !== ".") {
                       this.valueRangeChanged(layer.id, [
                         layer.valueRange[0],
-                        str != "" ? parseFloat(str) : 0,
+                        str !== "" ? parseFloat(str) : 0,
                       ]);
                     }
                   }}

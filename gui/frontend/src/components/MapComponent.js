@@ -1,7 +1,6 @@
 // MapComponent.js
-import React, { useEffect, useRef } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
-import { useMap } from "react-leaflet";
+import React, { useEffect } from "react";
+import L from "leaflet";
 import "leaflet.heat";
 import "../libs/leaflet-openweathermap.js";
 import "../libs/leaflet-openweathermap.css";
@@ -12,7 +11,7 @@ import { Container } from "react-bootstrap";
 
 import { C } from "../managers/Core.js";
 import "./MapComponent.css";
-import { getConfig } from "../utils/Utility.js";
+import { getConfig, checkExternalUpdate } from "../utils/Utility.js";
 
 //UI
 import SidebarRight from "./SidebarRight.js";
@@ -23,74 +22,104 @@ import DynamicLayerInteractive from "./DynamicLayerInteractive.js";
 //import WeatherInfoBox from "./WeatherInfoBox.js";
 
 function MapComponent() {
-  const mapRef = useRef();
+  var map = null;
 
   const defaultCenter = [49.8728, 8.6512];
 
-  let onlyOnce = false;
+  let didInit = false;
 
   useEffect(() => {
-    // Hide Leaflet map zoom control buttons after the map is rendered
-    const hideZoomControl = () => {
-      const zoomControl = document.querySelector(".leaflet-control-zoom");
-      if (zoomControl) {
-        zoomControl.style.visibility = "hidden";
-      }
-    };
+    if (didInit)
+      return;
 
-    hideZoomControl();
+    map = L.map("map", {
+      preferCanvas: true,
+      center: defaultCenter,
+      zoom: 13,
+      zoomSnap: 0.2,
+      maxZoom: 20,
+    });
+    
 
-    // Clean up the effect when the component is unmounted
-    return () => {
-      const zoomControl = document.querySelector(".leaflet-control-zoom");
-      if (zoomControl) {
-        zoomControl.style.visibility = "visible";
-      }
-    };
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxNativeZoom: 19,
+      maxZoom: 20,
+    }).addTo(map);
+
+    MapHook();
+
+    // add interval to check for external updates
+    setInterval(externalUpdate, 5000);
+
+    // hide zoom control
+    const zoomControl = document.querySelector(".leaflet-control-zoom");
+    if (zoomControl) {
+      zoomControl.style.visibility = "hidden";
+    }
+
+    didInit = true;
   }, []); // Empty dependency array ensures the effect runs once after the initial render
+
+  function externalUpdate() {
+    if (!didInit) {
+      return;
+    }
+    checkExternalUpdate().then((update) => {
+      if (update === undefined) {
+        return;
+      }
+      C().mapMan.importExternal(update);
+      const location_type_table = update.loc_type_entries;
+      // iterate over locationTypes and change location_type field to locationType
+      location_type_table.forEach((locationType) => {
+        locationType.locationType = locationType.location_type;
+        delete locationType.location_type;
+      });
+      const cloneLocationTable = structuredClone(C().sourceMan.locationTypes)
+      cloneLocationTable.push(...location_type_table);
+      C().sourceMan.locationTypes = cloneLocationTable;
+    });
+  }
+
 
   //This function is called within a MapContainer. It will pass the map reference to the MapManager
   function MapHook() {
-    if (onlyOnce) {
-      return null;
-    }
-    const map = useMap();
+
     C().mapMan.setMap(map);
     // Load the configuration data from the backend
     getConfig().then((configs) => {
       if (configs === null) {
         return null;
       }
-      const config = configs[0];
-      if (config !== null) {
-        const layers = config.layers;
-        const markers = config.markers;
-        C().layerMan.importAllLayers(layers);
-        C().mapMan.importMarkers(markers);
-        if (config.polylines !== undefined) {
-          const polylines = config.polylines;
-          C().mapMan.importPolylines(polylines);
-        }
-        if (config.polygons !== undefined) {
-          const polygons = config.polygons;
-          C().mapMan.importPolygons(polygons);
-        }
+      const layer_config = configs[0];
+      const dynamic_layer = configs[1];
+      const location_type_table = configs[2];
+      if (layer_config !== null) {
+        C().layerMan.importAllLayers(layer_config);
       }
-      const location_type_table = configs[1];
+      if (dynamic_layer !== null) {
+        const markers = dynamic_layer.markers;
+        const polylines = dynamic_layer.polylines;
+        const polygons = dynamic_layer.polygons;
+        C().mapMan.importMarkers(markers);
+        C().mapMan.importPolylines(polylines);
+        C().mapMan.importPolygons(polygons);
+      }
       if (location_type_table !== null) {
-        if (location_type_table.table === undefined || location_type_table.table.length === 0) {
+        if (location_type_table === undefined || location_type_table.length === 0) {
           return null;
         }
         // iterate over locationTypes and change location_type field to locationType
-        location_type_table.table.forEach((locationType) => {
+        location_type_table.forEach((locationType) => {
           locationType.locationType = locationType.location_type;
           delete locationType.location_type;
         });
 
-        C().sourceMan.locationTypes = location_type_table.table;
+        C().sourceMan.locationTypes = location_type_table;
       }
     });
-    onlyOnce = true;
+    
     return null;
   }
 
@@ -104,23 +133,11 @@ function MapComponent() {
 
       <BottomBar />
 
-      <MapContainer
-        preferCanvas={true}
+      <div
+        id="map"
         style={{ height: "100vh", width: "100%" }}
-        ref={mapRef}
-        center={defaultCenter}
-        zoom={13}
-        zoomSnap={0.2}
-        maxZoom={20}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          maxNativeZoom='19'
-          maxZoom={20}
-        />
-        <MapHook />
-      </MapContainer>
+      </div>
 
       <SidebarRight />
       {/* <WeatherInfoBox /> */}
