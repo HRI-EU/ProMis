@@ -58,7 +58,7 @@ try:
 except ImportError as _error:  # pragma: no cover
     _OSGEO_PRESENT = False
     warn(
-        "Could not import package osgeo. Please install it as described in the README. "
+        "Could not import package osgeo. If you woud like to load nautical charts, please install it as described in the README. "
         f"Error was: {_error}"
     )
     del _error
@@ -188,7 +188,7 @@ class S57ChartHandler:
 
     @staticmethod
     def _convert_layer_to_obstacles(
-        layer: ogr.Layer,
+        layer: "ogr.Layer",
     ) -> Generator[tuple[PolarGeometry, str], None, None]:
         """Converts the relevant obstacles of a layer into polar geometries.
 
@@ -219,7 +219,7 @@ class S57ChartHandler:
 
     @staticmethod
     def _create_obstacle(
-        feature: ogr.Feature,
+        feature: "ogr.Feature",
         human_readable_type: str,
         location_type: str,
     ) -> Generator[tuple[PolarGeometry, str], None, None]:
@@ -314,7 +314,7 @@ class S57ChartHandler:
                 )
 
 
-class NauticalChartLoader(SpatialLoader):
+class NauticalLoader(SpatialLoader):
     def __init__(
         self, chart_root: Path, origin: PolarLocation, dimensions: tuple[float, float]
     ) -> None:
