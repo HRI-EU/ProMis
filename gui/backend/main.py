@@ -278,16 +278,7 @@ def inference(req: RunRequest, hashVal: int):
     landscape = promis.solve(support, logic, n_jobs=4, batch_size=15)
 
     polar_pml = landscape.to_polar()
-    data = []
-    longlats = polar_pml.coordinates()
-    values = polar_pml.values()
-    columns = polar_pml._polar_columns()
-    for i, longlat in enumerate(longlats):
-        long = longlat[0] if columns[0] == 'longitude' else longlat[1]
-        lat = longlat[1] if columns[1] == 'latitude' else longlat[0]
-        val = values[i][0]
-        data.append([lat, long, val])
-    return data
+    return  [[row["latitude"], row["longitude"], row["v0"]] for _, row in polar_pml.data.iterrows()]
 
 
 @app.post("/update_total_layer_config")
