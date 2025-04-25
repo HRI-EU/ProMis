@@ -36,5 +36,6 @@ WORKDIR /backend
 COPY ./ /backend/
 
 RUN pip install "fastapi[standard]"
+RUN pip install geojson-pydantic 
 
 CMD ["fastapi", "run", "main.py"]

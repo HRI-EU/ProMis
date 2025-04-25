@@ -43,6 +43,7 @@ class Collection(ABC):
         # Attributes setup
         self.number_of_values = number_of_values
         self.origin = origin
+        self.basemap = None
 
         # Initialize the data frame
         self.data = DataFrame(columns=columns)
@@ -136,6 +137,9 @@ class Collection(ABC):
                 [self.data, DataFrame(new_entries, columns=self.data.columns)], ignore_index=True
             )
 
+        # Reset basemap since new data is added
+        self.basemap = None
+
     def append_with_default(
         self,
         coordinates: NDArray[Any] | list[PolarLocation | CartesianLocation],
@@ -150,7 +154,31 @@ class Collection(ABC):
 
         self.append(coordinates, values=repeat(atleast_2d(value), len(coordinates), axis=0))
 
-    def scatter(self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs):
+    def get_basemap(self, zoom=16):
+        """Obtain the OSM basemap image of the collection's area.
+        
+        Args:
+            zoom: The zoom level requested from OSM
+        
+        Returns:
+            The basemap image
+        """
+        
+        # Would cause circular import if done at module scope
+        from promis.loaders import OsmLoader
+
+        # Get OpenStreetMap and crop to relevant area
+        south, west, north, east = OsmLoader.compute_bounding_box(self.origin, self.dimensions())
+        map = smopy.Map((south, west, north, east), z=zoom)
+        left, bottom = map.to_pixels(south, west)
+        right, top = map.to_pixels(north, east)
+        region = map.img.crop((left, top, right, bottom))
+        
+        return region
+
+    def scatter(
+        self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs
+    ):
         """Create a scatterplot of this Collection.
 
         Args:
@@ -168,18 +196,12 @@ class Collection(ABC):
         if ax is None:
             ax = plt.gca()
 
+        # Render base map
         if plot_basemap:
-            # Get OpenStreetMap and crop to relevant area
-            south, west, north, east = SpatialLoader.compute_polar_bounding_box(
-                self.origin, self.dimensions
-            )
-            map = smopy.Map((south, west, north, east), z=zoom)
-            left, bottom = map.to_pixels(south, west)
-            right, top = map.to_pixels(north, east)
-            region = map.img.crop((left, top, right, bottom))
+            if self.basemap is None:
+                self.basemap = self.get_basemap(zoom)
 
-            # Render base map
-            ax.imshow(region, extent=self.extent())
+            ax.imshow(self.basemap, extent=self.extent())
 
         # Scatter collection data
         coordinates = self.coordinates()

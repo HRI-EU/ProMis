@@ -60,6 +60,8 @@ source venv/bin/activate    # Linux
 
 # Install ProMis dependencies
 pip install .
+
+# Optional dependencies
 pip install . "[nautical]"  # Handling nautical charts with ProMis
 pip install . "[dev]"       # Quality assurance tools for development 
 pip install . "[doc]"       # Tools to build the documentation locally with sphinx
@@ -96,6 +98,7 @@ We also provide Dockerfiles for backend and frontend for an automated setup:
 
 ```bash
 cd gui
+docker compose build
 docker compose up
 ```
 
