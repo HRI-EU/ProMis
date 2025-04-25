@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/logo.png" width=512/>
+  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/logo.png" width=512/>
 </p>
 
 # Probabilistic Mission Design
@@ -18,7 +18,7 @@ These can then be utilized for tasks such as path planning, automated clearance 
 For instance, the following shows ProMis being applied in a diverse set of scenarios, with a high probability of satisfying all flight restrictions being shown in blue, a low-probability being shown in red, and unsuitable spaces being transparent. 
 
 <p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/landscapes.png"/>
+  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/landscapes.png"/>
 </p>
 
 An example for using the API is available [here](https://github.com/HRI-EU/ProMis/blob/main/examples/promis.ipynb).
@@ -113,7 +113,7 @@ Afterwards, you can click the `Run` button and wait for the mission landscape to
 
 The following shows an example of entering the simple model `landscape(X) :- distance(X, building) > 10; distance(X, primary_road) < 5.`:
 <p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/gui_example.png"/>
+  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/gui_example.png"/>
 </p>
 
 For more detailed information, consult the GUI's own [README](https://github.com/HRI-EU/ProMis/blob/main/gui/README.md).

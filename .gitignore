@@ -274,10 +274,6 @@ dist
 # Pycharm
 .idea
 
-######################
-
-data/
-
 # Folders with derived content
 **.pkl
 examples/**/*.gif
