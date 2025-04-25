@@ -34,9 +34,10 @@ Please consult and cite the following publications for an in-depth discussion of
 
 ### Requirements
 
-To use ProMis, the following requirements may be needed depending on the features you want to use.
-First, [Python >= 3.9](https://www.python.org/downloads/) is required to run ProMis itself.
-Second, [Node.js](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) is needed to use ProMis' graphical user interface, but optional if only the Python package shall be used.
+To use ProMis, the following requirements are needed depending on the features you want to use.
+- [Python >= 3.9](https://www.python.org/downloads/) is required to run ProMis itself.
+- [Node.js](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) is needed to use ProMis' graphical user interface.
+- [GDAL](https://gdal.org/en/stable/download.html) is necessary to work with nautical chart data.
 
 If you have `Docker` installed on your system, we provide instructions in the following section to setup everything in a container.
 This way, the installation requirements and software dependencies are all handled automatically.
@@ -59,9 +60,9 @@ source venv/bin/activate    # Linux
 
 # Install ProMis dependencies
 pip install .
-
-# Return to ProMis directory
-cd ../..
+pip install . "[nautical]"  # Handling nautical charts with ProMis
+pip install . "[dev]"       # Quality assurance tools for development 
+pip install . "[doc]"       # Tools to build the documentation locally with sphinx
 ```
 
 You can automate this process in a containerized environment using `Docker` by running the following instead.
