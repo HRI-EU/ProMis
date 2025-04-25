@@ -133,7 +133,7 @@ class Map(ABC):
         return [feature.sample()[0] for feature in features]
 
     def sample(
-        self, number_of_samples: int = 1, n_jobs: int = 1, show_progress: bool = True
+        self, number_of_samples: int = 1, n_jobs: int = 1, show_progress: bool = False
     ) -> list[DerivedMap]:
         """Sample random maps given this maps's feature's uncertainty.
 
