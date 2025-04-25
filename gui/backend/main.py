@@ -4,7 +4,7 @@ from typing import Set
 
 
 from promis import ProMis, StaRMap
-from promis.geo import PolarLocation, RasterBand, PolarMap, PolarRoute, PolarPolygon
+from promis.geo import PolarLocation, CartesianRasterBand, PolarMap, PolarRoute, PolarPolygon
 from promis.loaders import OsmLoader
 
 from fastapi import FastAPI, HTTPException
@@ -238,12 +238,12 @@ def calculate_star_map(req: RunRequest, hashVal: int):
     # stochastic relationships in the environment, computing a raster of 1000 x 1000 points
     # using linear interpolation of a sample set
     target_resolution = req.resolutions
-    target = RasterBand(mission_center, target_resolution, width, height)
+    target = CartesianRasterBand(mission_center, target_resolution, width, height)
     star_map = StaRMap(target, uam, method=interpolation)
 
     # The sample points for which the relations will be computed directly
     support_resolutions = req.support_resolutions
-    support = RasterBand(mission_center, support_resolutions, width, height)
+    support = CartesianRasterBand(mission_center, support_resolutions, width, height)
 
     # We now compute the Distance and Over relationships for the selected points
     star_map.initialize(support, sample_size, logic)
@@ -271,7 +271,7 @@ def inference(req: RunRequest, hashVal: int):
     dimensions = req.dimensions
     width, height = dimensions
     support_resolutions = req.support_resolutions
-    support = RasterBand(mission_center, support_resolutions, width, height)
+    support = CartesianRasterBand(mission_center, support_resolutions, width, height)
 
     # Solve mission constraints using StaRMap parameters and multiprocessing
     promis = ProMis(star_map)
