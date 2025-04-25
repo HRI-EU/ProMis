@@ -65,6 +65,8 @@ setuptools.setup(
         "graphviz",
         "seaborn",
         "smopy",
+        # networking
+        "requests",
     ],
     extras_require={
         # Building the documentation locally with sphinx
