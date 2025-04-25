@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/logo.png" width=512/>
+  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/logo.png" width=512/>
 </p>
 
 # Probabilistic Mission Design
@@ -18,7 +18,7 @@ These can then be utilized for tasks such as path planning, automated clearance 
 For instance, the following shows ProMis being applied in a diverse set of scenarios, with a high probability of satisfying all flight restrictions being shown in blue, a low-probability being shown in red, and unsuitable spaces being transparent. 
 
 <p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/landscapes.png"/>
+  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/landscapes.png"/>
 </p>
 
 An example for using the API is available [here](https://github.com/HRI-EU/ProMis/blob/main/examples/promis.ipynb).
@@ -34,9 +34,10 @@ Please consult and cite the following publications for an in-depth discussion of
 
 ### Requirements
 
-To use ProMis, the following requirements may be needed depending on the features you want to use.
-First, [Python >= 3.9](https://www.python.org/downloads/) is required to run ProMis itself.
-Second, [Node.js](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) is needed to use ProMis' graphical user interface, but optional if only the Python package shall be used.
+To use ProMis, the following requirements are needed depending on the features you want to use.
+- [Python >= 3.9](https://www.python.org/downloads/) is required to run ProMis itself.
+- [Node.js](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) is needed to use ProMis' graphical user interface.
+- [GDAL](https://gdal.org/en/stable/download.html) is necessary to work with nautical chart data.
 
 If you have `Docker` installed on your system, we provide instructions in the following section to setup everything in a container.
 This way, the installation requirements and software dependencies are all handled automatically.
@@ -60,8 +61,10 @@ source venv/bin/activate    # Linux
 # Install ProMis dependencies
 pip install .
 
-# Return to ProMis directory
-cd ../..
+# Optional dependencies
+pip install . "[nautical]"  # Handling nautical charts with ProMis
+pip install . "[dev]"       # Quality assurance tools for development 
+pip install . "[doc]"       # Tools to build the documentation locally with sphinx
 ```
 
 You can automate this process in a containerized environment using `Docker` by running the following instead.
@@ -110,7 +113,7 @@ Afterwards, you can click the `Run` button and wait for the mission landscape to
 
 The following shows an example of entering the simple model `landscape(X) :- distance(X, building) > 10; distance(X, primary_road) < 5.`:
 <p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/gui_example.png"/>
+  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/gui_example.png"/>
 </p>
 
 For more detailed information, consult the GUI's own [README](https://github.com/HRI-EU/ProMis/blob/main/gui/README.md).

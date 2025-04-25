@@ -174,7 +174,6 @@ class Location(Geospatial):
 
 
 class PolarLocation(Location):
-
     """A geospatial location representing a spatial object on earth.
 
     See `here <http://www.movable-type.co.uk/scripts/latlong.html>`__ for a nice

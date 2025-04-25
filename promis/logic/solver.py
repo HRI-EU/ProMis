@@ -48,8 +48,8 @@ class Solver:
         inference = self.solver.probability(self.program, **self.configuration)
 
         # Unpack queried probabilities
-        results = []
-        for _, probability in inference["q"].items():
-            results.append(probability.value)
-
-        return results
+        return [
+            # Sometimes, the result is a tensor, so we need to extract the value
+            float(probability.value)
+            for probability in inference["q"].values()
+        ]

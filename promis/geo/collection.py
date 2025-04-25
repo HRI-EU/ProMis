@@ -20,13 +20,13 @@ from matplotlib import pyplot as plt
 from numpy import array, atleast_2d, concatenate, ndarray, repeat
 from numpy.typing import NDArray
 from pandas import DataFrame, concat
+from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 # ProMis
-from promis.geo.map import CartesianLocation, PolarLocation
+from promis.geo.location import CartesianLocation, PolarLocation
 
 
 class Collection(ABC):
-
     """A collection of values over a polar or Cartesian space.
 
     Locations are stored as Cartesian coordinates, but data can be unpacked into both
@@ -38,14 +38,15 @@ class Collection(ABC):
     """
 
     def __init__(
-        self,
-        data: DataFrame,
-        origin: PolarLocation,
-    ):
+        self, columns: list[str], origin: PolarLocation, number_of_values: int = 1
+    ) -> None:
         # Attributes setup
-        self.data = data
+        self.number_of_values = number_of_values
         self.origin = origin
         self.basemap = None
+
+        # Initialize the data frame
+        self.data = DataFrame(columns=columns)
 
     @staticmethod
     def load(path) -> "Collection":
@@ -65,13 +66,14 @@ class Collection(ABC):
         """Get the extent of this collection, i.e., the min and max coordinates.
 
         Returns:
-            The minimum and maximum coordinates in order west, east, south, north
+            The minimum and maximum coordinates in order ``west, east, south, north``
         """
 
-        west = min(self.data[self.data.columns[1]])
-        east = max(self.data[self.data.columns[1]])
-        south = min(self.data[self.data.columns[0]])
-        north = max(self.data[self.data.columns[0]])
+        # TODO this might fail near the international date line for polar coordinates
+        west = min(self.data[self.data.columns[0]])
+        east = max(self.data[self.data.columns[0]])
+        south = min(self.data[self.data.columns[1]])
+        north = max(self.data[self.data.columns[1]])
 
         return west, east, south, north
 
@@ -105,12 +107,6 @@ class Collection(ABC):
 
         self.data.to_csv(path, mode=mode, index=False, float_format="%f")
 
-    def _polar_columns(self, number_of_values: int = 1) -> list[str]:
-        return ["longitude", "latitude"] + [f"v{i}" for i in range(number_of_values)]
-
-    def _cartesian_columns(self, number_of_values: int = 1) -> list[str]:
-        return ["east", "north"] + [f"v{i}" for i in range(number_of_values)]
-
     def append(
         self,
         coordinates: NDArray[Any] | list[PolarLocation | CartesianLocation],
@@ -120,12 +116,12 @@ class Collection(ABC):
 
         Args:
             coordinates: A list of locations to append or matrix of coordinates
-            values: The associated values as 2D matrix, each row belongs to a single locations
+            values: The associated values as 2D matrix, each row belongs to a single location
         """
 
-        assert (
-            len(coordinates) == values.shape[0]
-        ), "Number of locations mismatched number of value vectors."
+        assert len(coordinates) == values.shape[0], (
+            "Number of locations mismatched number of value vectors."
+        )
 
         if isinstance(coordinates, ndarray):
             new_entries = concatenate([coordinates, values], axis=1)
@@ -193,15 +189,18 @@ class Collection(ABC):
             **kwargs: Args passed to the matplotlib scatter function
         """
 
+        # Would cause circular import if done at module scope
+        from promis.loaders import SpatialLoader
+
         # Either render with given axis or default context
         if ax is None:
             ax = plt.gca()
 
+        # Render base map
         if plot_basemap:
             if self.basemap is None:
                 self.basemap = self.get_basemap(zoom)
 
-            # Render base map
             ax.imshow(self.basemap, extent=self.extent())
 
         # Scatter collection data
@@ -212,13 +211,18 @@ class Collection(ABC):
 
 class CartesianCollection(Collection):
     def __init__(self, origin: PolarLocation, number_of_values: int = 1):
-        super().__init__(DataFrame(columns=self._cartesian_columns(number_of_values)), origin)
+        super().__init__(CartesianCollection._columns(number_of_values), origin, number_of_values)
 
+    @staticmethod
+    def _columns(number_of_values: int) -> list[str]:
+        return ["east", "north"] + [f"v{i}" for i in range(number_of_values)]
+
+    @property
     def dimensions(self) -> tuple[float, float]:
         """Get the dimensions of this Collection in meters.
 
         Returns:
-            The dimensions of this Collection in meters
+            The dimensions of this Collection in meters as ``(width, height)``.
         """
 
         west, east, south, north = self.extent()
@@ -234,7 +238,7 @@ class CartesianCollection(Collection):
 
         return locations
 
-    def to_polar(self):
+    def to_polar(self) -> "PolarCollection":
         # Apply the inverse projection of the origin location
         longitudes, latitudes = self.origin.projection(
             self.data["east"].to_numpy(), self.data["north"].to_numpy(), inverse=True
@@ -251,19 +255,45 @@ class CartesianCollection(Collection):
 
         return polar_collection
 
+    def get_interpolator(self, method: str = "linear") -> Any:
+        """Get an interpolator for the data.
+
+        Args:
+            method: The interpolation method to use
+
+        Returns:
+            A callable interpolator function
+        """
+
+        # Create interpolator
+        # TODO We'd ideally like to interpolate linearly within the support points,
+        # but with "nearest" outside of them.
+        match method:
+            case "linear":
+                return LinearNDInterpolator(self.coordinates(), self.values())
+            case "nearest":
+                return NearestNDInterpolator(self.coordinates(), self.values())
+            case _:
+                raise NotImplementedError(f'Interpolation method "{method}" not implemented')
+
 
 class PolarCollection(Collection):
     def __init__(self, origin: PolarLocation, number_of_values: int = 1):
-        super().__init__(DataFrame(columns=self._polar_columns(number_of_values)), origin)
+        super().__init__(PolarCollection._columns(number_of_values), origin, number_of_values)
 
+    @staticmethod
+    def _columns(number_of_values: int) -> list[str]:
+        return ["longitude", "latitude"] + [f"v{i}" for i in range(number_of_values)]
+
+    @property
     def dimensions(self) -> tuple[float, float]:
         """Get the dimensions of this Collection in meters.
 
         Returns:
-            The dimensions of this Collection in meters
+            The dimensions of this Collection in meters as ``(width, height)``.
         """
 
-        return self.to_cartesian().dimensions()
+        return self.to_cartesian().dimensions
 
     def to_polar_locations(self) -> list[PolarLocation]:
         coordinates = self.coordinates()
@@ -274,7 +304,7 @@ class PolarCollection(Collection):
 
         return locations
 
-    def to_cartesian(self) -> CartesianLocation:
+    def to_cartesian(self) -> CartesianCollection:
         # Apply the inverse projection of the origin location
         easts, norths = self.origin.projection(
             self.data["longitude"].to_numpy(), self.data["latitude"].to_numpy()

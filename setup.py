@@ -67,12 +67,19 @@ setuptools.setup(
         "smopy",
     ],
     extras_require={
+        # Building the documentation locally with sphinx
         "doc": [
             "sphinx",
             "sphinx-markdown-builder",
             "sphinx_rtd_theme",
             "sphinxcontrib-programoutput",
         ],
+        # Loading nautical chart data into ProMis
+        # Requires GDAL to be installed on the system
+        "nautical": [
+            "gdal"
+        ],
+        # Development tools for quality assurance
         "dev": [
             # static code analysis
             "black",
