@@ -21,8 +21,10 @@ from matplotlib.transforms import Bbox
 
 # Third Party
 from numpy import array, concatenate, float32, linspace, meshgrid, ndarray, ravel, vstack, zeros
+from networkx import Graph, astar_path
 from pandas import DataFrame
 from scipy.interpolate import RegularGridInterpolator
+from scipy.spatial import KDTree
 from sklearn.preprocessing import MinMaxScaler
 
 # ProMis
@@ -64,6 +66,68 @@ class RasterBand(ABC):
 
     def append(self, location: CartesianLocation | PolarLocation, values: list[float]) -> NoReturn:
         raise NotImplementedError(f"{type(self).__name__} cannot be extended with locations")
+
+    def to_graph(self, cost_model: Callable[[float], float], value_filter: Callable[[float], bool]) -> Graph:
+        """Convert a RasterBand into a NetworkX Graph for path planning.
+
+        Args:
+            cost_model: A function that maps RasterBand values to edge weights
+            value_filter: A function that is applied to RasterBand values to decide if they
+                should become edges in the graph
+        
+        Returns:
+            The corresponding graph where the cost of visiting a node is
+            determined by the RasterBand's values and cost_model
+        """
+
+        # Create graph with nodes with cost from own data
+        graph = Graph()
+        values = self.values()
+        coordinates = [tuple(coordinate) for coordinate in self.coordinates()]
+        for i, coordinate in enumerate(coordinates):
+            graph.add_node(tuple(coordinate))
+        
+        # Connect each node to k nearest actual neighbors
+        tree = KDTree(coordinates)
+        for i, coordinate in enumerate(coordinates):
+            dists, indices = tree.query(coordinate, k=5)  # 4 + 1 to include itself
+            for j in range(1, len(indices)):  # skip index 0 (self)
+                neighbor = coordinates[indices[j]]
+
+                if value_filter(values[indices[j]]):
+                    weight = cost_model(values[indices[j]])
+                    graph.add_edge(coordinate, neighbor, weight=weight)
+
+        return graph
+
+    def search_path(self, start: tuple[float, float], goal: tuple[float, float], cost_model: Callable[[float], float], value_filter: Callable[[float], float]) -> list[float]:
+        """Search the shortest path through this RasterBand using A*.
+
+        Args:
+            cost_model: A function that maps RasterBand values to edge weights
+            value_filter: A function that is applied to RasterBand values to decide if they
+                should become edges in the graph
+        
+        Returns:
+            The shortest path from start to goal given the costs induced by the given
+            models and RasterBand values
+        """
+
+        # Define Manhattan distance as heuristic for A*
+        def heuristic(a, b):
+            return abs(a[0] - b[0]) + abs(a[1] - b[1])
+            
+        # Search path from approximate start and goal positions
+        graph = self.to_graph(cost_model, value_filter)
+        path = astar_path(
+            graph, 
+            tuple(self.get_nearest_coordinate(start)), 
+            tuple(self.get_nearest_coordinate(goal)), 
+            heuristic=heuristic, 
+            weight='weight'
+        )
+
+        return path
 
 
 class CartesianRasterBand(RasterBand, CartesianCollection):
