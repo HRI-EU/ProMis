@@ -18,6 +18,7 @@ from matplotlib import pyplot as plt
 
 # Third Party
 from numpy import array, atleast_2d, concatenate, ndarray, repeat
+from numpy.linalg import norm
 from numpy.typing import NDArray
 from pandas import DataFrame, concat
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
@@ -168,13 +169,26 @@ class Collection(ABC):
         from promis.loaders import OsmLoader
 
         # Get OpenStreetMap and crop to relevant area
-        south, west, north, east = OsmLoader.compute_bounding_box(self.origin, self.dimensions())
+        south, west, north, east = OsmLoader.compute_polar_bounding_box(self.origin, self.dimensions)
         map = smopy.Map((south, west, north, east), z=zoom)
         left, bottom = map.to_pixels(south, west)
         right, top = map.to_pixels(north, east)
         region = map.img.crop((left, top, right, bottom))
         
         return region
+
+    def get_nearest_coordinate(self, point: NDArray) -> NDArray:
+        """Get the closest coordinate in this collection relative to a given point.
+        
+        Args:
+            point: The point to find the nearest coordinate to
+
+        Returns:
+            The coordinate that is closest to the given point
+        """        
+
+        nearest = min(self.coordinates(), key=lambda node: norm(point - array(node)))
+        return nearest
 
     def scatter(
         self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs
