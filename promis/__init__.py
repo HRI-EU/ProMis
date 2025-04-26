@@ -11,8 +11,9 @@
 # ProMis
 from promis.promis import ProMis
 from promis.star_map import StaRMap
+from promis.coco import ConstitutionalController
 
-__all__ = ["ProMis", "StaRMap"]
+__all__ = ["ProMis", "StaRMap", "ConstitutionalController"]
 __version__ = "2.0.0"
 __author__ = "Simon Kohaut"
 
