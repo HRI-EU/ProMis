@@ -21,6 +21,7 @@ from matplotlib.transforms import Bbox
 
 # Third Party
 from numpy import array, concatenate, float32, linspace, meshgrid, ndarray, ravel, vstack, zeros
+from networkx import Graph
 from pandas import DataFrame
 from scipy.interpolate import RegularGridInterpolator
 from sklearn.preprocessing import MinMaxScaler
@@ -64,6 +65,34 @@ class RasterBand(ABC):
 
     def append(self, location: CartesianLocation | PolarLocation, values: list[float]) -> NoReturn:
         raise NotImplementedError(f"{type(self).__name__} cannot be extended with locations")
+
+    def to_graph(self, cost_offset: int = 1) -> Graph:
+        """Convert a RasterBand into a NetworkX Graph for path planning.
+
+        Args:
+            cost_offset: An additional cost to induce for each step in the graph,
+                e.g., representing time spent to reach a goal
+        
+        Returns:
+            The corresponding graph where the cost of visiting a node is
+            determined by the RasterBand's values
+        """
+
+        # Create graph with nodes with cost from own data
+        graph = Graph()
+        for _, row in self.data.iterrows():
+            node = (row[self.data.columns[0]], row[self.data.columns[1]])
+            graph.add_node(node, cost=row[self.data.columns[2]])
+        
+        # Add edges between neighbours with the weight of the target node's cost
+        for node in graph.nodes:
+            x, y = node
+            neighbors = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+            for neighbour in neighbors:
+                if neighbour in graph:
+                    graph.add_edge(node, neighbour, weight=graph.nodes[neighbour]['cost'] + cost_offset)
+        
+        return graph
 
 
 class CartesianRasterBand(RasterBand, CartesianCollection):
