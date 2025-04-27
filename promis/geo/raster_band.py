@@ -10,33 +10,25 @@
 
 # Standard Library
 from abc import ABC
-from collections import defaultdict
 from collections.abc import Callable
 from itertools import product
 from typing import NoReturn
 
 # Plotting
-import matplotlib.pyplot as plt
-from matplotlib.transforms import Bbox
+from networkx import Graph, astar_path
 
 # Third Party
-from numpy import array, concatenate, float32, linspace, meshgrid, ndarray, ravel, vstack, zeros
-from networkx import Graph, astar_path
+from numpy import array, concatenate, linspace, meshgrid, ndarray, ravel, vstack, zeros
+from numpy.typing import NDArray
 from pandas import DataFrame
-from scipy.interpolate import RegularGridInterpolator
 from scipy.spatial import KDTree
-from sklearn.preprocessing import MinMaxScaler
 
 # ProMis
-import promis.geo
 from promis.geo import (
     CartesianCollection,
     CartesianLocation,
-    CartesianMap,
-    CartesianPolygon,
     PolarCollection,
     PolarLocation,
-    PolarMap,
 )
 
 
@@ -74,7 +66,7 @@ class RasterBand(ABC):
             cost_model: A function that maps RasterBand values to edge weights
             value_filter: A function that is applied to RasterBand values to decide if they
                 should become edges in the graph
-        
+
         Returns:
             The corresponding graph where the cost of visiting a node is
             determined by the RasterBand's values and cost_model
@@ -86,7 +78,7 @@ class RasterBand(ABC):
         coordinates = [tuple(coordinate) for coordinate in self.coordinates()]
         for i, coordinate in enumerate(coordinates):
             graph.add_node(tuple(coordinate))
-        
+
         # Connect each node to k nearest actual neighbors
         tree = KDTree(coordinates)
         for i, coordinate in enumerate(coordinates):
@@ -100,14 +92,14 @@ class RasterBand(ABC):
 
         return graph
 
-    def search_path(self, start: tuple[float, float], goal: tuple[float, float], cost_model: Callable[[float], float], value_filter: Callable[[float], float]) -> list[float]:
+    def search_path(self, start: tuple[float, float], goal: tuple[float, float], cost_model: Callable[[float], float], value_filter: Callable[[float], float]) -> NDArray:
         """Search the shortest path through this RasterBand using A*.
 
         Args:
             cost_model: A function that maps RasterBand values to edge weights
             value_filter: A function that is applied to RasterBand values to decide if they
                 should become edges in the graph
-        
+
         Returns:
             The shortest path from start to goal given the costs induced by the given
             models and RasterBand values
@@ -116,18 +108,18 @@ class RasterBand(ABC):
         # Define Manhattan distance as heuristic for A*
         def heuristic(a, b):
             return abs(a[0] - b[0]) + abs(a[1] - b[1])
-            
+
         # Search path from approximate start and goal positions
         graph = self.to_graph(cost_model, value_filter)
         path = astar_path(
-            graph, 
-            tuple(self.get_nearest_coordinate(start)), 
-            tuple(self.get_nearest_coordinate(goal)), 
-            heuristic=heuristic, 
+            graph,
+            tuple(self.get_nearest_coordinate(start)),
+            tuple(self.get_nearest_coordinate(goal)),
+            heuristic=heuristic,
             weight='weight'
         )
 
-        return path
+        return array(path)
 
 
 class CartesianRasterBand(RasterBand, CartesianCollection):

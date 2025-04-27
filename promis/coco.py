@@ -9,11 +9,11 @@
 #
 
 # Standard Library
+from collections.abc import Callable
 from copy import deepcopy
-from typing import Callable
 
 # Third Party
-from numpy import isnan, mean
+from numpy import mean, zeros
 from numpy.typing import NDArray
 
 # ProMis
@@ -26,20 +26,22 @@ class ConstitutionalController:
         pass
 
     def apply_doubt(self, landscape: Collection, doubt_density: Callable[[int], NDArray], number_of_samples: int) -> Collection:
-        linear_interpolator = landscape.get_interpolator("linear")
-        nearest_interpolator = landscape.get_interpolator("nearest")
-
-        def hybrid_interpolator(coordinates):
-            result = linear_interpolator(coordinates)
-            nan_values = isnan(result).reshape(len(result))
-            result[nan_values] = nearest_interpolator(coordinates[nan_values])
-
-            return result
-
+        interpolator = landscape.get_interpolator("hybrid")
         doubtful_landscape = deepcopy(landscape)
         sample_points = doubt_density(number_of_samples)
         for index, point in enumerate(landscape.coordinates()):
-            landscape_probabilities = hybrid_interpolator(sample_points + point)
+            landscape_probabilities = interpolator(sample_points + point)
             doubtful_landscape.data.loc[index, 'v0'] = mean(landscape_probabilities)
 
         return doubtful_landscape
+
+    def compliance(self, path: NDArray, landscape: Collection, doubt_density: Callable[[int], NDArray], number_of_samples: int) -> NDArray:
+        interpolator = landscape.get_interpolator("hybrid")
+        compliances = zeros(path.shape[0])
+        for index, point in enumerate(path):
+            sample_points = doubt_density(number_of_samples)
+            landscape_probabilities = interpolator(sample_points + point)
+
+            compliances[index] = mean(landscape_probabilities)
+
+        return compliances

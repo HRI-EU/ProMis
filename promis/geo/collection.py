@@ -17,7 +17,7 @@ import smopy
 from matplotlib import pyplot as plt
 
 # Third Party
-from numpy import array, atleast_2d, concatenate, ndarray, repeat
+from numpy import array, atleast_2d, concatenate, isnan, ndarray, repeat
 from numpy.linalg import norm
 from numpy.typing import NDArray
 from pandas import DataFrame, concat
@@ -164,7 +164,7 @@ class Collection(ABC):
         Returns:
             The basemap image
         """
-        
+
         # Would cause circular import if done at module scope
         from promis.loaders import OsmLoader
 
@@ -174,7 +174,7 @@ class Collection(ABC):
         left, bottom = map.to_pixels(south, west)
         right, top = map.to_pixels(north, east)
         region = map.img.crop((left, top, right, bottom))
-        
+
         return region
 
     def get_nearest_coordinate(self, point: NDArray) -> NDArray:
@@ -185,7 +185,7 @@ class Collection(ABC):
 
         Returns:
             The coordinate that is closest to the given point
-        """        
+        """
 
         nearest = min(self.coordinates(), key=lambda node: norm(point - array(node)))
         return nearest
@@ -204,7 +204,6 @@ class Collection(ABC):
         """
 
         # Would cause circular import if done at module scope
-        from promis.loaders import SpatialLoader
 
         # Either render with given axis or default context
         if ax is None:
@@ -273,20 +272,30 @@ class CartesianCollection(Collection):
         """Get an interpolator for the data.
 
         Args:
-            method: The interpolation method to use
+            method: The interpolation method to use, one of {linear, nearest, hybrid}
 
         Returns:
             A callable interpolator function
         """
 
         # Create interpolator
-        # TODO We'd ideally like to interpolate linearly within the support points,
-        # but with "nearest" outside of them.
         match method:
             case "linear":
                 return LinearNDInterpolator(self.coordinates(), self.values())
             case "nearest":
                 return NearestNDInterpolator(self.coordinates(), self.values())
+            case "hybrid":
+                linear = self.get_interpolator("linear")
+                nearest = self.get_interpolator("nearest")
+
+                def hybrid_interpolator(coordinates):
+                    result = linear(coordinates)
+                    nan_values = isnan(result).reshape(len(result))
+                    result[nan_values] = nearest(coordinates[nan_values])
+
+                    return result
+
+                return lambda coordinates: hybrid_interpolator(coordinates)
             case _:
                 raise NotImplementedError(f'Interpolation method "{method}" not implemented')
 

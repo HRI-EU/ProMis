@@ -9,9 +9,9 @@
 #
 
 # ProMis
+from promis.coco import ConstitutionalController
 from promis.promis import ProMis
 from promis.star_map import StaRMap
-from promis.coco import ConstitutionalController
 
 __all__ = ["ProMis", "StaRMap", "ConstitutionalController"]
 __version__ = "0.1.0"
