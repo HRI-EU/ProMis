@@ -9,11 +9,11 @@
 #
 
 # ProMis
-from promis.coco import ConstitutionalController
+from promis.coco import ConstitutionalController, DoubtDensity
 from promis.promis import ProMis
 from promis.star_map import StaRMap
 
-__all__ = ["ProMis", "StaRMap", "ConstitutionalController"]
+__all__ = ["ProMis", "StaRMap", "ConstitutionalController", "DoubtDensity"]
 __version__ = "0.1.0"
 __author__ = "Simon Kohaut"
 

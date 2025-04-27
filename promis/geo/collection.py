@@ -13,15 +13,14 @@ from abc import ABC
 from pickle import dump, load
 from typing import Any
 
-import smopy
-from matplotlib import pyplot as plt
-
 # Third Party
 from numpy import array, atleast_2d, concatenate, isnan, ndarray, repeat
 from numpy.linalg import norm
 from numpy.typing import NDArray
 from pandas import DataFrame, concat
+from matplotlib import pyplot as plt
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
+import smopy
 
 # ProMis
 from promis.geo.location import CartesianLocation, PolarLocation
@@ -285,17 +284,7 @@ class CartesianCollection(Collection):
             case "nearest":
                 return NearestNDInterpolator(self.coordinates(), self.values())
             case "hybrid":
-                linear = self.get_interpolator("linear")
-                nearest = self.get_interpolator("nearest")
-
-                def hybrid_interpolator(coordinates):
-                    result = linear(coordinates)
-                    nan_values = isnan(result).reshape(len(result))
-                    result[nan_values] = nearest(coordinates[nan_values])
-
-                    return result
-
-                return lambda coordinates: hybrid_interpolator(coordinates)
+                return HybridInterpolator(self.coordinates(), self.values())
             case _:
                 raise NotImplementedError(f'Interpolation method "{method}" not implemented')
 
@@ -343,3 +332,16 @@ class PolarCollection(Collection):
             cartesian_collection.data[f"v{i}"] = self.data[f"v{i}"]
 
         return cartesian_collection
+
+
+class HybridInterpolator:
+
+    def __init__(self, coordinates, values):
+        self.linear = LinearNDInterpolator(coordinates, values)
+        self.nearest = NearestNDInterpolator(coordinates, values)
+
+    def __call__(self, coordinates):
+        result = self.linear(coordinates)
+        nan_values = isnan(result).reshape(len(result))
+        result[nan_values] = self.nearest(coordinates[nan_values])
+        return result
