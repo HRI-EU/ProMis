@@ -13,35 +13,47 @@ from collections.abc import Callable
 from copy import deepcopy
 
 # Third Party
-from numpy import mean, zeros
+from numpy import array, mean, newaxis
 from numpy.typing import NDArray
+from scipy.stats import multivariate_normal
 
 # ProMis
 from promis.geo import Collection
 
 
-class ConstitutionalController:
+class DoubtDensity:
+    def __init__(self, velocity: float):
+        self.velocity = velocity
 
-    def __init__(self):
-        pass
+    def __call__(self, n_samples: int):
+        # TODO: Just a placeholder, should be a learned conditional model
+        return multivariate_normal(
+            mean=[0.0, 0.0],
+            cov=[[self.velocity, 0.0], [0.0, self.velocity]]
+        ).rvs(n_samples)
+
+
+class ConstitutionalController:
 
     def apply_doubt(self, landscape: Collection, doubt_density: Callable[[int], NDArray], number_of_samples: int) -> Collection:
         interpolator = landscape.get_interpolator("hybrid")
+        samples = doubt_density(number_of_samples)
+
         doubtful_landscape = deepcopy(landscape)
-        sample_points = doubt_density(number_of_samples)
-        for index, point in enumerate(landscape.coordinates()):
-            landscape_probabilities = interpolator(sample_points + point)
-            doubtful_landscape.data.loc[index, 'v0'] = mean(landscape_probabilities)
+        doubtful_landscape.data['v0'] = [
+            mean(interpolator(location_samples))
+            for location_samples in doubtful_landscape.coordinates()[:, newaxis, :] + samples[newaxis, :, :]
+        ]
 
         return doubtful_landscape
 
     def compliance(self, path: NDArray, landscape: Collection, doubt_density: Callable[[int], NDArray], number_of_samples: int) -> NDArray:
         interpolator = landscape.get_interpolator("hybrid")
-        compliances = zeros(path.shape[0])
-        for index, point in enumerate(path):
-            sample_points = doubt_density(number_of_samples)
-            landscape_probabilities = interpolator(sample_points + point)
+        samples = doubt_density(number_of_samples)
 
-            compliances[index] = mean(landscape_probabilities)
+        compliances = array([
+            mean(interpolator(location_samples))
+            for location_samples in path[:, newaxis, :] + samples[newaxis, :, :]
+        ])
 
         return compliances
