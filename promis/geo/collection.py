@@ -57,9 +57,7 @@ class Collection(ABC):
         data: A list of Cartesian location and value pairs
     """
 
-    def __init__(
-        self, columns: list[str], origin: PolarLocation, number_of_values: int = 1
-    ) -> None:
+    def __init__(self, columns: list[str], origin: PolarLocation, number_of_values: int = 1) -> None:
         # Attributes setup
         self.number_of_values = number_of_values
         self.origin = origin
@@ -76,7 +74,7 @@ class Collection(ABC):
         height: float,
         number_of_samples: int,
         number_of_values: int = 1,
-        include_corners: bool = False
+        include_corners: bool = False,
     ) -> "Collection":
         samples = LatinHypercube(d=2).random(n=number_of_samples)
         samples = scale(samples, [-width / 2, -height / 2], [width / 2, height / 2])
@@ -86,13 +84,15 @@ class Collection(ABC):
 
         if include_corners:
             collection.append_with_default(
-                array([
-                    [-width / 2, -height / 2],
-                    [-width / 2, height / 2],
-                    [width / 2, -height / 2],
-                    [width / 2, height / 2]
-                ]),
-                0.0
+                array(
+                    [
+                        [-width / 2, -height / 2],
+                        [-width / 2, height / 2],
+                        [width / 2, -height / 2],
+                        [width / 2, height / 2],
+                    ]
+                ),
+                0.0,
             )
 
         return collection
@@ -201,10 +201,7 @@ class Collection(ABC):
             values: The default value to assign to all locations
         """
 
-        self.append(
-            atleast_2d(coordinates),
-            repeat(atleast_2d(value), len(coordinates), axis=0)
-        )
+        self.append(atleast_2d(coordinates), repeat(atleast_2d(value), len(coordinates), axis=0))
 
     def get_basemap(self, zoom=16):
         """Obtain the OSM basemap image of the collection's area.
@@ -220,9 +217,7 @@ class Collection(ABC):
         from promis.loaders import OsmLoader
 
         # Get OpenStreetMap and crop to relevant area
-        south, west, north, east = OsmLoader.compute_polar_bounding_box(
-            self.origin, self.dimensions
-        )
+        south, west, north, east = OsmLoader.compute_polar_bounding_box(self.origin, self.dimensions)
         map = smopy.Map((south, west, north, east), z=zoom)
         left, bottom = map.to_pixels(south, west)
         right, top = map.to_pixels(north, east)
@@ -328,10 +323,7 @@ class Collection(ABC):
             self.append(next_points, next_values)
 
     def get_entropy(
-        self,
-        number_of_neighbours: int = 4,
-        number_of_bins: int = 10,
-        value_index: int = 0
+        self, number_of_neighbours: int = 4, number_of_bins: int = 10, value_index: int = 0
     ) -> NDArray:
         """Compute the local entropy in the collection.
 
@@ -354,10 +346,7 @@ class Collection(ABC):
         for i, neighbors in enumerate(indices):
             neighbor_values = values[neighbors[1:]]
             hist, _ = histogram(
-                neighbor_values,
-                bins=number_of_bins,
-                range=(min(values), max(values)),
-                density=True
+                neighbor_values, bins=number_of_bins, range=(min(values), max(values)), density=True
             )
             hist += 1e-12
             hist /= sum(hist)
@@ -365,9 +354,7 @@ class Collection(ABC):
 
         return entropies
 
-    def scatter(
-        self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs
-    ):
+    def scatter(self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs):
         """Create a scatterplot of this Collection.
 
         Args:
@@ -444,10 +431,7 @@ class CartesianCollection(Collection):
         return polar_collection
 
     def into(
-        self,
-        other: "Collection",
-        interpolation_method: str = "linear",
-        in_place: bool = True
+        self, other: "Collection", interpolation_method: str = "linear", in_place: bool = True
     ) -> "Collection":
         if in_place:
             target = other
@@ -501,9 +485,7 @@ class CartesianCollection(Collection):
         threshold: float,
     ):
         coordinates = self.coordinates()
-        clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=threshold).fit(
-            coordinates
-        )
+        clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=threshold).fit(coordinates)
 
         pruning_index = sort(unique(clusters.labels_, return_index=True)[1])
         pruned_coordinates = coordinates[pruning_index]
@@ -559,7 +541,6 @@ class PolarCollection(Collection):
 
 
 class HybridInterpolator:
-
     def __init__(self, coordinates, values):
         self.linear = LinearNDInterpolator(coordinates, values)
         self.nearest = NearestNDInterpolator(coordinates, values)
