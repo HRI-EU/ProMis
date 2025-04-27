@@ -470,7 +470,7 @@ class CartesianCollection(Collection):
 
         Args:
             interpolation_method: The interpolation method to use, one
-                of {linear, nearest, hybrid, gaussian_process}
+                of {linear, nearest, hybrid, gaussian_process, clough-tocher}
 
         Returns:
             A callable interpolator function
