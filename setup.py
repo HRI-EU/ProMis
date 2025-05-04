@@ -44,6 +44,7 @@ setuptools.setup(
     install_requires=[
         # general tools
         "rich",
+        "tqdm",
         # generic scientific
         "numpy",
         "scipy",
@@ -57,6 +58,8 @@ setuptools.setup(
         "shapely",
         "overpy",
         # probabilistic logic and modelling
+        "nflows",
+        "torch",
         "pyro-ppl",
         "pysdd",
         "problog @ git+https://github.com/simon-kohaut/problog.git@dcproblog_develop",
