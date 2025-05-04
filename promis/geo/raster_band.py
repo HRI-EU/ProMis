@@ -59,7 +59,11 @@ class RasterBand(ABC):
     def append(self, location: CartesianLocation | PolarLocation, values: list[float]) -> NoReturn:
         raise NotImplementedError(f"{type(self).__name__} cannot be extended with locations")
 
-    def to_graph(self, cost_model: Callable[[float], float], value_filter: Callable[[float], bool]) -> Graph:
+    def to_graph(
+        self,
+        cost_model: Callable[[float], float] = lambda x: 1 - x,
+        value_filter: Callable[[float], bool] = lambda: True,
+    ) -> Graph:
         """Convert a RasterBand into a NetworkX Graph for path planning.
 
         Args:
@@ -72,30 +76,50 @@ class RasterBand(ABC):
             determined by the RasterBand's values and cost_model
         """
 
+        # TODO: Despite being defined in the base class, this method only works reliably for
+        # CartesianRasterBand. For PolarRasterBand, it does not correctly compute distances.
+        # On a cartesian grid, the entire implementation is correct, but could be much faster.
+        # By avoiding the KDTree altogether and using the fact that the graph is a regular grid.
+
         # Create graph with nodes with cost from own data
         graph = Graph()
         values = self.values()
-        coordinates = [tuple(coordinate) for coordinate in self.coordinates()]
+        coordinates = [tuple(coordinate.tolist()) for coordinate in self.coordinates()]
         for i, coordinate in enumerate(coordinates):
-            graph.add_node(tuple(coordinate))
+            graph.add_node(coordinate)
 
         # Connect each node to k nearest actual neighbors
         tree = KDTree(coordinates)
         for i, coordinate in enumerate(coordinates):
             dists, indices = tree.query(coordinate, k=5)  # 4 + 1 to include itself
+            assert dists[0] == 0, "KDTree query should return itself first"
             for j in range(1, len(indices)):  # skip index 0 (self)
                 neighbor = coordinates[indices[j]]
 
                 if value_filter(values[indices[j]]):
                     weight = cost_model(values[indices[j]])
-                    graph.add_edge(coordinate, neighbor, weight=weight)
+                    graph.add_edge(coordinate, neighbor, weight=weight, dist=dists[j])
 
         return graph
 
-    def search_path(self, start: tuple[float, float], goal: tuple[float, float], cost_model: Callable[[float], float], value_filter: Callable[[float], float]) -> NDArray:
+    def search_path(
+        self,
+        start: tuple[float, float],
+        goal: tuple[float, float],
+        cost_model: Callable[[float], float] = lambda x: 1 - x,
+        value_filter: Callable[[float], float] = lambda x: True,
+        min_cost: float = 0.3,
+    ) -> NDArray:
         """Search the shortest path through this RasterBand using A*.
 
+        Note:
+            To perform efficient path planning, assumes that all costs are bounded
+            by ``0 < min_cost < 1`` and ``1``. This permits defining an admissible
+            heuristic for A* that is a lower bound on the cost of the path.
+
         Args:
+            start: The starting location (clipped to the nearest RasterBand pixel)
+            goal: The goal location (clipped to the nearest RasterBand pixel)
             cost_model: A function that maps RasterBand values to edge weights
             value_filter: A function that is applied to RasterBand values to decide if they
                 should become edges in the graph
@@ -105,9 +129,17 @@ class RasterBand(ABC):
             models and RasterBand values
         """
 
+        assert 0 < min_cost < 1, "min_cost must be strictly between 0 and 1"
+
         # Define Manhattan distance as heuristic for A*
-        def heuristic(a, b):
-            return abs(a[0] - b[0]) + abs(a[1] - b[1])
+        # The distance is rescaled such that one axis-aligned hop in any direction
+        # (horizontal or vertical) is equal to 1.0.
+        # After that, to be admissible, the heuristic is multiplied by the minimum cost
+        # of the path, which is assumed to be between 0 and 1.
+        def heuristic(a: tuple[float, float], b: tuple[float, float]) -> float:
+            dx = abs(a[0] - b[0]) / self.pixel_width
+            dy = abs(a[1] - b[1]) / self.pixel_height
+            return (dx + dy) * min_cost
 
         # Search path from approximate start and goal positions
         graph = self.to_graph(cost_model, value_filter)
@@ -116,7 +148,7 @@ class RasterBand(ABC):
             tuple(self.get_nearest_coordinate(start)),
             tuple(self.get_nearest_coordinate(goal)),
             heuristic=heuristic,
-            weight='weight'
+            weight="weight",
         )
 
         return array(path)
