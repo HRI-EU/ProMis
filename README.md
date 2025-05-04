@@ -59,12 +59,12 @@ source venv/bin/activate    # Linux
 .\venv\Scripts\activate     # Windows
 
 # Install ProMis dependencies
-pip install .
+pip install -e .
 
 # Optional dependencies
-pip install . "[nautical]"  # Handling nautical charts with ProMis
-pip install . "[dev]"       # Quality assurance tools for development 
-pip install . "[doc]"       # Tools to build the documentation locally with sphinx
+pip install -e ."[nautical]"  # Handling nautical charts with ProMis
+pip install -e ."[dev]"       # Quality assurance tools for development 
+pip install -e ."[doc]"       # Tools to build the documentation locally with sphinx
 ```
 
 You can automate this process in a containerized environment using `Docker` by running the following instead.
