@@ -141,6 +141,21 @@ class Map(ABC):
             to their uncertainties and underlying sample methods
         """
 
+        # TODO: investigate why the parallelization is not working
+        # (it makes all features be the same in the sampled maps)
+
+        # with Pool(n_jobs) as pool:
+        #     sampled_feature_lists = list(
+        #         track(
+        #             pool.imap_unordered(
+        #                 Map._sample_features, repeat(self.features, number_of_samples), chunksize=1
+        #             ),
+        #             description=f"Resampling Map {number_of_samples} times",
+        #             total=number_of_samples,
+        #             disable=not show_progress,
+        #         )
+        #     )
+
         return [
             type(self)(self.origin, Map._sample_features(self.features)) for _ in range(number_of_samples)
         ]
@@ -205,7 +220,7 @@ class PolarMap(Map):
 
         return CartesianMap(self.origin, cartesian_features)
 
-    def send_to_gui(self, url: str ="http://localhost:8000/add_geojson_map", timeout: int = 10):
+    def send_to_gui(self, url: str = "http://localhost:8000/add_geojson_map", timeout: int = 10):
         """Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.
 
         Args:
@@ -221,11 +236,12 @@ class PolarMap(Map):
         data = "["
         for feature in self.features:
             data += feature.to_geo_json()
-            data += ','
+            data += ","
         data = data[:-1]
-        data += ']'
+        data += "]"
         r = post(url=url, data=data, timeout=timeout)
         r.raise_for_status()
+
 
 class CartesianMap(Map):
     """A map containing geospatial objects based on local coordinates with a global reference point.
