@@ -2,88 +2,109 @@ from argparse import ArgumentParser
 from pathlib import Path
 from pickle import load
 from signal import SIGINT
-from subprocess import Popen
+from subprocess import PIPE, Popen
 from time import monotonic, sleep
 
-import matplotlib.pyplot as plt
-import torch
-from crazyflie_py import Crazyswarm
-from numpy import array, ndarray
-
-from promis import ConstitutionalController, DoubtDensity
-from promis.geo import CartesianCollection
+# from crazyflie_py import Crazyswarm
+from networkx import Graph
+from numpy import array, full, load, stack
+from tqdm import tqdm
 
 
-def get_path(setting: str) -> tuple[CartesianCollection, ndarray]:
-    # TODO use the setting to load the correct path
-    # match setting:
-    #     case "promis":
-    #         pass
-    #     case "coco-fixed-v":
-    #         pass
-    #     case "coco-dynamic-v":
-    #         pass
-
-    doubt_density = DoubtDensity.load("data/doubt_density.pkl")
-    landscape = CartesianCollection.load("data/virtual_setup_landscape.pkl")
-    coco = ConstitutionalController()
-
-    doubt_space = {
-        "controller": {"type": "categorical", "number_of_classes": 2},
-        "heading": {"type": "continuous"},
-    }
-
-    doubt_space["heading"]["values"] = torch.tensor([[0.0]])
-    doubt_space["controller"]["values"] = torch.tensor([[1]])
-    augmented_landscape = coco.apply_doubt(
-        landscape=landscape,
-        doubt_density=doubt_density,
-        doubt_space=doubt_space,
-        number_of_samples=100,
-    )
-
-    image = augmented_landscape.scatter(
-        s=0.4, plot_basemap=False, rasterized=True, cmap="coolwarm_r", alpha=0.25
-    )
-    cbar = plt.colorbar(image, ticks=[0.0, 0.5, 1.0], aspect=25, pad=0.02)
-    cbar.ax.set_yticklabels(["0.0", "0.5", "1.0"])
-    cbar.solids.set(alpha=1)
+def main(setting: str, controller: int, rosbag_name: str, speed: float = 0.1) -> None:
+    # Load the graph and landscape
+    # with open(f"data/drone-exp/extended_graph-controller-{controller}.pkl", "rb") as f:
+    #     graph: Graph = load(f)
 
     start = (-1_000, -1_000)
+    start_w_speed = (*start, speed)
     goal = (1_400, 1_400)
-    min_cost = 0.3
-    return augmented_landscape, augmented_landscape.search_path(
-        start,
-        goal,
-        cost_model=lambda p: max(min_cost, 1.0 - p**3),
-        value_filter=lambda p: p >= min_cost,
-        min_cost=min_cost,
+    goal_w_speed = (*goal, speed)
+
+    speeds = [0.3, 0.8]
+    assert speed in speeds, f"Speed {speed} not in {speeds}"
+    start_speed = speeds[0]
+    end_speed = speeds[0]
+
+    # min_speed = 0.3
+    # max_speed = 1.4
+
+    # # Only comes from the speed component
+    # min_cost = min_speed / max_speed  # All speed costs are scaled to this anyway
+
+    # def cost_model(p):
+    #     consitution_cost = (1.0 - p) * 4
+    #     time_cost = min_speed / speed
+    #     return consitution_cost + time_cost
+
+    # def value_filter(p):
+    #     return p >= min_cost
+
+    # match setting:
+    #     case "promis":
+    #         landscape_one_speed = CartesianRasterBand.load(
+    #             f"data/drone-exp/original_landscape-speed-{default_speed:.2f}.pkl"
+    #         )
+    #         path = landscape_one_speed.search_path(
+    #             start=start,
+    #             goal=goal,
+    #             cost_model=cost_model,
+    #             value_filter=value_filter,
+    #             min_cost=min_cost,
+    #         )
+    #     case "coco-fixed-v":
+    #         speed = 0.1
+    #         landscape_one_speed = CartesianRasterBand.load(
+    #             f"data/drone-exp/augmented_landscape-controller-{controller}-speed-{speed:.2f}.pkl"
+    #         )
+    #     case "coco-dynamic-v":
+    #         path = landscape_one_speed.search_path(
+    #             start=start,
+    #             goal=goal,
+    #             graph=graph,
+    #         )
+    #     case _:
+    #         raise ValueError(f"Unknown setting: {setting}")
+
+    match setting:
+        case "promis":
+            path = load(f"data/drone-exp/original_path-speed-{speed:.2f}.npy")
+        case "coco-fixed-v":
+            path = load(
+                f"data/drone-exp/augmented_graph-controller-{controller}-speed-{speed:.2f}.npy"
+            )
+        case "coco-dynamic-v":
+            path = load(f"data/drone-exp/extended_path-controller-{controller}.npy")
+
+    path_with_velocity = (
+        path
+        if path.shape[1] == 3
+        else stack([path[:, 0], path[:, 1], full(path.shape[0], speed)], axis=1)
     )
 
-
-def main(setting: str, rosbag_name: str) -> None:
-    augmented_landscape, path = get_path(setting)
-
     TAKEOFF_DURATION = 2.0
-    HOVER_DURATION = 2.0
+    HOVER_DURATION = 0.5
     Z = 0.4
 
     ROSBAG_START_DURATION = 5.0
     ROSBAG_TARGET = Path("data/rosbag-recordings").absolute()
     ROSBAG_TARGET.mkdir(exist_ok=True)
 
-    swarm = Crazyswarm()
-    cf = swarm.allcfs.crazyflies[0]
+    # swarm = Crazyswarm()
+    # cf = swarm.allcfs.crazyflies[0]
 
     # Start
     print("Liftoff!")
-    cf.takeoff(targetHeight=Z, duration=TAKEOFF_DURATION)
+    # cf.takeoff(targetHeight=Z, duration=TAKEOFF_DURATION)
     sleep(TAKEOFF_DURATION + HOVER_DURATION)
 
     # Start the rosbag as a subprocess that we can kill later
     rosbag_process = Popen(
-        ["ros2", "bag", "record", "-o", str(ROSBAG_TARGET / rosbag_name), "-a"],
+        # ["ros2", "bag", "record", "-o", str(ROSBAG_TARGET / rosbag_name), "-a"],
+        ["watch", "ls", "/"],
         shell=False,
+        stdout=PIPE,
+        stderr=PIPE,
     )
     try:
         # Wait for the rosbag to start
@@ -94,17 +115,23 @@ def main(setting: str, rosbag_name: str) -> None:
         t0 = monotonic()
         last_x, last_y = path[0][:2]
         should_have_elapsed = 0.0
-        for index, (x, y, v) in enumerate(path):
+        for index, (x, y, v) in tqdm(enumerate(path_with_velocity[1:, ...]), disable=True):
             distance = ((x - last_x) ** 2 + (y - last_y) ** 2) ** 0.5
-            duration = distance / v
-            cf.goTo(
-                array([x, y, Z]),
-                yaw=0.0,
-                duration=1.0,
+            duration = distance / (v * 1000)  # m/s to mm/s
+            # cf.goTo(
+            #     array([x, y, Z]),
+            #     yaw=0.0,
+            #     duration=duration,
+            # )
+            print(
+                f"Flying to ({x:.2f}, {y:.2f}) with speed {v:.2f} m/s, "
+                f"duration {duration:.2f} s, distance {distance:.2f} mm"
             )
             elapsed = monotonic() - t0
             should_have_elapsed += duration
-            sleep(should_have_elapsed - elapsed)
+            to_sleep = should_have_elapsed - elapsed
+            if to_sleep > 0:
+                sleep(to_sleep)
             last_x, last_y = x, y
 
         print("Experiment finished normally")
@@ -119,7 +146,7 @@ def main(setting: str, rosbag_name: str) -> None:
 
         # Land
         print("Landing...")
-        cf.land(targetHeight=0.04, duration=TAKEOFF_DURATION)
+        # cf.land(targetHeight=0.04, duration=TAKEOFF_DURATION)
         sleep(TAKEOFF_DURATION)
 
 
@@ -132,10 +159,28 @@ if __name__ == "__main__":
         help="The setting to use for the test run.",
     )
     parser.add_argument(
+        "controller",
+        type=int,
+        choices=[0, 1, 2],
+        help="The controller to use for the test run.",
+    )
+    parser.add_argument(
         "rosbag_name",
         type=str,
         help="The name of the directory to save the rosbag recording.",
     )
+    parser.add_argument(
+        "--speed",
+        type=float,
+        default=0.3,
+        choices=[0.3, 0.8],
+        help="The speed to use for the test run.",
+    )
     args = parser.parse_args()
 
-    main(setting=args.setting, rosbag_name=args.rosbag_name)
+    main(
+        setting=args.setting,
+        controller=args.controller,
+        rosbag_name=args.rosbag_name,
+        speed=args.speed,
+    )
