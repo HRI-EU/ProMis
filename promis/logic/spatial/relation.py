@@ -242,8 +242,6 @@ class ScalarRelation(Relation):
         else:
             relation = f"{self.problog_name}(x_{index}, {self.location_type})"
 
-        distribution = (
-            f"normal({self.parameters.data['v0'][index]}, {self.parameters.data['v1'][index]})"
-        )
+        distribution = f"normal({self.parameters.data['v0'][index]}, {sqrt(self.parameters.data['v1'][index])})"
 
         return f"{relation} ~ {distribution}.\n"

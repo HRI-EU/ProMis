@@ -39,6 +39,8 @@ class _RelationInformation(TypedDict):
     approximator: None | object
 
 
+# TODO: StaRMap and ProMis should not hold on to the target maps
+
 class StaRMap:
     """A Statistical Relational Map.
 
