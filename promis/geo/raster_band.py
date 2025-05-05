@@ -106,6 +106,7 @@ class RasterBand(ABC):
         self,
         start: tuple[float, float],
         goal: tuple[float, float],
+        graph: Graph | None = None,
         cost_model: Callable[[float], float] = lambda x: 1 - x,
         value_filter: Callable[[float], float] = lambda x: True,
         min_cost: float = 0.3,
@@ -131,6 +132,10 @@ class RasterBand(ABC):
 
         assert 0 < min_cost < 1, "min_cost must be strictly between 0 and 1"
 
+        # Make sure that we have a graph to work with
+        if graph is None:
+            graph = self.to_graph(cost_model, value_filter)
+
         # Define Manhattan distance as heuristic for A*
         # The distance is rescaled such that one axis-aligned hop in any direction
         # (horizontal or vertical) is equal to 1.0.
@@ -142,16 +147,51 @@ class RasterBand(ABC):
             return (dx + dy) * min_cost
 
         # Search path from approximate start and goal positions
-        graph = self.to_graph(cost_model, value_filter)
         path = astar_path(
             graph,
-            tuple(self.get_nearest_coordinate(start)),
-            tuple(self.get_nearest_coordinate(goal)),
+            tuple([*self.get_nearest_coordinate(start[:2]), *start[2:]]),
+            tuple([*self.get_nearest_coordinate(goal[:2]), *goal[2:]]),
             heuristic=heuristic,
             weight="weight",
         )
 
         return array(path)
+
+    @staticmethod
+    def stack_graphs(graphs, labels, vertical_weight: float = 0.0) -> Graph:
+        """Create a new graph containing the data of the old ones with 'vertical' connections."""
+
+        assert len(graphs) == len(labels), "Graphs and labels must be of the same length"
+
+        stacked_graph = Graph()
+
+        for graph_index, (graph, label) in enumerate(zip(graphs, labels)):
+            # Add nodes
+            for node in graph.nodes:
+                stacked_graph.add_node((node[0], node[1], label))
+
+            # Add normal edges
+            for edge in graph.edges:
+                stacked_graph.add_edge(
+                    (edge[0][0], edge[0][1], label),
+                    (edge[1][0], edge[1][1], label),
+                    # copy all edge attributes
+                    **graph[edge[0]][edge[1]],
+                )
+
+            if graph_index > 0:
+                # Add vertical edges
+                label_a = labels[graph_index - 1]
+                label_b = labels[graph_index]
+                for node in graph.nodes:
+                    n0 = (node[0], node[1], label_a)
+                    n1 = (node[0], node[1], label_b)
+                    # Add edge between the two graphs
+                    stacked_graph.add_edge(n0, n1, weight=vertical_weight)
+                    # Add reverse edge
+                    stacked_graph.add_edge(n1, n0, weight=vertical_weight)
+
+        return stacked_graph
 
 
 class CartesianRasterBand(RasterBand, CartesianCollection):
