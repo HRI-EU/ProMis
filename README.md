@@ -37,4 +37,4 @@ docker run -it coco
 
 ## License
 
-We will open-source this complete implementation upon acceptance.
+We will open-source the implementation of CoCo upon acceptance under the *BSD-3-Clause License*.
