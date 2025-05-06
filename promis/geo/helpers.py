@@ -9,13 +9,7 @@ References:
  - `Walter Bislin's Blog <https://walter.bislins.ch/bloge/index.asp?page=Distances+on+Globe+and+Flat+Earth>`__
 """
 
-#
-# Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
-#
-# This file is part of ProMis and licensed under the BSD 3-Clause License.
-# You should have received a copy of the BSD 3-Clause License along with ProMis.
-# If not, see https://opensource.org/license/bsd-3-clause/.
-#
+
 
 # Standard Library
 from enum import Enum
