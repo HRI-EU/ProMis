@@ -282,3 +282,6 @@ examples/**/*.gif
 examples/**/*.mp4
 examples/**/*.pdf
 examples/cofi-exports/**
+examples/data/drone-doubt-recordings/
+examples/data/drone-exp/
+examples/data/rosbag-recordings/
