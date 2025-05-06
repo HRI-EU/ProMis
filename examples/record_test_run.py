@@ -5,7 +5,7 @@ from signal import SIGINT
 from subprocess import PIPE, Popen
 from time import monotonic, sleep
 
-# from crazyflie_py import Crazyswarm
+from crazyflie_py import Crazyswarm
 from networkx import Graph
 from numpy import array, full, load, stack
 from tqdm import tqdm
@@ -84,30 +84,39 @@ def main(setting: str, controller: int, rosbag_name: str, speed: float = 0.1) ->
 
     TAKEOFF_DURATION = 2.0
     HOVER_DURATION = 0.5
+    GOTO_START_DURATION = 2.0
     Z = 0.4
 
-    ROSBAG_START_DURATION = 5.0
+    ROSBAG_START_DURATION = 5.0  # Also needs time to reach the start position
+    assert ROSBAG_START_DURATION >= GOTO_START_DURATION
     ROSBAG_TARGET = Path("data/rosbag-recordings").absolute()
     ROSBAG_TARGET.mkdir(exist_ok=True)
 
-    # swarm = Crazyswarm()
-    # cf = swarm.allcfs.crazyflies[0]
+    swarm = Crazyswarm()
+    cf = swarm.allcfs.crazyflies[0]
 
-    # Start
+    # Liftoff and go to start position
     print("Liftoff!")
-    # cf.takeoff(targetHeight=Z, duration=TAKEOFF_DURATION)
+    cf.takeoff(targetHeight=Z, duration=TAKEOFF_DURATION)
     sleep(TAKEOFF_DURATION + HOVER_DURATION)
 
-    # Start the rosbag as a subprocess that we can kill later
+    cf.goTo(
+        array([*path[0][:2], Z]),
+        yaw=0.0,
+        duration=GOTO_START_DURATION,
+    )
+    # We wait while rosbag is starting
+
+    # Start rosbag as a subprocess that we can interrupt/shutdown later
     rosbag_process = Popen(
-        # ["ros2", "bag", "record", "-o", str(ROSBAG_TARGET / rosbag_name), "-a"],
-        ["watch", "ls", "/"],
+        ["ros2", "bag", "record", "-o", str(ROSBAG_TARGET / rosbag_name), "-a"],
+        # ["watch", "ls", "/"],
         shell=False,
         stdout=PIPE,
         stderr=PIPE,
     )
     try:
-        # Wait for the rosbag to start
+        # Wait for rosbag to start
         sleep(ROSBAG_START_DURATION)
         print("Recording started")
 
@@ -115,18 +124,19 @@ def main(setting: str, controller: int, rosbag_name: str, speed: float = 0.1) ->
         t0 = monotonic()
         last_x, last_y = path[0][:2]
         should_have_elapsed = 0.0
-        for index, (x, y, v) in tqdm(enumerate(path_with_velocity[1:, ...]), disable=True):
+        # We skip the first point, since we already flew there
+        for index, (x, y, v) in tqdm(enumerate(path_with_velocity[1:, ...]), disable=False):
             distance = ((x - last_x) ** 2 + (y - last_y) ** 2) ** 0.5
             duration = distance / (v * 1000)  # m/s to mm/s
-            # cf.goTo(
-            #     array([x, y, Z]),
-            #     yaw=0.0,
-            #     duration=duration,
-            # )
-            print(
-                f"Flying to ({x:.2f}, {y:.2f}) with speed {v:.2f} m/s, "
-                f"duration {duration:.2f} s, distance {distance:.2f} mm"
+            cf.goTo(
+                array([x, y, Z]),
+                yaw=0.0,
+                duration=duration,
             )
+            # print(
+            #     f"Flying to ({x:.2f}, {y:.2f}) with speed {v:.2f} m/s, "
+            #     f"duration {duration:.2f} s, distance {distance:.2f} mm"
+            # )
             elapsed = monotonic() - t0
             should_have_elapsed += duration
             to_sleep = should_have_elapsed - elapsed
@@ -146,7 +156,7 @@ def main(setting: str, controller: int, rosbag_name: str, speed: float = 0.1) ->
 
         # Land
         print("Landing...")
-        # cf.land(targetHeight=0.04, duration=TAKEOFF_DURATION)
+        cf.land(targetHeight=0.04, duration=TAKEOFF_DURATION)
         sleep(TAKEOFF_DURATION)
 
 
