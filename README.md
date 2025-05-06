@@ -1,136 +1,40 @@
-<p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/logo.png" width=512/>
-</p>
+# The Constitutional Controller
 
-# Probabilistic Mission Design
+Official implementation of the paper *The Constitutional Controller: Doubt-Calibrated Steering of Compliant Agents* submitted to ECAI 2025.
 
-This repository implements Probabilistic Mission Design (ProMis).
-ProMis allows the user to formalize their knowledge about local rules, such as traffic regulations, to constrain an agent's actions and motion. 
-To do so, we employ probabilistic first-order logic, a mathematical framework combining formal reasoning with probabilistic inference.
-This provides a weighted belief whether the encoded rules are satisfied for a state or action. 
+## Structure
 
-Using ProMis, we pave the way towards Constitutional Agents. 
-Such agents can give reason for their actions and act in a principled fashion even under uncertainty. 
-To this end, ProMis gives high-level, easy-to-understand, and adaptable control over the navigation process, e.g., to effortlessly integrate local laws with operator requirements and environmental uncertainties into logical and spatial constraints. 
+The implementation builds on [ProMis](https://github.com/HRI-EU/ProMis), a framework for the design and execution of mission plans for autonomous agents.
+Most of the implementation is contained in `promis/coco.py` and is then used in `examples/`.
 
-Using ProMis, scalar fields of the probability of adhering to the agent's constitution across its state-space are obtained.
-These can then be utilized for tasks such as path planning, automated clearance granting, explaining the impact of and optimizing mission parameters.
-For instance, the following shows ProMis being applied in a diverse set of scenarios, with a high probability of satisfying all flight restrictions being shown in blue, a low-probability being shown in red, and unsuitable spaces being transparent. 
-
-<p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/landscapes.png"/>
-</p>
-
-An example for using the API is available [here](https://github.com/HRI-EU/ProMis/blob/main/examples/promis.ipynb).
-Installation instructions and information on how to use ProMis own GUI can be found below.
-
-Please consult and cite the following publications for an in-depth discussion of the methods implemented in this repository.
-- [Mission Design for Unmanned Aerial Vehicles using Hybrid Probabilistic Logic Programs](https://arxiv.org/abs/2406.03454).
-  Simon Kohaut, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
-  In 26th IEEE International Intelligent Transportation Systems Conference (ITSC).
-- [Towards Probabilistic Clearance, Explanation and Optimization](https://arxiv.org/abs/2406.15088).
-  Simon Kohaut, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
-  In Proceedings of the 2024 International Conference on Unmanned Aircraft Systems (ICUAS).
-
-### Requirements
-
-To use ProMis, the following requirements are needed depending on the features you want to use.
-- [Python >= 3.9](https://www.python.org/downloads/) is required to run ProMis itself.
-- [Node.js](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) is needed to use ProMis' graphical user interface.
-- [GDAL](https://gdal.org/en/stable/download.html) is necessary to work with nautical chart data.
-
-If you have `Docker` installed on your system, we provide instructions in the following section to setup everything in a container.
-This way, the installation requirements and software dependencies are all handled automatically.
+Specifically, in the latter you can find the central `coco.ipynb` notebook demonstrating how to use CoCo.
+It also forms the basis of the experiments in the paper, which can be executed by running the `record_test_run.py` script on a computer with a working [Crazyflie 2.1](https://www.bitcraze.io/products/old-products/crazyflie-2-1/) + [ROS2](docs.ros.org/en/rolling) setup.
+The file `convert_rosbag_to_csv.py` helps to convert the recorded ROS2 bag files into a CSV format for easier analysis.
 
 ## Installation
 
-The following commands create a local working environment for employing ProMis.
-For this, recommend using a [virtual environments](https://docs.python.org/3/library/venv.html) to manage the Python dependancies.
+The following commands create a local working environment for using this repository.
+For this, it is recommended to use [virtual environments](https://docs.python.org/3/library/venv.html) to manage the Python dependencies.
 
 ```bash
-# Clone and enter ProMis
-git clone git@github.com:HRI-EU/ProMis.git
-cd ProMis
-
-# Create venv for dependencies and activate
 # This step is optional but highly recommended
 python -m venv venv
 source venv/bin/activate    # Linux
 .\venv\Scripts\activate     # Windows
 
-# Install ProMis dependencies
-pip install -e .
-
-# Optional dependencies
-pip install -e ."[nautical]"  # Handling nautical charts with ProMis
-pip install -e ."[dev]"       # Quality assurance tools for development 
-pip install -e ."[doc]"       # Tools to build the documentation locally with sphinx
+# Install all dependencies
+pip install -e ".[dev]"
 ```
 
-You can automate this process in a containerized environment using `Docker` by running the following instead.
+If you have `Docker` installed on your system, we provide instructions in the following section to set up everything in a container.
+You can use it to automate the above process in a containerized environment by running the following instead:
 
 ```bash
-# Enters the ProMis directiory, builds a new docker image and runs it in interactive mode
-docker build . -t promis
-docker run -it promis
+# Builds a new Docker image and runs it in interactive mode
+docker build . -t coco
+docker run -it coco
 ```
 
-## Graphical User Interface
+## License
 
-ProMis comes with a GUI that provides an interactive interface to its features.
-To employ the GUI, make sure that you have installed ProMis according to the instructions above.
-Then, first run the following commands to start the backend.
-
-```bash
-cd gui/backend
-fastapi run main.py
-```
-
-Afterwards, you can start the frontend using `npm (Node.js)` with the following commands.
-
-```bash
-cd gui/frontend
-npm install      # Only once or if changes where made
-npm run start
-```
-
-We also provide Dockerfiles for backend and frontend for an automated setup:
-
-```bash
-cd gui
-docker compose build
-docker compose up
-```
-
-Either way, you can open [http://localhost:3000](http://localhost:3000) in a browser of your choice to start interacting with ProMis.
-
-Once you have opened the GUI in your browser, you can check that everything works by doing an example run.
-First, from the top-left, click the drone icon and place a marker where you would like to center the mission area.
-Second, click the button at the bottom to open the mission design interface.
-Here, you can either import ProMis code from disk using the `Import Source` button, or click `Edit`.
-You may further configure your run by selecting an origin, height, width (in meters) and a resolution of the mission landscape. 
-Afterwards, you can click the `Run` button and wait for the mission landscape to show on the map.
-
-The following shows an example of entering the simple model `landscape(X) :- distance(X, building) > 10; distance(X, primary_road) < 5.`:
-<p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/gui_example.png"/>
-</p>
-
-For more detailed information, consult the GUI's own [README](https://github.com/HRI-EU/ProMis/blob/main/gui/README.md).
-
-## Documentation
-
-A Jupyter Notebook demonstrating the usage of ProMis is given in the examples folder.
-To build the documentation, ensure a full installation with the respective dependencies by running `pip install ".[doc]"`.
-Then, using the following commands, trigger Sphinx to create the documentation.
-
-```bash
-cd doc
-make html
-```
-
-To view the documentation, open the file `ProMis/doc/build/html/index.html` using the browser of your choice.
-
-## Quality Assurance
-
-This projects is setup to be checked with `ruff` and `pytest`.
+We will open-source this complete implementation upon acceptance.
