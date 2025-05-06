@@ -68,6 +68,7 @@ setuptools.setup(
         "graphviz",
         "seaborn",
         "smopy",
+        "ipywidgets",
         # networking
         "requests",
     ],
