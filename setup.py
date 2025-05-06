@@ -8,18 +8,18 @@
 # If not, see https://opensource.org/license/bsd-3-clause/.
 #
 
-# Standard library
 import re
+
 import setuptools
 
 # Find Promis version and author strings
-with open("promis/__init__.py", "r", encoding="utf8") as fd:
+with open("promis/__init__.py", encoding="utf8") as fd:
     content = fd.read()
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', content, re.MULTILINE).group(1)
     author = re.search(r'^__author__\s*=\s*[\'"]([^\'"]*)[\'"]', content, re.MULTILINE).group(1)
 
 # Import readme
-with open("README.md", "r", encoding="utf8") as readme:
+with open("README.md", encoding="utf8") as readme:
     long_description = readme.read()
 
 setuptools.setup(
@@ -82,7 +82,7 @@ setuptools.setup(
         # Loading nautical chart data into ProMis
         # Requires GDAL to be installed on the system
         "nautical": [
-            "gdal"
+            "gdal",
         ],
         # Development tools for quality assurance
         "dev": [
