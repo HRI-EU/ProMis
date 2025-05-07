@@ -479,8 +479,8 @@ class MapManager {
             );*/
 
             if (
-              marker.probability >= currentLayer.valueRange[0] &&
-              marker.probability <= currentLayer.valueRange[1]
+              marker.probability >= currentLayer.valueRange[0] - 0.000000001 &&
+              marker.probability <= currentLayer.valueRange[1] + 0.000000001
             ) {
               var createdMarker = null;
               switch (currentLayer.renderMode) {
