@@ -391,7 +391,7 @@ class MapManager {
     if (id) {
       layer.feature.properties["id"] = id;
     } else {
-      layer.feature.properties["id"] = randomId();
+      layer.feature.properties["id"] = randomId().toString();
     }
     layer.feature.properties["shape"] = shape;
     layer.feature.properties["name"] = name;

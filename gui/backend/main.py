@@ -383,7 +383,7 @@ def add_geo_object(new_obj: Feature):
 
     match new_obj.geometry.type:
         case "Point":
-            marker = Marker(id=new_obj.id, 
+            marker = Marker(id=str(new_obj.id), 
                             latlng=[coords[1], coords[0]] , 
                             shape=new_obj.properties["shape"] if "shape" in new_obj.properties else 'defaultMarker',
                             name=new_obj.properties["name"] if "name" in new_obj.properties else '3rd Party',
@@ -392,7 +392,7 @@ def add_geo_object(new_obj: Feature):
             update_dynamic_layer_entry(marker)
             app.temp_dyn_obj_and_loc_type["markers"].append(marker)
         case "LineString":
-            line = Line(id=new_obj.id, 
+            line = Line(id=str(new_obj.id), 
                         latlngs=[[loc[1], loc[0]] for loc in coords],
                         location_type=location_type,
                         color=color)
@@ -407,7 +407,7 @@ def add_geo_object(new_obj: Feature):
                     hole = [(loc[1], loc[0]) for loc in coords[ind]]
                     hole = hole[:-1]
                     holes.append(hole)
-            polygon = Polygon(id=new_obj.id, 
+            polygon = Polygon(id=str(new_obj.id), 
                               latlngs=latlngs,
                               holes=holes,
                               location_type=location_type,
