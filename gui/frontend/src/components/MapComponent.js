@@ -24,7 +24,7 @@ import DynamicLayerInteractive from "./DynamicLayerInteractive.js";
 function MapComponent() {
   var map = null;
 
-  const defaultCenter = [49.8728, 8.6512];
+  const defaultCenter = [49.877, 8.653];
 
   let didInit = false;
 
@@ -35,7 +35,7 @@ function MapComponent() {
     map = L.map("map", {
       preferCanvas: true,
       center: defaultCenter,
-      zoom: 13,
+      zoom: 15,
       zoomSnap: 0.2,
       maxZoom: 20,
     });

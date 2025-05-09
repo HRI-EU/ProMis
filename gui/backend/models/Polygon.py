@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class Polygon(BaseModel):
-    id: int
+    id: str
     latlngs: list[tuple[float, float]]
     holes: list[list[tuple[float, float]]] = [[]]
     location_type: str = ""

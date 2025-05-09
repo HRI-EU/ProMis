@@ -4,7 +4,6 @@ import hljs from "highlight.js";
 import "highlight.js/styles/atom-one-dark.css";
 import { C } from "../managers/Core";
 import LocationTypeSetting from "./LocationTypeSetting";
-import { randomId } from "../utils/Utility.js";
 
 //MUI elements
 import Box from "@mui/material/Box";
@@ -46,58 +45,6 @@ const darkTheme = createTheme({
   },
 });
 
-
-const initialRows = [
-  {
-    id: randomId(),
-    locationType: "primary_road",
-    filter: "['highway' = 'primary']",
-    color: "blue",
-    uncertainty: 10,
-  },
-  {
-    id: randomId(),
-    locationType: "secondary_road",
-    filter: "['highway' = 'secondary']",
-    color: "red",
-    uncertainty: 10,
-  },
-  {
-    id: randomId(),
-    locationType: "tertiary_road",
-    filter: "['highway' = 'tertiary']",
-    color: "green",
-    uncertainty: 10,
-  },
-  {
-    id: randomId(),
-    locationType: "park",
-    filter: "['leisure' = 'park']",
-    color: "yellow",
-    uncertainty: 10,
-  },
-  {
-    id: randomId(),
-    locationType: "UNKNOWN",
-    filter: "",
-    color: "black",
-    uncertainty: 0,
-  },
-  {
-    id: randomId(),
-    locationType: "ORIGIN",
-    filter: "",
-    color: "gray",
-    uncertainty: 0,
-  },
-  {
-    id: randomId(),
-    locationType: "VERTIPORT",
-    filter: "",
-    color: "blue",
-    uncertainty: 0,
-  },
-];
 
 export default class BottomBar extends React.Component {
   constructor() {
@@ -152,7 +99,6 @@ export default class BottomBar extends React.Component {
     if (this.hiddenFileInput.current) {
       this.hiddenFileInput.current.setAttribute("onclick", "this.value=null;");
     }
-    C().sourceMan.locationTypes = initialRows;
   }
 
   // Highlight the code when the component updates
@@ -982,9 +928,7 @@ export default class BottomBar extends React.Component {
                   ref={this.codeRef}
                   className={C().sourceMan.hasSource ? "prolog" : ""}
                 >
-                  {C().sourceMan.hasSource
-                    ? C().sourceMan.source
-                    : "No Model"}
+                  {this.editorValue()}
                 </code>
               </pre>
             }
