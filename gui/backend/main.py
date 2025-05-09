@@ -24,7 +24,6 @@ from geojson_pydantic import Feature
 
 # typing
 
-
 app = FastAPI()
 
 origins = [
@@ -65,6 +64,14 @@ def _get_config() -> LayerConfig:
                 raise HTTPException(status_code=500, detail="fail to parse config file")
     except FileNotFoundError as er:
         # create an empty file in place
+        with open('./models/default_layer.json', 'r') as f:
+            default_layer = f.read()
+            try:
+                default_layer = Layer.model_validate_json(default_layer)
+                config.append(default_layer)
+            except ValidationError as e:
+                print(e)
+                raise HTTPException(status_code=500, detail="fail to parse default layer")
         with open('./config/config.json', 'w', encoding='utf-8') as f:
             f.write(config.model_dump_json(indent=2))
         
@@ -81,7 +88,14 @@ def _get_dynamic_layer() -> DynamicLayer:
                 print(e)
                 raise HTTPException(status_code=500, detail="fail to parse dynamic layer")
     except FileNotFoundError as e:
-        # create an empty file in place non file found
+        # create a file with default origin in place non file found
+        default_origin = Marker(id=0,
+                        latlng= (49.877, 8.653),
+                        shape="defaultMarker",
+                        name="Default origin",
+                        location_type="ORIGIN",
+                        color="gray")
+        dynamic_layer.markers.append(default_origin)
         with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
             f.write(dynamic_layer.model_dump_json(indent=2))
     return dynamic_layer
@@ -98,6 +112,13 @@ def _get_location_type_table() -> LocationTypeTable:
                 raise HTTPException(status_code=500, detail="fail to parse location type table file")
     except FileNotFoundError as e:
         # create an empty file in place non file found
+        with open('./models/default_loc_table.json', 'r') as f:
+            default_loc_table = f.read()
+            try:
+                location_type_table = LocationTypeTable.model_validate_json(default_loc_table)
+            except ValidationError as e:
+                print(e)
+                raise HTTPException(status_code=500, detail="fail to parse default location type table")
         with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
             f.write(location_type_table.model_dump_json(indent=2))
     return location_type_table

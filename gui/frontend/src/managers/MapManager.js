@@ -133,7 +133,6 @@ class MapManager {
    * initialize the map
    */
   _initMap() {
-    this.moveTo([49.8728, 8.6512]);
     this._initToolbar();
     //this._initWeatherLayer();
   }
