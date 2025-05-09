@@ -74,6 +74,9 @@ export default function LocationTypeSetting({ initialRows }) {
     return () => {
       // remove onclick event listener
       C().mapMan.removeLocationTypeOnClick();
+      // remove empty location types
+      let locTypes = C().sourceMan.locationTypes.filter((row) => row.locationType !== '');
+      C().sourceMan.updateLocationTypes(locTypes);
     };
   }, []);
 

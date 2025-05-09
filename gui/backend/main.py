@@ -89,7 +89,7 @@ def _get_dynamic_layer() -> DynamicLayer:
                 raise HTTPException(status_code=500, detail="fail to parse dynamic layer")
     except FileNotFoundError as e:
         # create a file with default origin in place non file found
-        default_origin = Marker(id=0,
+        default_origin = Marker(id="0",
                         latlng= (49.877, 8.653),
                         shape="defaultMarker",
                         name="Default origin",
