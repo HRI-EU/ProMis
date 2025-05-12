@@ -44,30 +44,26 @@ This way, the installation requirements and software dependencies are all handle
 
 ## Installation
 
-The following commands create a local working environment for employing ProMis.
-For this, recommend using a [virtual environments](https://docs.python.org/3/library/venv.html) to manage the Python dependancies.
+ProMis can be easily installed using the following commands.
 
 ```bash
-# Clone and enter ProMis
-git clone git@github.com:HRI-EU/ProMis.git
-cd ProMis
-
-# Create venv for dependencies and activate
-# This step is optional but highly recommended
-python -m venv venv
-source venv/bin/activate    # Linux
-.\venv\Scripts\activate     # Windows
-
-# Install ProMis dependencies
-pip install .
-
-# Optional dependencies
-pip install . "[nautical]"  # Handling nautical charts with ProMis
-pip install . "[dev]"       # Quality assurance tools for development 
-pip install . "[doc]"       # Tools to build the documentation locally with sphinx
+# Installing ProMis and a probabilistic reasoning backend
+pip install promis
+pip install git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
 ```
 
-You can automate this process in a containerized environment using `Docker` by running the following instead.
+In case you would like to contribute to the project, the following sets up ProMis for development.
+
+```bash
+git clone git@github.com:HRI-EU/ProMis.git
+cd ProMis
+pip install -e ".[dev,doc]"
+pip install git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
+```
+
+For nautical applications using marine chart data, you can install the additional dependencies with `pip install . "[nautical]"`.
+
+Finally, the installation can be automated in a containerized environment using `Docker` in a `vscode devcontainer` or by running the following commands.
 
 ```bash
 # Enters the ProMis directiory, builds a new docker image and runs it in interactive mode
