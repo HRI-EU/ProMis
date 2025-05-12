@@ -157,14 +157,14 @@ class Collection(ABC):
 
     def get_basemap(self, zoom=16):
         """Obtain the OSM basemap image of the collection's area.
-        
+
         Args:
             zoom: The zoom level requested from OSM
-        
+
         Returns:
             The basemap image
         """
-        
+
         # Would cause circular import if done at module scope
         from promis.loaders import OsmLoader
 
@@ -174,18 +174,18 @@ class Collection(ABC):
         left, bottom = map.to_pixels(south, west)
         right, top = map.to_pixels(north, east)
         region = map.img.crop((left, top, right, bottom))
-        
+
         return region
 
     def get_nearest_coordinate(self, point: NDArray) -> NDArray:
         """Get the closest coordinate in this collection relative to a given point.
-        
+
         Args:
             point: The point to find the nearest coordinate to
 
         Returns:
             The coordinate that is closest to the given point
-        """        
+        """
 
         nearest = min(self.coordinates(), key=lambda node: norm(point - array(node)))
         return nearest
@@ -204,7 +204,6 @@ class Collection(ABC):
         """
 
         # Would cause circular import if done at module scope
-        from promis.loaders import SpatialLoader
 
         # Either render with given axis or default context
         if ax is None:

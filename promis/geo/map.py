@@ -19,9 +19,9 @@ from typing import TypeVar
 # Third Party
 from geojson import Feature, FeatureCollection, dumps
 from numpy import ndarray
+from requests import post
 from rich.progress import track
 from shapely import STRtree
-from requests import post
 
 # ProMis (need to avoid circular imports)
 import promis.geo
@@ -223,7 +223,7 @@ class PolarMap(Map):
         cartesian_features = [feature.to_cartesian(self.origin) for feature in self.features]
 
         return CartesianMap(self.origin, cartesian_features)
-    
+
     def send_to_gui(self, url: str ="http://localhost:8000/add_geojson_map", timeout: int = 10):
         """Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.
 

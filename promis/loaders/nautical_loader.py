@@ -58,7 +58,8 @@ try:
 except ImportError as _error:  # pragma: no cover
     _OSGEO_PRESENT = False
     warn(
-        "Could not import package osgeo. If you woud like to load nautical charts, please install it as described in the README. "
+        "Could not import package osgeo. "
+        "If you woud like to load nautical charts, please install it as described in the README. "
         f"Error was: {_error}"
     )
     del _error
@@ -369,7 +370,8 @@ def _from_shapely(
     """Constructs an appropriate geometry from a Shapely geometry object.
 
     Args:
-        shapely_geometry: The geometry to convert. Supported types are Point, LineString, Polygon, and MultiPolygon.
+        shapely_geometry: The geometry to convert. Supported types are Point, LineString,
+            Polygon, and MultiPolygon.
         copy_metadata_from: The geometry to copy metadata from, or None to not copy metadata.
 
     Returns:
