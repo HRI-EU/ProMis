@@ -35,7 +35,7 @@ Please consult and cite the following publications for an in-depth discussion of
 ### Requirements
 
 To use ProMis, the following requirements are needed depending on the features you want to use.
-- [Python >= 3.9](https://www.python.org/downloads/) is required to run ProMis itself.
+- [Python >= 3.10](https://www.python.org/downloads/) is required to run ProMis itself.
 - [Node.js](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) is needed to use ProMis' graphical user interface.
 - [GDAL](https://gdal.org/en/stable/download.html) is necessary to work with nautical chart data.
 
