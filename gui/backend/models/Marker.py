@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class Marker(BaseModel):
-    id: int
+    id: str
     latlng: tuple[float, float]
     shape: str
     name: str

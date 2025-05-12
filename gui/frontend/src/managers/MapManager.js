@@ -133,7 +133,6 @@ class MapManager {
    * initialize the map
    */
   _initMap() {
-    this.moveTo([49.8728, 8.6512]);
     this._initToolbar();
     //this._initWeatherLayer();
   }
@@ -391,7 +390,7 @@ class MapManager {
     if (id) {
       layer.feature.properties["id"] = id;
     } else {
-      layer.feature.properties["id"] = randomId();
+      layer.feature.properties["id"] = randomId().toString();
     }
     layer.feature.properties["shape"] = shape;
     layer.feature.properties["name"] = name;
@@ -479,8 +478,8 @@ class MapManager {
             );*/
 
             if (
-              marker.probability >= currentLayer.valueRange[0] &&
-              marker.probability <= currentLayer.valueRange[1]
+              marker.probability >= currentLayer.valueRange[0] - 0.000000001 &&
+              marker.probability <= currentLayer.valueRange[1] + 0.000000001
             ) {
               var createdMarker = null;
               switch (currentLayer.renderMode) {
