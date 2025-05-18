@@ -28,15 +28,16 @@ class OsmLoader(SpatialLoader):
         origin: PolarLocation,
         dimensions: tuple[float, float],
         feature_description: dict | None,
+        timeout: float = 5.0
     ):
         # Initialize Overpass API
         self.overpass_api = Overpass()
         super().__init__(origin, dimensions)
 
         if feature_description is not None:
-            self.load(feature_description)
+            self.load(feature_description, timeout)
 
-    def load(self, feature_description: dict[str, str]) -> None:
+    def load(self, feature_description: dict[str, str], timeout: float = 5.0) -> None:
         for location_type, osm_filter in feature_description.items():
             self._load_routes(osm_filter, location_type)
             self._load_polygons(osm_filter, location_type)

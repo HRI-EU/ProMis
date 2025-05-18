@@ -10,21 +10,40 @@
 
 # Standard Library
 from abc import ABC
+from collections.abc import Callable
+from copy import deepcopy
 from pickle import dump, load
 from typing import Any
 
+# Third Party
 import smopy
 from matplotlib import pyplot as plt
-
-# Third Party
-from numpy import array, atleast_2d, concatenate, ndarray, repeat
+from numpy import (
+    argsort,
+    array,
+    atleast_2d,
+    concatenate,
+    histogram,
+    isnan,
+    ndarray,
+    repeat,
+    sort,
+    unique,
+    zeros,
+)
 from numpy.linalg import norm
 from numpy.typing import NDArray
 from pandas import DataFrame, concat
-from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
+from scipy.interpolate import CloughTocher2DInterpolator, LinearNDInterpolator, NearestNDInterpolator
+from scipy.spatial import distance_matrix
+from scipy.stats import entropy as shannon_entropy
+from scipy.stats.qmc import LatinHypercube, scale
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.neighbors import NearestNeighbors
 
 # ProMis
 from promis.geo.location import CartesianLocation, PolarLocation
+from promis.models import GaussianProcess
 
 
 class Collection(ABC):
@@ -48,6 +67,35 @@ class Collection(ABC):
 
         # Initialize the data frame
         self.data = DataFrame(columns=columns)
+
+    @classmethod
+    def make_latin_hypercube(
+        cls,
+        origin: PolarLocation,
+        width: float,
+        height: float,
+        number_of_samples: int,
+        number_of_values: int = 1,
+        include_corners: bool = False
+    ) -> "Collection":
+        samples = LatinHypercube(d=2).random(n=number_of_samples)
+        samples = scale(samples, [-width / 2, -height / 2], [width / 2, height / 2])
+
+        collection = cls(origin, number_of_values)
+        collection.append_with_default(samples, 0.0)
+
+        if include_corners:
+            collection.append_with_default(
+                array([
+                    [-width / 2, -height / 2],
+                    [-width / 2, height / 2],
+                    [width / 2, -height / 2],
+                    [width / 2, height / 2]
+                ]),
+                0.0
+            )
+
+        return collection
 
     @staticmethod
     def load(path) -> "Collection":
@@ -121,7 +169,7 @@ class Collection(ABC):
         """
 
         assert len(coordinates) == values.shape[0], (
-            "Number of locations mismatched number of value vectors."
+            f"Number of coordinates and values mismatch, got {len(coordinates)} and {values.shape[0]}"
         )
 
         if isinstance(coordinates, ndarray):
@@ -153,7 +201,10 @@ class Collection(ABC):
             values: The default value to assign to all locations
         """
 
-        self.append(coordinates, values=repeat(atleast_2d(value), len(coordinates), axis=0))
+        self.append(
+            atleast_2d(coordinates),
+            repeat(atleast_2d(value), len(coordinates), axis=0)
+        )
 
     def get_basemap(self, zoom=16):
         """Obtain the OSM basemap image of the collection's area.
@@ -169,7 +220,9 @@ class Collection(ABC):
         from promis.loaders import OsmLoader
 
         # Get OpenStreetMap and crop to relevant area
-        south, west, north, east = OsmLoader.compute_polar_bounding_box(self.origin, self.dimensions)
+        south, west, north, east = OsmLoader.compute_polar_bounding_box(
+            self.origin, self.dimensions
+        )
         map = smopy.Map((south, west, north, east), z=zoom)
         left, bottom = map.to_pixels(south, west)
         right, top = map.to_pixels(north, east)
@@ -189,6 +242,128 @@ class Collection(ABC):
 
         nearest = min(self.coordinates(), key=lambda node: norm(point - array(node)))
         return nearest
+
+    def get_distance_to(self, other: "Collection") -> NDArray:
+        """Computes the distances from this collection to another.
+
+        Args:
+            other: The other collection to compute the distance to
+
+        Returns:
+            An array that contains the distance to the respectively closest point in
+            the other collection
+        """
+
+        own_coordinates = self.coordinates()
+        other_coordinates = other.coordinates()
+
+        return distance_matrix(other_coordinates, own_coordinates).min(axis=1)
+
+    def improve(
+        self,
+        candidate_sampler: Callable,
+        value_function: Callable,
+        number_of_iterations: int,
+        number_of_improvement_points: int,
+        scaler: float,
+        value_index: int = 0,
+        acquisition_method: str = "entropy",
+    ) -> None:
+        """Automatic improvement of the collection via informed sampling.
+
+        Args:
+            candidate_sampler: A sampler that provides a candidate Collection that may be used
+                to improve this collection
+            value_function: The function to get new values from for the chosen points
+            number_of_iterations: The number of iterations to run the improvement for
+            number_of_improvement_points: The number of samples to take at
+                every iteration (will be multiplied by number of value columns)
+            scaler: How much to scale the entropy or standard deviation within the
+                score relative to the distance
+            acquisition_method: The scoreing method to use, one of {entropy, gaussian_process}
+        """
+
+        # Get minimum distances to candidates and get nearest neigbours index
+        # candidate_coordinates = candidate_collection.coordinates()
+
+        if acquisition_method == "gaussian_process":
+            gp = GaussianProcess()
+            gp.fit(self.coordinates(), self.values()[:, value_index, None], 50)
+
+        # Repeat improvement for specified number of iterations
+        for _ in range(number_of_iterations):
+            candidate_collection = candidate_sampler()
+            candidate_coordinates = candidate_collection.coordinates()
+            distances = self.get_distance_to(candidate_collection)
+            nn = NearestNeighbors(n_neighbors=1).fit(self.coordinates())
+            _, indices = nn.kneighbors(candidate_coordinates)
+
+            # We decide score based on chosen method
+            if acquisition_method == "entropy":
+                entropy = self.get_entropy(value_index=value_index)
+
+                distances_norm = (distances - distances.min()) / (distances.max() - distances.min())
+                entropies_norm = (entropy - entropy.min()) / (entropy.max() - entropy.min())
+
+                score = distances_norm * (1 + scaler * entropies_norm[indices.flatten()])
+            elif acquisition_method == "gaussian_process":
+                gp.fit(self.coordinates(), self.values()[:, value_index, None], 10)
+                std = gp.predict(candidate_coordinates, return_std=True)[1][:, 0]
+
+                distances_norm = (distances - distances.min()) / (distances.max() - distances.min())
+                std_norm = (std - std.min()) / (std.max() - std.min())
+
+                score = distances_norm * (1 + scaler * std_norm)
+            else:
+                raise NotImplementedError(
+                    f'Requested unknown acquisition method "{acquisition_method}" from Collection'
+                )
+
+            # Decide next points to sample at
+            top_candidate_indices = argsort(score)[-number_of_improvement_points:][::-1]
+            next_points = atleast_2d(candidate_coordinates[top_candidate_indices])
+
+            # Compute new samples and append to collection
+            next_values = value_function(next_points)
+            self.append(next_points, next_values)
+
+    def get_entropy(
+        self,
+        number_of_neighbours: int = 4,
+        number_of_bins: int = 10,
+        value_index: int = 0
+    ) -> NDArray:
+        """Compute the local entropy in the collection.
+
+        Args:
+            number_of_neighbours: The number of neighbours of a point to take into account
+            number_of_bins: The number of bins to be used for the histogram
+            value_index: Decides which value of the collection the entropy is computed from
+
+        Returns:
+            The local entropy for each point
+        """
+
+        coordinates = self.coordinates()
+        values = self.values()[:, value_index]
+
+        nn = NearestNeighbors(n_neighbors=number_of_neighbours + 1).fit(coordinates)
+        _, indices = nn.kneighbors(coordinates)
+
+        entropies = zeros(coordinates.shape[0])
+        for i, neighbors in enumerate(indices):
+            neighbor_values = values[neighbors[1:]]
+            hist, _ = histogram(
+                neighbor_values,
+                bins=number_of_bins,
+                range=(min(values), max(values)),
+                density=True
+            )
+            hist += 1e-12
+            hist /= sum(hist)
+            entropies[i] = shannon_entropy(hist)
+
+        return entropies
 
     def scatter(
         self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs
@@ -268,26 +443,74 @@ class CartesianCollection(Collection):
 
         return polar_collection
 
-    def get_interpolator(self, method: str = "linear") -> Any:
+    def into(
+        self,
+        other: "Collection",
+        interpolation_method: str = "linear",
+        in_place: bool = True
+    ) -> "Collection":
+        if in_place:
+            target = other
+        else:
+            target = deepcopy(other)
+
+        # Expand or reduce target to take up the same number of value columns
+        while len(target.data.columns) < len(self.data.columns):
+            target.data[f"v{len(target.data.columns) - 2}"] = 0.0
+        while len(target.data.columns) > len(self.data.columns):
+            del target.data[f"v{len(target.data.columns) - 3}"]
+
+        interpolated = self.get_interpolator(interpolation_method)(target.coordinates())
+        target.data.iloc[:, 2:] = atleast_2d(interpolated)
+
+        return target
+
+    def get_interpolator(self, interpolation_method: str = "linear") -> Any:
         """Get an interpolator for the data.
 
         Args:
-            method: The interpolation method to use
+            interpolation_method: The interpolation method to use, one
+                of {linear, nearest, hybrid, gaussian_process}
 
         Returns:
             A callable interpolator function
         """
 
         # Create interpolator
-        # TODO We'd ideally like to interpolate linearly within the support points,
-        # but with "nearest" outside of them.
-        match method:
+        match interpolation_method:
             case "linear":
                 return LinearNDInterpolator(self.coordinates(), self.values())
             case "nearest":
                 return NearestNDInterpolator(self.coordinates(), self.values())
+            case "hybrid":
+                return HybridInterpolator(self.coordinates(), self.values())
+            case "gaussian_process":
+                gp = GaussianProcess()
+                gp.fit(self.coordinates(), self.values())
+
+                return gp
+            case "clough-tocher":
+                return CloughTocher2DInterpolator(self.coordinates(), self.values())
             case _:
-                raise NotImplementedError(f'Interpolation method "{method}" not implemented')
+                raise NotImplementedError(
+                    f'Interpolation method "{interpolation_method}" is not implemented for Collection'
+                )
+
+    def prune(
+        self,
+        threshold: float,
+    ):
+        coordinates = self.coordinates()
+        clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=threshold).fit(
+            coordinates
+        )
+
+        pruning_index = sort(unique(clusters.labels_, return_index=True)[1])
+        pruned_coordinates = coordinates[pruning_index]
+        pruned_values = self.values()[pruning_index]
+
+        self.clear()
+        self.append(pruned_coordinates, pruned_values)
 
 
 class PolarCollection(Collection):
@@ -333,3 +556,16 @@ class PolarCollection(Collection):
             cartesian_collection.data[f"v{i}"] = self.data[f"v{i}"]
 
         return cartesian_collection
+
+
+class HybridInterpolator:
+
+    def __init__(self, coordinates, values):
+        self.linear = LinearNDInterpolator(coordinates, values)
+        self.nearest = NearestNDInterpolator(coordinates, values)
+
+    def __call__(self, coordinates):
+        result = self.linear(coordinates)
+        nan_values = isnan(result).reshape(len(result))
+        result[nan_values] = self.nearest(coordinates[nan_values])
+        return result

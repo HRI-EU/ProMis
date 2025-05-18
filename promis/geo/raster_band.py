@@ -19,6 +19,7 @@ from networkx import Graph, astar_path
 
 # Third Party
 from numpy import array, concatenate, linspace, meshgrid, ndarray, ravel, vstack, zeros
+from numpy.typing import NDArray
 from pandas import DataFrame
 from scipy.spatial import KDTree
 
@@ -97,7 +98,7 @@ class RasterBand(ABC):
         goal: tuple[float, float],
         cost_model: Callable[[float], float],
         value_filter: Callable[[float], float]
-    ) -> list[float]:
+    ) -> NDArray:
         """Search the shortest path through this RasterBand using A*.
 
         Args:
@@ -124,7 +125,7 @@ class RasterBand(ABC):
             weight='weight'
         )
 
-        return path
+        return array(path)
 
 
 class CartesianRasterBand(RasterBand, CartesianCollection):
