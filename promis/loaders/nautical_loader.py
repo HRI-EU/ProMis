@@ -57,11 +57,6 @@ try:
         from osgeo import gdal, ogr
 except ImportError as _error:  # pragma: no cover
     _OSGEO_PRESENT = False
-    warn(
-        "Could not import package osgeo. "
-        "If you woud like to load nautical charts, please install it as described in the README. "
-        f"Error was: {_error}"
-    )
     del _error
 else:
     _OSGEO_PRESENT = True
@@ -92,7 +87,10 @@ class S57ChartHandler:
 
     def __init__(self):
         if not _OSGEO_PRESENT:  # pragma: no cover
-            raise ImportError('the "osgeo" package must be installed for this handler to function')
+            raise ImportError(
+                "Could not import package osgeo. "
+                "If you woud like to load nautical charts, please install it as described in the README."
+            )
 
     #: This maps layer names to the corresponding parameters for S57ChartHandler._create_obstacle(...)
     #: These are not all possible objects but merely the ones which are trivial to read out.
