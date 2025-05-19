@@ -38,12 +38,12 @@ from promis.geo import (
     CartesianGeometry,
     CartesianLocation,
     CartesianPolygon,
-    CartesianRoute,
+    CartesianPolyLine,
     Geospatial,
     PolarGeometry,
     PolarLocation,
     PolarPolygon,
-    PolarRoute,
+    PolarPolyLine,
 )
 from promis.loaders.spatial_loader import SpatialLoader
 
@@ -274,7 +274,7 @@ class S57ChartHandler:
                 points = [
                     PolarLocation(latitude=lat, longitude=lon) for lon, lat in geometry.GetPoints()
                 ]
-                yield PolarRoute(points, name=name, location_type=location_type), feature_id
+                yield PolarPolyLine(points, name=name, location_type=location_type), feature_id
 
             case ogr.wkbMultiLineString:
                 for i in range(geometry.GetGeometryCount()):
@@ -282,7 +282,7 @@ class S57ChartHandler:
                         PolarLocation(latitude=lat, longitude=lon)
                         for lon, lat in geometry.GetGeometryRef(i).GetPoints()
                     ]
-                    yield PolarRoute(points, name=name, location_type=location_type), feature_id
+                    yield PolarPolyLine(points, name=name, location_type=location_type), feature_id
 
             case ogr.wkbPolygon:
                 outer_ring = geometry.GetGeometryRef(0)
@@ -387,7 +387,7 @@ def _from_shapely(
                 identifier=reference.identifier,
             )
         case LineString(coords=coords):
-            yield CartesianRoute.from_numpy(
+            yield CartesianPolyLine.from_numpy(
                 array(coords),
                 name=reference.name,
                 location_type=reference.location_type,

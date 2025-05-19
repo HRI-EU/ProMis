@@ -1,4 +1,4 @@
-"""This module implements abstractions for geospatial routes (line strings)
+"""This module implements abstractions for geospatial PolyLines
 in WGS84 and local coordinate frames."""
 
 #
@@ -24,10 +24,10 @@ from promis.geo.location import CartesianLocation, PolarLocation
 from promis.models import Gaussian
 
 #: Helper to define <Polar|Cartesian>Location operatios within base class
-DerivedRoute = TypeVar("DerivedRoute", bound="Route")
+DerivedPolyLine = TypeVar("DerivedPolyLine", bound="PolyLine")
 
 
-class Route(Geospatial):
+class PolyLine(Geospatial):
     def __init__(
         self,
         locations: list[PolarLocation | CartesianLocation],
@@ -37,7 +37,7 @@ class Route(Geospatial):
         covariance: ndarray | None = None,
     ) -> None:
         # Assertions on the given locations
-        assert len(locations) >= 2, "A route must contain at least two points!"
+        assert len(locations) >= 2, "A PolyLine must contain at least two points!"
 
         # Setup attributes
         self.locations = locations
@@ -63,14 +63,14 @@ class Route(Geospatial):
             "coordinates": [(location.x, location.y) for location in self.locations],
         }
 
-    def sample(self, number_of_samples: int = 1) -> list[DerivedRoute]:
-        """Sample routes given this route's uncertainty.
+    def sample(self, number_of_samples: int = 1) -> list[DerivedPolyLine]:
+        """Sample PolyLines given this PolyLine's uncertainty.
 
         Args:
             number_of_samples: How many samples to draw
 
         Returns:
-            The set of sampled routes, each with same name, identifier etc.
+            The set of sampled PolyLines, each with same name, identifier etc.
         """
 
         # Check if a distribution is given
@@ -81,13 +81,13 @@ class Route(Geospatial):
                 )
             ] * number_of_samples
 
-        # Gather all the sampled routes
-        sampled_routes = []
+        # Gather all the sampled PolyLines
+        sampled_polylines = []
         for sample in self.distribution.sample(number_of_samples).T:
-            # Translate each route location by sampled translation
+            # Translate each polyline location by sampled translation
             sampled_locations = [location + vstack(sample) for location in self.locations]
 
-            sampled_routes.append(
+            sampled_polylines.append(
                 type(self)(
                     sampled_locations,
                     self.location_type,
@@ -97,10 +97,10 @@ class Route(Geospatial):
                 )
             )
 
-        return sampled_routes
+        return sampled_polylines
 
     def to_numpy(self) -> ndarray:
-        """Converts the coordinates defining this route into a :class:`numpy.ndarray`.
+        """Converts the coordinates defining this polyline into a :class:`numpy.ndarray`.
 
         Returns:
             An array with shape ``(number of locations, 2)``, where each location
@@ -117,19 +117,19 @@ class Route(Geospatial):
         )
 
 
-class PolarRoute(Route):
+class PolarPolyLine(PolyLine):
 
-    """A route (line string) based on WGS84 coordinates.
+    """A polyline (line string) based on WGS84 coordinates.
 
     Note:
         This class does not yet support simplification as it was not required so far.
 
     Args:
-        locations: The two or more points that make up this route; see :attr:`~.locations`
+        locations: The two or more points that make up this polyline; see :attr:`~.locations`
         location_type: The type of this polygon
         name: An optional name of this polygon
-        identifier: The route's optional unique identifier, in :math:`[0, 2**63)`
-        uncertainty: An optional value representing the variance of this route's
+        identifier: The polyline's optional unique identifier, in :math:`[0, 2**63)`
+        uncertainty: An optional value representing the variance of this polyline's
             latitudes and longitudes respectively
     """
 
@@ -141,17 +141,17 @@ class PolarRoute(Route):
         identifier: int | None = None,
         covariance: ndarray | None = None,
     ) -> None:
-        # Setup Route
+        # Setup PolyLine
         super().__init__(locations, location_type, name, identifier, covariance)
 
-    def to_cartesian(self, origin: PolarLocation) -> "CartesianRoute":
-        """Projects this route to a Cartesian one according to the given global reference.
+    def to_cartesian(self, origin: PolarLocation) -> "CartesianPolyLine":
+        """Projects this polyline to a Cartesian one according to the given global reference.
 
         Args:
             origin: The reference by which to project onto the local tangent plane
 
         Returns:
-            The cartesian representation of this route with the given reference point being set
+            The cartesian representation of this polyline with the given reference point being set
         """
 
         # convert to cartesian
@@ -160,7 +160,7 @@ class PolarRoute(Route):
             coordinates[:, 0], coordinates[:, 1]
         )
 
-        return CartesianRoute.from_numpy(
+        return CartesianPolyLine.from_numpy(
             coordinates,
             origin=origin,
             location_type=self.location_type,
@@ -176,17 +176,17 @@ class PolarRoute(Route):
         )
 
     @classmethod
-    def from_numpy(cls, data: ndarray, *args, **kwargs) -> "PolarRoute":
-        """Create a polar route from a numpy representation.
+    def from_numpy(cls, data: ndarray, *args, **kwargs) -> "PolarPolyLine":
+        """Create a polar polyline from a numpy representation.
 
         Args:
             data: An array with shape ``(number of locations, 2)``, where each location
             is represented by a pair of ``(longitude, latitude)``, each in degrees.
-            *args: Positional arguments to be passed to :class:`~PolarRoute`
-            **kwargs: Keyword arguments to be passed to :class:`~PolarRoute`
+            *args: Positional arguments to be passed to :class:`~PolarPolyLine`
+            **kwargs: Keyword arguments to be passed to :class:`~PolarPolyLine`
 
         Returns:
-            The polar route created from the given coordinates an other parameters
+            The polar polyline created from the given coordinates an other parameters
 
         Raises:
             :class:`AssertionError`: If the shape of ``array`` is invalid
@@ -207,22 +207,22 @@ class PolarRoute(Route):
 
     def __repr__(self) -> str:
         locations = ", ".join(str(loc) for loc in self.locations)
-        return f"PolarRoute(locations=[{locations}]{self._repr_extras})"
+        return f"PolarPolyLine(locations=[{locations}]{self._repr_extras})"
 
 
-class CartesianRoute(Route):
+class CartesianPolyLine(PolyLine):
 
-    """A Cartesian route (line string) in local coordinates.
+    """A Cartesian polyline (line string) in local coordinates.
 
     Args:
         locations: The list of two or more locations that
             this shape consists of; see :attr:`~locations`
-        location_type: The type of this route
-        name: The name of this route
-        identifier: The route's optional unique identifier, in :math:`[0, 2**63)`
+        location_type: The type of this polyline
+        name: The name of this polyline
+        identifier: The polyline's optional unique identifier, in :math:`[0, 2**63)`
         origin: A reference that can be used to project this cartesian representation (back)
             into a polar one
-        covariance: An optional value representing the variance of this route's
+        covariance: An optional value representing the variance of this polyline's
             east and north coordinates respectively
     """
 
@@ -239,18 +239,18 @@ class CartesianRoute(Route):
         self.origin = origin
         self.geometry = LineString([location.geometry.coords[0] for location in locations])
 
-        # Setup Route
-        Route.__init__(self, locations, location_type, name, identifier, covariance)
+        # Setup PolyLine
+        PolyLine.__init__(self, locations, location_type, name, identifier, covariance)
 
-    def to_polar(self, origin: PolarLocation | None = None) -> PolarRoute:
-        """Computes the polar representation of this route.
+    def to_polar(self, origin: PolarLocation | None = None) -> PolarPolyLine:
+        """Computes the polar representation of this polyline.
 
         Args:
             origin: The global reference to be used for back-projection, must be set if and only if
                 :attr:`~origin` is ``None``
 
         Returns:
-            The global, polar representation of this route
+            The global, polar representation of this polyline
         """
 
         # Decide which origin to use
@@ -271,7 +271,7 @@ class CartesianRoute(Route):
             coordinates[:, 0], coordinates[:, 1], inverse=True
         )
 
-        return PolarRoute.from_numpy(
+        return PolarPolyLine.from_numpy(
             coordinates,
             location_type=self.location_type,
             name=self.name,
@@ -284,17 +284,17 @@ class CartesianRoute(Route):
         )
 
     @classmethod
-    def from_numpy(cls, data: ndarray, *args, **kwargs) -> "CartesianRoute":
-        """Create a Cartesian route from a numpy representation.
+    def from_numpy(cls, data: ndarray, *args, **kwargs) -> "CartesianPolyLine":
+        """Create a Cartesian polyline from a numpy representation.
 
         Args:
             data: An array with shape ``(number of locations, 2)``, where each location
                 is represented by a pair of ``(east, north)``, each in degrees.
-            *args: Positional arguments to be passed to :class:`~CartesianRoute`
-            **kwargs: Keyword arguments to be passed to :class:`~CartesianRoute`
+            *args: Positional arguments to be passed to :class:`~CartesianPolyLine`
+            **kwargs: Keyword arguments to be passed to :class:`~CartesianPolyLine`
 
         Returns:
-            The polar route created from the given coordinates an other parameters
+            The polar polyline created from the given coordinates an other parameters
 
         Raises:
             :class:`AssertionError`: If the shape of ``array`` is invalid
@@ -317,13 +317,13 @@ class CartesianRoute(Route):
         return self.geometry.distance(other.geometry)
 
     def send_to_gui(self, url = "http://localhost:8000/add_geojson", timeout = 1):
-        raise NotImplementedError("Cartesian Route does not have geospatial feature to send to gui!")
+        raise NotImplementedError("Cartesian PolyLine does not have geospatial feature to send to gui!")
 
     def __repr__(self) -> str:
         origin = f", origin={self.origin}" if self.origin is not None else ""
         locations = ", ".join(f"({x}, {y})" for x, y in self.geometry.coords)
 
-        return f"CartesianRoute(locations=[{locations}]{origin}{self._repr_extras})"
+        return f"CartesianPolyLine(locations=[{locations}]{origin}{self._repr_extras})"
 
     def __str__(self) -> str:
         # this is required to override shapely.geometry.LineString.__str__()

@@ -19,11 +19,11 @@ from promis.geo.location import CartesianLocation, Location, PolarLocation
 from promis.geo.map import CartesianMap, Map, PolarMap
 from promis.geo.polygon import CartesianPolygon, PolarPolygon
 from promis.geo.raster_band import CartesianRasterBand, PolarRasterBand, RasterBand
-from promis.geo.route import CartesianRoute, PolarRoute, Route
+from promis.geo.polyline import CartesianPolyLine, PolarPolyLine, PolyLine
 
 # Type aliases
-CartesianGeometry: TypeAlias = CartesianLocation | CartesianMap | CartesianPolygon | CartesianRoute
-PolarGeometry: TypeAlias = PolarLocation | PolarMap | PolarPolygon | PolarRoute
+CartesianGeometry: TypeAlias = CartesianLocation | CartesianMap | CartesianPolygon | CartesianPolyLine
+PolarGeometry: TypeAlias = PolarLocation | PolarMap | PolarPolygon | PolarPolyLine
 
 
 __all__ = [
@@ -34,7 +34,7 @@ __all__ = [
     "CartesianMap",
     "CartesianPolygon",
     "CartesianRasterBand",
-    "CartesianRoute",
+    "CartesianPolyLine",
     "Direction",
     "Geospatial",
     "Location",
@@ -45,7 +45,7 @@ __all__ = [
     "PolarMap",
     "PolarPolygon",
     "PolarRasterBand",
-    "PolarRoute",
-    "Route",
+    "PolarPolyLine",
+    "PolyLine",
     "RasterBand",
 ]

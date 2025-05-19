@@ -16,7 +16,7 @@ from overpy import Overpass, Relation
 from overpy.exception import OverpassGatewayTimeout, OverpassTooManyRequests
 
 # ProMis
-from promis.geo import PolarLocation, PolarPolygon, PolarRoute
+from promis.geo import PolarLocation, PolarPolygon, PolarPolyLine
 from promis.loaders.spatial_loader import SpatialLoader
 
 
@@ -47,8 +47,8 @@ class OsmLoader(SpatialLoader):
         filters: str,
         name: str,
         timeout: float = 5.0,
-    ) -> list[PolarRoute]:
-        """Loads all selected ways from OSM as PolarRoute.
+    ) -> list[PolarPolyLine]:
+        """Loads all selected ways from OSM as PolarPolyLine.
 
         Args:
             tag: The tag that way and relation will be qualitfied with, required to
@@ -57,7 +57,7 @@ class OsmLoader(SpatialLoader):
             location_type: The type to assign to each loaded route
 
         Returns:
-            A list of all found map features as PolarRoutes
+            A list of all found map features as PolarPolyLines
         """
 
         # Compute bounding box and format it for Overpass
@@ -76,7 +76,7 @@ class OsmLoader(SpatialLoader):
                 )
 
                 self.features += [
-                    PolarRoute(
+                    PolarPolyLine(
                         [
                             PolarLocation(
                                 latitude=float(node.lat), longitude=float(node.lon), location_type=name
@@ -100,8 +100,8 @@ class OsmLoader(SpatialLoader):
         filters: str,
         name: str,
         timeout: float = 5.0,
-    ) -> list[PolarRoute]:
-        """Loads all selected ways from OSM as PolarRoute.
+    ) -> list[PolarPolyLine]:
+        """Loads all selected ways from OSM as PolarPolyLine.
 
         Args:
             tag: The tag that way and relation will be qualitfied with, required to
@@ -110,7 +110,7 @@ class OsmLoader(SpatialLoader):
             location_type: The type to assign to each loaded route
 
         Returns:
-            A list of all found map features as PolarRoutes
+            A list of all found map features as PolarPolyLines
         """
 
         # Compute bounding box and format it for Overpass

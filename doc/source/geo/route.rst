@@ -1,7 +1,7 @@
-Route
-=====
+PolyLine
+========
 
-.. automodule:: promis.geo.route
+.. automodule:: promis.geo.polyline
     :members:
     :undoc-members:
     :show-inheritance:
