@@ -1,12 +1,10 @@
 """This module contains a class for handling raster-band data."""
 
-
-
 # Standard Library
 from abc import ABC
 from collections.abc import Callable
 from itertools import product
-from typing import NoReturn
+from typing import Any, NoReturn
 
 # Plotting
 from networkx import Graph, astar_path
@@ -18,12 +16,7 @@ from pandas import DataFrame
 from scipy.spatial import KDTree
 
 # ProMis
-from promis.geo import (
-    CartesianCollection,
-    CartesianLocation,
-    PolarCollection,
-    PolarLocation,
-)
+from promis.geo import CartesianCollection, CartesianLocation, PolarCollection, PolarLocation
 
 
 class RasterBand(ABC):
@@ -152,14 +145,23 @@ class RasterBand(ABC):
         return array(path)
 
     @staticmethod
-    def stack_graphs(graphs, labels, vertical_weight: float = 0.0) -> Graph:
-        """Create a new graph containing the data of the old ones with 'vertical' connections."""
+    def stack_graphs(graphs: dict[tuple[Any], Graph], vertical_weight: float = 0.0) -> Graph:
+        """Create a new graph containing the data of the old ones with 'vertical' connections.
 
-        assert len(graphs) == len(labels), "Graphs and labels must be of the same length"
+        Args:
+            graphs: A dictionary of graphs to be stacked, where the keys are the labels
+                and the values are the graphs themselves.
+                The new nodes will be tuples of the form ``(x, y, *label)`` with
+                weight ``vertical_weight``.
+            vertical_weight: The weight of the vertical edges between the graphs.
+                For simplicity, this is currently assumed to be the same for all graphs.
+        """
 
         stacked_graph = Graph()
 
-        for graph_index, (graph, label) in enumerate(zip(graphs, labels)):
+        previous_label = None  # Not a tuple, so discernable from (None,)
+
+        for label, graph in graphs.items():
             # Add nodes
             for node in graph.nodes:
                 stacked_graph.add_node((node[0], node[1], label))
@@ -173,17 +175,16 @@ class RasterBand(ABC):
                     **graph[edge[0]][edge[1]],
                 )
 
-            if graph_index > 0:
+            if previous_label is not None:
                 # Add vertical edges
-                label_a = labels[graph_index - 1]
-                label_b = labels[graph_index]
                 for node in graph.nodes:
-                    n0 = (node[0], node[1], label_a)
-                    n1 = (node[0], node[1], label_b)
-                    # Add edge between the two graphs
+                    n0 = (node[0], node[1], *label)
+                    n1 = (node[0], node[1], *previous_label)
+                    # Add forward and reverse edges between the two graphs
                     stacked_graph.add_edge(n0, n1, weight=vertical_weight)
-                    # Add reverse edge
                     stacked_graph.add_edge(n1, n0, weight=vertical_weight)
+
+            previous_label = label
 
         return stacked_graph
 
@@ -212,9 +213,7 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
         CartesianCollection.__init__(self, origin, number_of_values)
 
         # Compute coordinates from spatial dimensions and resolution
-        raster_coordinates = vstack(
-            list(map(ravel, meshgrid(self._x_coordinates, self._y_coordinates)))
-        ).T
+        raster_coordinates = vstack(list(map(ravel, meshgrid(self._x_coordinates, self._y_coordinates)))).T
 
         # Put coordinates and default value 0 together into matrix and set DataFrame
         raster_entries = concatenate(
