@@ -5,7 +5,7 @@ Official implementation of the paper *The Constitutional Controller: Doubt-Calib
 ## Structure
 
 The implementation of *CoCo* builds on [ProMis](https://github.com/HRI-EU/ProMis), a framework for the design and execution of mission plans for autonomous agents.
-Most of the implementation is contained in `promis/coco.py` and is then used in `examples/`.
+Most of the implementation is contained in `promis/coco.py` and is then used in `examples/coco/`.
 
 Specifically, in the latter you can find the central `coco.ipynb` notebook demonstrating how to use CoCo.
 It also forms the basis of the experiments in the paper, which can be executed by running the `record_test_run.py` script on a computer with a working [Crazyflie 2.1](https://www.bitcraze.io/products/old-products/crazyflie-2-1/) + [ROS2](docs.ros.org/en/rolling) setup.
