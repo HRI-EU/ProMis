@@ -4,11 +4,12 @@
 
 # Standard Library
 from collections import defaultdict
-from collections.abc import Callable, Iterable, TypedDict
+from collections.abc import Callable, Iterable
 from copy import deepcopy
 from pickle import dump, load
 from re import finditer
 from traceback import format_exception
+from typing import TypedDict
 from warnings import warn
 
 # Third Party

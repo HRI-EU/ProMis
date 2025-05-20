@@ -53,6 +53,7 @@ setuptools.setup(
         "overpy",
         # probabilistic logic and modelling
         "nflows",
+        "gpytorch",  # TODO consider moving this to extras_require
         "torch",
         "pyro-ppl",
         "pysdd",
@@ -85,8 +86,6 @@ setuptools.setup(
             "ruff",
             # dynamic code analysis
             "pytest",
-            "pytest-cov",
-            "pytest-sugar",
         ],
     },
 )
