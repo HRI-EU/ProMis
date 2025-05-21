@@ -59,6 +59,7 @@ setuptools.setup(
         # probabilistic logic and modelling
         "pyro-ppl",
         "pysdd",
+        "gpytorch",
         # plotting and visualization
         "fastapi[standard]",
         "graphviz",
