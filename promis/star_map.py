@@ -9,7 +9,6 @@ from copy import deepcopy
 from pickle import dump, load
 from re import finditer
 from traceback import format_exception
-from typing import TypedDict
 from warnings import warn
 
 # Third Party
@@ -20,13 +19,6 @@ from numpy.typing import NDArray
 from promis.geo import CartesianCollection, CartesianMap
 from promis.logic.spatial import Depth, Distance, Over, Relation
 
-
-class _RelationInformation(TypedDict):
-    collection: CartesianCollection
-    approximator: None | object
-
-
-# TODO: StaRMap and ProMis should not hold on to the target maps
 
 class StaRMap:
     """A Statistical Relational Map.

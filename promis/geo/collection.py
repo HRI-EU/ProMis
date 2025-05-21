@@ -1,7 +1,5 @@
 """This module contains a class for handling a collection of spatially referenced data."""
 
-
-
 # Standard Library
 from abc import ABC
 from collections.abc import Callable
@@ -139,6 +137,23 @@ class Collection(ABC):
 
         location_columns = self.data.columns[:2]
         return self.data[location_columns].to_numpy()
+
+    def __getitem__(self, position: tuple[float, float]) -> NDArray[Any]:
+        """Get the value at a specific coordinate.
+
+        Args:
+            x: The x coordinate
+            y: The y coordinate
+
+        Returns:
+            The value at the specified coordinate
+        """
+
+        return (
+            self.data.loc[(self.data[self.data.columns[0]] == x) & (self.data[self.data.columns[1]] == y)]
+            .to_numpy()[:, 2:]  # Get all columns except the first two
+            .squeeze(0)  # Makes sure we get a 1D array
+        )
 
     def to_csv(self, path: str, mode: str = "w"):
         """Saves the collection as comma-separated values file.

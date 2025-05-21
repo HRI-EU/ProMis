@@ -1,7 +1,5 @@
 """This module contains base classes for geospatial objects like polygons, routes and points."""
 
-
-
 # Standard Library
 from abc import ABC, abstractmethod
 from typing import Any, cast
