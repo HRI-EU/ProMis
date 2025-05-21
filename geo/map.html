@@ -1,0 +1,345 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Map &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Collection" href="collection.html" />
+    <link rel="prev" title="PolyLine" href="polyline.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            ProMis
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../promis.html">ProMis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../star_map.html">StaR Map</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="geo.html">Geo</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="geospatial.html">Geospatial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="location.html">Location</a></li>
+<li class="toctree-l2"><a class="reference internal" href="polygon.html">Polygon</a></li>
+<li class="toctree-l2"><a class="reference internal" href="polyline.html">PolyLine</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Map</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#promis.geo.map.CartesianMap"><code class="docutils literal notranslate"><span class="pre">CartesianMap</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.CartesianMap.to_polar"><code class="docutils literal notranslate"><span class="pre">CartesianMap.to_polar()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.geo.map.DerivedMap"><code class="docutils literal notranslate"><span class="pre">DerivedMap</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.geo.map.Map"><code class="docutils literal notranslate"><span class="pre">Map</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.all_location_types"><code class="docutils literal notranslate"><span class="pre">Map.all_location_types</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.apply_covariance"><code class="docutils literal notranslate"><span class="pre">Map.apply_covariance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.filter"><code class="docutils literal notranslate"><span class="pre">Map.filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.is_valid"><code class="docutils literal notranslate"><span class="pre">Map.is_valid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.load"><code class="docutils literal notranslate"><span class="pre">Map.load()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.location_types"><code class="docutils literal notranslate"><span class="pre">Map.location_types()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.sample"><code class="docutils literal notranslate"><span class="pre">Map.sample()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.save"><code class="docutils literal notranslate"><span class="pre">Map.save()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.to_geo_json"><code class="docutils literal notranslate"><span class="pre">Map.to_geo_json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.Map.to_rtree"><code class="docutils literal notranslate"><span class="pre">Map.to_rtree()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.geo.map.PolarMap"><code class="docutils literal notranslate"><span class="pre">PolarMap</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.PolarMap.send_to_gui"><code class="docutils literal notranslate"><span class="pre">PolarMap.send_to_gui()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.map.PolarMap.to_cartesian"><code class="docutils literal notranslate"><span class="pre">PolarMap.to_cartesian()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="collection.html">Collection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="raster_band.html">RasterBand</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../loaders/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logic/logic.html">Logic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../estimators/estimators.html">Estimators</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="geo.html">Geo</a></li>
+      <li class="breadcrumb-item active">Map</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/geo/map.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-promis.geo.map">
+<span id="map"></span><h1>Map<a class="headerlink" href="#module-promis.geo.map" title="Link to this heading"></a></h1>
+<p>This module implements abstractions for geospatial, polygonal shapes in WGS84 and local cartesian
+coordinates using shapely.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="promis.geo.map.CartesianMap">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.geo.map.</span></span><span class="sig-name descname"><span class="pre">CartesianMap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="location.html#promis.geo.location.PolarLocation" title="promis.geo.location.PolarLocation"><span class="pre">PolarLocation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="location.html#promis.geo.location.CartesianLocation" title="promis.geo.location.CartesianLocation"><span class="pre">CartesianLocation</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#promis.geo.map.CartesianMap" title="promis.geo.map.CartesianMap"><span class="pre">CartesianMap</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="polygon.html#promis.geo.polygon.CartesianPolygon" title="promis.geo.polygon.CartesianPolygon"><span class="pre">CartesianPolygon</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="polyline.html#promis.geo.polyline.CartesianPolyLine" title="promis.geo.polyline.CartesianPolyLine"><span class="pre">CartesianPolyLine</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/promis/geo/map.html#CartesianMap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.CartesianMap" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#promis.geo.map.Map" title="promis.geo.map.Map"><code class="xref py py-class docutils literal notranslate"><span class="pre">Map</span></code></a></p>
+<p>A map containing geospatial objects based on local coordinates with a global reference point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>origin</strong> – The origin point of this map</p></li>
+<li><p><strong>features</strong> – A list of features that should be contained by this map</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.CartesianMap.to_polar">
+<span class="sig-name descname"><span class="pre">to_polar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.map.PolarMap" title="promis.geo.map.PolarMap"><span class="pre">PolarMap</span></a></span></span><a class="reference internal" href="../_modules/promis/geo/map.html#CartesianMap.to_polar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.CartesianMap.to_polar" title="Link to this definition"></a></dt>
+<dd><p>Projects this map to a polar representation according to the map’s global reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cartesian representation of this map with the given reference point being the same</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="promis.geo.map.DerivedMap">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.geo.map.</span></span><span class="sig-name descname"><span class="pre">DerivedMap</span></span><a class="headerlink" href="#promis.geo.map.DerivedMap" title="Link to this definition"></a></dt>
+<dd><p>Helper to define &lt;Polar|Cartesian&gt;Map operatios within base class</p>
+<p>alias of TypeVar(‘DerivedMap’, bound=<a class="reference internal" href="#promis.geo.map.Map" title="promis.geo.map.Map"><code class="xref py py-class docutils literal notranslate"><span class="pre">Map</span></code></a>)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="promis.geo.map.Map">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.geo.map.</span></span><span class="sig-name descname"><span class="pre">Map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="location.html#promis.geo.location.PolarLocation" title="promis.geo.location.PolarLocation"><span class="pre">PolarLocation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="location.html#promis.geo.location.CartesianLocation" title="promis.geo.location.CartesianLocation"><span class="pre">CartesianLocation</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#promis.geo.map.CartesianMap" title="promis.geo.map.CartesianMap"><span class="pre">CartesianMap</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="polygon.html#promis.geo.polygon.CartesianPolygon" title="promis.geo.polygon.CartesianPolygon"><span class="pre">CartesianPolygon</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="polyline.html#promis.geo.polyline.CartesianPolyLine" title="promis.geo.polyline.CartesianPolyLine"><span class="pre">CartesianPolyLine</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="location.html#promis.geo.location.PolarLocation" title="promis.geo.location.PolarLocation"><span class="pre">PolarLocation</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#promis.geo.map.PolarMap" title="promis.geo.map.PolarMap"><span class="pre">PolarMap</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="polygon.html#promis.geo.polygon.PolarPolygon" title="promis.geo.polygon.PolarPolygon"><span class="pre">PolarPolygon</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="polyline.html#promis.geo.polyline.PolarPolyLine" title="promis.geo.polyline.PolarPolyLine"><span class="pre">PolarPolyLine</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/promis/geo/map.html#Map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<p>A base class for maps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>origin</strong> – The origin point of this map</p></li>
+<li><p><strong>features</strong> – A list of features that should be contained by this map</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="promis.geo.map.Map.all_location_types">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">all_location_types</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.13)"><span class="pre">set</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#promis.geo.map.Map.all_location_types" title="Link to this definition"></a></dt>
+<dd><p>Get all location types contained in this map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A set of all location types contained in this map</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.Map.apply_covariance">
+<span class="sig-name descname"><span class="pre">apply_covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">covariance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><span class="pre">ndarray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/promis/geo/map.html#Map.apply_covariance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map.apply_covariance" title="Link to this definition"></a></dt>
+<dd><p>Set the covariance matrix of all features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>covariance</strong> – The covariance matrix to set for all featuers or a dictionary
+mapping location_type to covariance matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.Map.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.map.DerivedMap" title="promis.geo.map.DerivedMap"><span class="pre">DerivedMap</span></a></span></span><a class="reference internal" href="../_modules/promis/geo/map.html#Map.filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map.filter" title="Link to this definition"></a></dt>
+<dd><p>Get a map with only features of the given type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>location_type</strong> – The type of locations to filter for</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A map that only contains features of the given type</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.Map.is_valid">
+<span class="sig-name descname"><span class="pre">is_valid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/promis/geo/map.html#Map.is_valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map.is_valid" title="Link to this definition"></a></dt>
+<dd><p>Whether this map contains only valid polygonal shapes according to <code class="xref py py-mod docutils literal notranslate"><span class="pre">shapely</span></code>.</p>
+<p>Quite expensive, not cached. Invalid features might cross themselves or have zero area.
+Other tools might still refuse it, like <em>GEOS</em>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.Map.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.map.Map" title="promis.geo.map.Map"><span class="pre">Map</span></a></span></span><a class="reference internal" href="../_modules/promis/geo/map.html#Map.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map.load" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.Map.location_types">
+<span class="sig-name descname"><span class="pre">location_types</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/promis/geo/map.html#Map.location_types"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map.location_types" title="Link to this definition"></a></dt>
+<dd><p>Get all location types contained in this map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of all location types contained in this map</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.Map.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">number_of_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#promis.geo.map.DerivedMap" title="promis.geo.map.DerivedMap"><span class="pre">DerivedMap</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/promis/geo/map.html#Map.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map.sample" title="Link to this definition"></a></dt>
+<dd><p>Sample random maps given this maps’s feature’s uncertainty.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>number_of_samples</strong> – How many samples to draw</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The set of sampled maps with the individual features being sampled according
+to their uncertainties and underlying sample methods</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.Map.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/promis/geo/map.html#Map.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map.save" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.Map.to_geo_json">
+<span class="sig-name descname"><span class="pre">to_geo_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/promis/geo/map.html#Map.to_geo_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map.to_geo_json" title="Link to this definition"></a></dt>
+<dd><p>Constructs the GeoJSON string representing this map as a FeatureCollection.</p>
+<p>For more information on GeoJSON, see <a class="reference internal" href="geospatial.html#promis.geo.geospatial.Geospatial.to_geo_json" title="promis.geo.geospatial.Geospatial.to_geo_json"><code class="xref py py-func docutils literal notranslate"><span class="pre">promis.geo.geospatial.Geospatial.to_geo_json()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.Map.to_rtree">
+<span class="sig-name descname"><span class="pre">to_rtree</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://shapely.readthedocs.io/en/stable/strtree.html#shapely.STRtree" title="(in Shapely)"><span class="pre">STRtree</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/promis/geo/map.html#Map.to_rtree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.Map.to_rtree" title="Link to this definition"></a></dt>
+<dd><p>Convert this map into a Shapely STRtree for efficient spatial queries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The Shapely STRtree containing this map’s features</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="promis.geo.map.PolarMap">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.geo.map.</span></span><span class="sig-name descname"><span class="pre">PolarMap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="location.html#promis.geo.location.PolarLocation" title="promis.geo.location.PolarLocation"><span class="pre">PolarLocation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="location.html#promis.geo.location.PolarLocation" title="promis.geo.location.PolarLocation"><span class="pre">PolarLocation</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#promis.geo.map.PolarMap" title="promis.geo.map.PolarMap"><span class="pre">PolarMap</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="polygon.html#promis.geo.polygon.PolarPolygon" title="promis.geo.polygon.PolarPolygon"><span class="pre">PolarPolygon</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="polyline.html#promis.geo.polyline.PolarPolyLine" title="promis.geo.polyline.PolarPolyLine"><span class="pre">PolarPolyLine</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/promis/geo/map.html#PolarMap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.PolarMap" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#promis.geo.map.Map" title="promis.geo.map.Map"><code class="xref py py-class docutils literal notranslate"><span class="pre">Map</span></code></a></p>
+<p>A map containing geospatial objects based on WGS84 coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>origin</strong> – The origin point of this map</p></li>
+<li><p><strong>features</strong> – A list of features that should be contained by this map</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.PolarMap.send_to_gui">
+<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'http://localhost:8000/add_geojson_map'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/promis/geo/map.html#PolarMap.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.PolarMap.send_to_gui" title="Link to this definition"></a></dt>
+<dd><p>Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> – url of the backend</p></li>
+<li><p><strong>timeout</strong> – request timeout in second</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.32.3)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.32.3)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.map.PolarMap.to_cartesian">
+<span class="sig-name descname"><span class="pre">to_cartesian</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.map.CartesianMap" title="promis.geo.map.CartesianMap"><span class="pre">CartesianMap</span></a></span></span><a class="reference internal" href="../_modules/promis/geo/map.html#PolarMap.to_cartesian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.map.PolarMap.to_cartesian" title="Link to this definition"></a></dt>
+<dd><p>Projects this map to a cartesian representation according to its global reference.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The cartesian representation of this map with the given reference point being the same</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="polyline.html" class="btn btn-neutral float-left" title="PolyLine" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="collection.html" class="btn btn-neutral float-right" title="Collection" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

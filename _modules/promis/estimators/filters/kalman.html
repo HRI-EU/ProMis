@@ -1,0 +1,322 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>promis.estimators.filters.kalman &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            ProMis
+              <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../promis.html">ProMis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../star_map.html">StaR Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../geo/geo.html">Geo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../loaders/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../logic/logic.html">Logic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../estimators/estimators.html">Estimators</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">promis.estimators.filters.kalman</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for promis.estimators.filters.kalman</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module implements the Kalman filter for state estimation based on</span>
+<span class="sd">   linear state transition and measurement models.&quot;&quot;&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of ProMis and licensed under the BSD 3-Clause License.</span>
+<span class="c1"># You should have received a copy of the BSD 3-Clause License along with ProMis.</span>
+<span class="c1"># If not, see https://opensource.org/license/bsd-3-clause/.</span>
+<span class="c1">#</span>
+
+<span class="c1"># Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="c1"># Third Party</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndarray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">inv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">concat</span>
+
+<span class="c1"># ProMis</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gaussian</span>
+
+
+<div class="viewcode-block" id="Kalman">
+<a class="viewcode-back" href="../../../../estimators/filters/kalman.html#promis.estimators.filters.kalman.Kalman">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Kalman</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The Kalman filter for linear state estimation.</span>
+
+<span class="sd">    The Kalman filter is a single target tracker for linear state space models, i.e. models that</span>
+<span class="sd">    describe the transition of a state variable and its relationship to sensor readings</span>
+<span class="sd">    as matrix-vector-multiplications.</span>
+<span class="sd">    Additionally, the Kalman filter is based on the assumption that the state process and</span>
+<span class="sd">    measurements are sampled from a Gaussian distribution.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        First, import some helper functions from numpy.</span>
+
+<span class="sd">        &gt;&gt;&gt; from numpy import array</span>
+<span class="sd">        &gt;&gt;&gt; from numpy import eye</span>
+<span class="sd">        &gt;&gt;&gt; from numpy import vstack</span>
+
+<span class="sd">        Then, setup the system&#39;s model.</span>
+<span class="sd">        In this case, we track a 1D position that we assume to have a constant velocity.</span>
+<span class="sd">        Thereby we choose the transition model and measurement function like so.</span>
+
+<span class="sd">        &gt;&gt;&gt; F = array([[1.0, 1.0], [0.0, 1.0]])</span>
+<span class="sd">        &gt;&gt;&gt; H = array([[1.0, 0.0]])</span>
+
+<span class="sd">        Furthermore, we assume the following covariance matrices to model</span>
+<span class="sd">        the noise in our model and measurements.</span>
+
+<span class="sd">        &gt;&gt;&gt; Q = eye(2)</span>
+<span class="sd">        &gt;&gt;&gt; R = eye(1)</span>
+
+<span class="sd">        An input to the system can be defined as well.</span>
+<span class="sd">        Here, we model the input to change the velocity of the system.</span>
+
+<span class="sd">        &gt;&gt;&gt; B = vstack([0.0, 1.0])</span>
+
+<span class="sd">        Our initial belief is a position and velocity of 0.</span>
+
+<span class="sd">        &gt;&gt;&gt; mean = vstack([0.0, 0.0])</span>
+<span class="sd">        &gt;&gt;&gt; covariance = array([[1.0, 0.0], [0.0, 1.0]])</span>
+<span class="sd">        &gt;&gt;&gt; estimate = Gaussian(mean, covariance)</span>
+
+<span class="sd">        Then, we initialize the filter.</span>
+<span class="sd">        Since, this model has not input we can ignore the control function B.</span>
+
+<span class="sd">        &gt;&gt;&gt; kalman = Kalman(estimate, F, H, Q, R, B)</span>
+
+<span class="sd">        Now, we can predict based on the provided model and system input.</span>
+<span class="sd">        Then, a correcttion with measurements of the true position is done.</span>
+
+<span class="sd">        &gt;&gt;&gt; for _ in range(5):</span>
+<span class="sd">        ...     kalman.predict(u=vstack([0.0]))</span>
+<span class="sd">        ...     kalman.correct(array([5.]))</span>
+
+<span class="sd">        Predictions and corrections do not need to alternate every time.</span>
+<span class="sd">        As an example, you can predict the state multiple times should your measurements be</span>
+<span class="sd">        unavailable for an extended period of time.</span>
+
+<span class="sd">        Furthermore, an alternative measurement model can be provided in case it is needed.</span>
+<span class="sd">        For this, define H and its arguments as keyword arguments as follows.</span>
+
+<span class="sd">        &gt;&gt;&gt; kalman.correct(array([5.]), H=lambda v: array([[v, 0.0]]), v=3)</span>
+
+<span class="sd">        Finally, we can set the filter to keep a trace of the estimation process:</span>
+
+<span class="sd">        &gt;&gt;&gt; kalman = Kalman(estimate, F, H, Q, R, B, keep_trace=True)</span>
+<span class="sd">        &gt;&gt;&gt; kalman.predict(u=vstack([0.0]))</span>
+<span class="sd">        &gt;&gt;&gt; kalman.correct(array([5.]))</span>
+
+<span class="sd">        By doing so, DataFrame objects of the predictions</span>
+
+<span class="sd">        &gt;&gt;&gt; kalman.predictions</span>
+<span class="sd">                        x                         P                         F</span>
+<span class="sd">        0  [[0.0], [0.0]]  [[3.0, 1.0], [1.0, 2.0]]  [[1.0, 1.0], [0.0, 1.0]]</span>
+
+<span class="sd">        and estimates</span>
+
+<span class="sd">        &gt;&gt;&gt; kalman.estimates</span>
+<span class="sd">                          x                             P      z</span>
+<span class="sd">        0  [[3.75], [1.25]]  [[0.75, 0.25], [0.25, 1.75]]  [5.0]</span>
+
+<span class="sd">        can be obtained.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        estimate: Initial belief, i.e. the gaussian distribution that describes your initial guess</span>
+<span class="sd">            on the target&#39;s state</span>
+<span class="sd">        F: State transition model, i.e. the change of x in a single timestep (n, n)</span>
+<span class="sd">        H: Measurement model, i.e. a mapping from a state to measurement space (m, n)</span>
+<span class="sd">        Q: Process noise matrix, i.e. the covariance of the state transition (n, n)</span>
+<span class="sd">        R: Measurement noise matrix, i.e. the covariance of the sensor readings (m, m)</span>
+<span class="sd">        B: Input dynamics model, i.e. the influence of a system input on the state transition (1, k)</span>
+<span class="sd">        keep_trace: Flag for tracking filter process</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        - https://en.wikipedia.org/wiki/Kalman_filter</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">estimate</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">,</span>
+        <span class="n">F</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">H</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">Q</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">R</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">B</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">keep_trace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># Initial belief</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimate</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">estimate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prediction</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">estimate</span><span class="p">)</span>
+
+        <span class="c1"># Model specification</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">F</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">B</span> <span class="o">=</span> <span class="n">B</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="n">H</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">=</span> <span class="n">Q</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="n">R</span>
+
+        <span class="c1"># Objects for process tracing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keep_trace</span> <span class="o">=</span> <span class="n">keep_trace</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;P&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimates</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;P&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">])</span>
+
+<div class="viewcode-block" id="Kalman.predict">
+<a class="viewcode-back" href="../../../../estimators/filters/kalman.html#promis.estimators.filters.kalman.Kalman.predict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict a future state based on a linear forward model with optional system input.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Compute F if additional parameters are needed</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span>
+
+        <span class="c1"># Consider system input</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;u&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">input_influence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">B</span> <span class="o">@</span> <span class="n">u</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+        <span class="c1"># Predict next state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prediction</span> <span class="o">=</span> <span class="n">Gaussian</span><span class="p">(</span>
+            <span class="n">F</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">input_influence</span><span class="p">,</span>
+            <span class="n">F</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate</span><span class="o">.</span><span class="n">P</span> <span class="o">@</span> <span class="n">F</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Append prediction data to trace</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_trace</span><span class="p">:</span>
+            <span class="n">new</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prediction</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">(),),</span>
+                    <span class="s2">&quot;P&quot;</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prediction</span><span class="o">.</span><span class="n">P</span><span class="o">.</span><span class="n">copy</span><span class="p">(),),</span>
+                    <span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">copy</span><span class="p">(),),</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">predictions</span> <span class="o">=</span> <span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">predictions</span><span class="p">,</span> <span class="n">new</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Kalman.correct">
+<a class="viewcode-back" href="../../../../estimators/filters/kalman.html#promis.estimators.filters.kalman.Kalman.correct">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">correct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Correct a state prediction based on a measurement.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            z: The measurement taken at this timestep</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check for differing measurement model</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">)</span>
+
+        <span class="c1"># Compute H if additional parameters are needed</span>
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">H</span><span class="p">):</span>
+            <span class="n">H</span> <span class="o">=</span> <span class="n">H</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Compute the residual and its covariance</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">z</span> <span class="o">-</span> <span class="n">H</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">H</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction</span><span class="o">.</span><span class="n">P</span> <span class="o">@</span> <span class="n">H</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">R</span>
+
+        <span class="c1"># Compute the new Kalman gain</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prediction</span><span class="o">.</span><span class="n">P</span> <span class="o">@</span> <span class="n">H</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">inv</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+
+        <span class="c1"># Estimate new state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimate</span> <span class="o">=</span> <span class="n">Gaussian</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prediction</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">K</span> <span class="o">@</span> <span class="n">y</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prediction</span><span class="o">.</span><span class="n">P</span> <span class="o">-</span> <span class="n">K</span> <span class="o">@</span> <span class="n">S</span> <span class="o">@</span> <span class="n">K</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Append estimation data to trace</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keep_trace</span><span class="p">:</span>
+            <span class="n">new</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimate</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">(),),</span> <span class="s2">&quot;P&quot;</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimate</span><span class="o">.</span><span class="n">P</span><span class="o">.</span><span class="n">copy</span><span class="p">(),),</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">z</span><span class="o">.</span><span class="n">copy</span><span class="p">(),)}</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">estimates</span> <span class="o">=</span> <span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">estimates</span><span class="p">,</span> <span class="n">new</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

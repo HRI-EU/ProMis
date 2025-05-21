@@ -1,0 +1,356 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>promis.estimators.filters.gmphd &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            ProMis
+              <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../promis.html">ProMis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../star_map.html">StaR Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../geo/geo.html">Geo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../loaders/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../logic/logic.html">Logic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../estimators/estimators.html">Estimators</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">promis.estimators.filters.gmphd</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for promis.estimators.filters.gmphd</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module implements the Gaussian Mixture PHD filter for linear</span>
+<span class="sd">   multi target tracking..&quot;&quot;&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of ProMis and licensed under the BSD 3-Clause License.</span>
+<span class="c1"># You should have received a copy of the BSD 3-Clause License along with ProMis.</span>
+<span class="c1"># If not, see https://opensource.org/license/bsd-3-clause/.</span>
+<span class="c1">#</span>
+
+<span class="c1"># Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="c1"># Third Party</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndarray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">inv</span>
+
+<span class="c1"># ProMis</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">GaussianMixture</span>
+
+
+<div class="viewcode-block" id="GaussianMixturePhd">
+<a class="viewcode-back" href="../../../../estimators/filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GaussianMixturePhd</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The gaussian mixture PHD filter for linear multi-target tracking.</span>
+
+<span class="sd">    The gaussian mixture PHD filter is a multi target tracker for linear state space models.</span>
+<span class="sd">    It can be regarded as an extension of the Kalman filter formulas to so-called random</span>
+<span class="sd">    finite sets (RFS). The PHD filter follows the same prediction-correction scheme for state</span>
+<span class="sd">    estimation as the single target Kalman filters. As an additional part of the interface,</span>
+<span class="sd">    the internal model for the filter&#39;s belief needs to be pruned regularly as to limit</span>
+<span class="sd">    the computational complexity. The extraction of a state estimate is similarly more</span>
+<span class="sd">    sophisticated in the PHD filter and requires the use of a dedicated procedure.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Start by importing the necessary numpy functions.</span>
+
+<span class="sd">        &gt;&gt;&gt; from numpy import array</span>
+<span class="sd">        &gt;&gt;&gt; from numpy import eye</span>
+<span class="sd">        &gt;&gt;&gt; from numpy import vstack</span>
+
+<span class="sd">        Setup the model.</span>
+<span class="sd">        In this case, we track 1D positions with constant velocities.</span>
+<span class="sd">        Thereby we choose the transition model like so.</span>
+
+<span class="sd">        &gt;&gt;&gt; F = array([[1.0, 1.0], [0.0, 0.0]])</span>
+
+<span class="sd">        The measurements will be positions and no velocities.</span>
+
+<span class="sd">        &gt;&gt;&gt; H = array([[1.0, 0.0]])</span>
+
+<span class="sd">        Furthermore, we assume the following noise on the process and measurements.</span>
+
+<span class="sd">        &gt;&gt;&gt; Q = eye(2)</span>
+<span class="sd">        &gt;&gt;&gt; R = eye(1)</span>
+
+<span class="sd">        Our belief of how targets are generetaded is for them to start with</span>
+<span class="sd">        a position and velocity of 0.</span>
+
+<span class="sd">        &gt;&gt;&gt; mean = vstack([0.0, 0.0])</span>
+<span class="sd">        &gt;&gt;&gt; covariance = array([[1.0, 0.0], [0.0, 1.0]])</span>
+<span class="sd">        &gt;&gt;&gt; birth_belief = GaussianMixture([Gaussian(mean, covariance)])</span>
+
+<span class="sd">        We need to tell the filter how certain we are to detect targets and whether they survive.</span>
+<span class="sd">        Also, the amount of clutter in the observed environment is quantized.</span>
+
+<span class="sd">        &gt;&gt;&gt; survival_rate = 0.99</span>
+<span class="sd">        &gt;&gt;&gt; detection_rate = 0.99</span>
+<span class="sd">        &gt;&gt;&gt; intensity = 0.01</span>
+
+<span class="sd">        Then, we initialize the filter. This model has not input, so we ignore B.</span>
+
+<span class="sd">        &gt;&gt;&gt; phd = GaussianMixturePhd(</span>
+<span class="sd">        ...     birth_belief,</span>
+<span class="sd">        ...     survival_rate,</span>
+<span class="sd">        ...     detection_rate,</span>
+<span class="sd">        ...     intensity,</span>
+<span class="sd">        ...     F,</span>
+<span class="sd">        ...     H,</span>
+<span class="sd">        ...     Q,</span>
+<span class="sd">        ...     R</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">        We can now predict with the provided model and then correct the prediction with a</span>
+<span class="sd">        measurement, in this case of a single targets&#39; position.</span>
+
+<span class="sd">        &gt;&gt;&gt; for _ in range(5):</span>
+<span class="sd">        ...     phd.predict()</span>
+<span class="sd">        ...     phd.correct(vstack([5.]))</span>
+
+<span class="sd">        Furthermore, an alternative measurement model can be provided in case it is needed.</span>
+<span class="sd">        For this, define H and its arguments as keyword arguments as follows.</span>
+
+<span class="sd">        &gt;&gt;&gt; phd.correct(vstack([5.]), H=lambda v: array([[v, 0.0]]), v=3)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        birth_belief: GMM of target births</span>
+<span class="sd">        survival_rate: Probability of a target to survive a timestep</span>
+<span class="sd">        detection_rate: Probability of a target to be detected at a timestep</span>
+<span class="sd">        intensity: Clutter intensity</span>
+<span class="sd">        F: Linear state transition model (n, n)</span>
+<span class="sd">        H: Linear measurement model (m, n)</span>
+<span class="sd">        Q: Process noise matrix (n, n)</span>
+<span class="sd">        R: Measurement noise matrix (m, m)</span>
+
+<span class="sd">    Refernces:</span>
+<span class="sd">        - B.-N. Vo and W.-K. Ma, &quot;The Gaussian Mixture Probability Hypothesis Density Filter,&quot;</span>
+<span class="sd">          in IEEE Transactions on Signal Processing, vol. 54, no. 11, pp. 4091-4104,</span>
+<span class="sd">          Nov. 2006, doi: 10.1109/TSP.2006.881190.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">birth_belief</span><span class="p">:</span> <span class="n">GaussianMixture</span><span class="p">,</span>
+        <span class="n">survival_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">detection_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">intensity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">F</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">H</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">Q</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">R</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># Filter specification</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">F</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="n">H</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">=</span> <span class="n">Q</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="n">R</span>
+
+        <span class="c1"># Gaussian mixture model for spontaneous birth of new targets</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">birth_belief</span> <span class="o">=</span> <span class="n">birth_belief</span>
+
+        <span class="c1"># Rates of survival, detection and clutter intensity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">survival_rate</span> <span class="o">=</span> <span class="n">survival_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detection_rate</span> <span class="o">=</span> <span class="n">detection_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="n">intensity</span>
+
+        <span class="c1"># Gaussian mixture model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gmm</span> <span class="o">=</span> <span class="n">GaussianMixture</span><span class="p">()</span>
+
+<div class="viewcode-block" id="GaussianMixturePhd.forward_model">
+<a class="viewcode-back" href="../../../../estimators/filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd.forward_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Gaussian</span><span class="p">:</span>
+        <span class="c1"># Compute F if additional parameters are needed</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span>
+
+        <span class="k">return</span> <span class="n">Gaussian</span><span class="p">(</span>
+            <span class="n">F</span> <span class="o">@</span> <span class="n">component</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+            <span class="n">F</span> <span class="o">@</span> <span class="n">component</span><span class="o">.</span><span class="n">P</span> <span class="o">@</span> <span class="n">F</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span>
+            <span class="n">component</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">survival_rate</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GaussianMixturePhd.measurement_model">
+<a class="viewcode-back" href="../../../../estimators/filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd.measurement_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">measurement_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Compute H if additional parameters are needed</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">(</span><span class="n">component</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span>
+
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">H</span> <span class="o">@</span> <span class="n">component</span><span class="o">.</span><span class="n">x</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">+</span> <span class="n">H</span> <span class="o">@</span> <span class="n">component</span><span class="o">.</span><span class="n">P</span> <span class="o">@</span> <span class="n">H</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">component</span><span class="o">.</span><span class="n">P</span> <span class="o">@</span> <span class="n">H</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">inv</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">component</span><span class="o">.</span><span class="n">P</span> <span class="o">-</span> <span class="n">K</span> <span class="o">@</span> <span class="n">S</span> <span class="o">@</span> <span class="n">K</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="k">return</span> <span class="n">mu</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">P</span></div>
+
+
+<div class="viewcode-block" id="GaussianMixturePhd.predict">
+<a class="viewcode-back" href="../../../../estimators/filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd.predict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predict the future state.&quot;&quot;&quot;</span>
+
+        <span class="c1"># Spontaneous birth of new targets</span>
+        <span class="n">born</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">birth_belief</span><span class="p">)</span>
+
+        <span class="c1"># Spawning off of existing targets</span>
+        <span class="c1"># TODO: Spawning not implemented at this point in time</span>
+        <span class="n">spawned</span> <span class="o">=</span> <span class="n">GaussianMixture</span><span class="p">()</span>
+
+        <span class="c1"># Prediction for existing targets</span>
+        <span class="n">predicted</span> <span class="o">=</span> <span class="n">GaussianMixture</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">gmm</span><span class="p">:</span>
+            <span class="n">predicted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forward_model</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+        <span class="c1"># Concatenate with newborn and spawned target components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gmm</span> <span class="o">=</span> <span class="n">predicted</span> <span class="o">+</span> <span class="n">born</span> <span class="o">+</span> <span class="n">spawned</span></div>
+
+
+<div class="viewcode-block" id="GaussianMixturePhd.correct">
+<a class="viewcode-back" href="../../../../estimators/filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd.correct">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">correct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">measurements</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Correct the former prediction based on a sensor reading.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            measurements: Measurements at this timestep</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># ######################################</span>
+        <span class="c1"># Construction of update components</span>
+
+        <span class="n">mu</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Means mapped to measurement space</span>
+        <span class="n">S</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Residual covariance</span>
+        <span class="n">K</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Gains</span>
+        <span class="n">P</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Covariance</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">component</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gmm</span><span class="p">):</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">measurement_model</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+            <span class="n">mu</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">S</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">K</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">P</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="c1"># ######################################</span>
+        <span class="c1"># Update</span>
+
+        <span class="c1"># Undetected assumption</span>
+        <span class="n">updated</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gmm</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">updated</span><span class="p">:</span>
+            <span class="n">component</span><span class="o">.</span><span class="n">weight</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">detection_rate</span>
+
+        <span class="c1"># Measured assumption</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">measurements</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="c1"># Fill batch with corrected components</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">GaussianMixture</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">Gaussian</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">gmm</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">K</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">@</span> <span class="p">(</span><span class="n">measurements</span><span class="p">[:,</span> <span class="p">[</span><span class="n">z</span><span class="p">]]</span> <span class="o">-</span> <span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span>
+                        <span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">detection_rate</span> <span class="o">*</span> <span class="n">Gaussian</span><span class="p">(</span><span class="n">mu</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">])(</span><span class="n">measurements</span><span class="p">[:,</span> <span class="p">[</span><span class="n">z</span><span class="p">]]),</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gmm</span><span class="p">))</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Normalize weights</span>
+            <span class="n">sum_of_weights</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">component</span><span class="o">.</span><span class="n">weight</span> <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">:</span>
+                <span class="n">component</span><span class="o">.</span><span class="n">weight</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intensity</span> <span class="o">+</span> <span class="n">sum_of_weights</span>
+
+            <span class="c1"># Append batch to updated GMM</span>
+            <span class="n">updated</span> <span class="o">+=</span> <span class="n">batch</span>
+
+        <span class="c1"># Set updated as new gaussian mixture model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gmm</span> <span class="o">=</span> <span class="n">updated</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,408 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>promis.geo.map &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ProMis
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../promis.html">ProMis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../star_map.html">StaR Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../geo/geo.html">Geo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../loaders/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../logic/logic.html">Logic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../estimators/estimators.html">Estimators</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">promis.geo.map</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for promis.geo.map</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module implements abstractions for geospatial, polygonal shapes in WGS84 and local cartesian</span>
+<span class="sd">coordinates using shapely.&quot;&quot;&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of ProMis and licensed under the BSD 3-Clause License.</span>
+<span class="c1"># You should have received a copy of the BSD 3-Clause License along with ProMis.</span>
+<span class="c1"># If not, see https://opensource.org/license/bsd-3-clause/.</span>
+<span class="c1">#</span>
+
+<span class="c1"># Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pickle</span><span class="w"> </span><span class="kn">import</span> <span class="n">dump</span><span class="p">,</span> <span class="n">load</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span>
+
+<span class="c1"># Third Party</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geojson</span><span class="w"> </span><span class="kn">import</span> <span class="n">Feature</span><span class="p">,</span> <span class="n">FeatureCollection</span><span class="p">,</span> <span class="n">dumps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndarray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">requests</span><span class="w"> </span><span class="kn">import</span> <span class="n">post</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
+
+<span class="c1"># ProMis (need to avoid circular imports)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">promis.geo</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.geospatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geospatial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.location</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolarLocation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.polygon</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianPolygon</span><span class="p">,</span> <span class="n">PolarPolygon</span>
+
+<span class="c1">#: Helper to define &lt;Polar|Cartesian&gt;Map operatios within base class</span>
+<span class="n">DerivedMap</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;DerivedMap&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;Map&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Map">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Map</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A base class for maps.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        origin: The origin point of this map</span>
+<span class="sd">        features: A list of features that should be contained by this map</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="s2">&quot;list[promis.geo.CartesianGeometry | promis.geo.PolarGeometry] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Attributes setup</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">features</span> <span class="ow">or</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="Map.load">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.load">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Map&quot;</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Map.save">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Map.location_types">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.location_types">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">location_types</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all location types contained in this map.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of all location types contained in this map</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">]))</span></div>
+
+
+<div class="viewcode-block" id="Map.is_valid">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.is_valid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether this map contains only valid polygonal shapes according to :mod:`shapely`.</span>
+
+<span class="sd">        Quite expensive, not cached. Invalid features might cross themselves or have zero area.</span>
+<span class="sd">        Other tools might still refuse it, like *GEOS*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">PolarPolygon</span> <span class="o">|</span> <span class="n">CartesianPolygon</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">feature</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="Map.filter">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.filter">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedMap</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a map with only features of the given type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location_type: The type of locations to filter for</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A map that only contains features of the given type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="o">==</span> <span class="n">location_type</span><span class="p">],</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Map.to_rtree">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.to_rtree">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_rtree</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">STRtree</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert this map into a Shapely STRtree for efficient spatial queries.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The Shapely STRtree containing this map&#39;s features</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Construct an STR tree with the geometry of this map</span>
+        <span class="k">return</span> <span class="n">STRtree</span><span class="p">([</span><span class="n">feature</span><span class="o">.</span><span class="n">geometry</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Map.to_geo_json">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.to_geo_json">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_geo_json</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">indent</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructs the GeoJSON string representing this map as a FeatureCollection.</span>
+
+<span class="sd">        For more information on GeoJSON, see :func:`promis.geo.geospatial.Geospatial.to_geo_json`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">dumps</span><span class="p">(</span>
+            <span class="n">FeatureCollection</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">Feature</span><span class="p">(</span>
+                        <span class="n">geometry</span><span class="o">=</span><span class="n">feature</span><span class="p">,</span>
+                        <span class="nb">id</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">identifier</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span>
+                    <span class="k">if</span> <span class="n">location_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="o">==</span> <span class="n">location_type</span>
+                <span class="p">],</span>
+                <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_features</span><span class="p">(</span><span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Geospatial</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Geospatial</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">sample</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Map.sample">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">DerivedMap</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample random maps given this maps&#39;s feature&#39;s uncertainty.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            number_of_samples: How many samples to draw</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The set of sampled maps with the individual features being sampled according</span>
+<span class="sd">            to their uncertainties and underlying sample methods</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="n">Map</span><span class="o">.</span><span class="n">_sample_features</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_samples</span><span class="p">)</span>
+        <span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Map.apply_covariance">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.apply_covariance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">covariance</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the covariance matrix of all features.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            covariance: The covariance matrix to set for all featuers or a dictionary</span>
+<span class="sd">                mapping location_type to covariance matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># TODO: investigae how the covariance of the final relation is computed</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">covariance</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="ow">in</span> <span class="n">covariance</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">feature</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span><span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">location_type</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+                <span class="n">feature</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">all_location_types</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all location types contained in this map.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A set of all location types contained in this map</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PolarMap">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.PolarMap">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PolarMap</span><span class="p">(</span><span class="n">Map</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A map containing geospatial objects based on WGS84 coordinates.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        origin: The origin point of this map</span>
+<span class="sd">        features: A list of features that should be contained by this map</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="s2">&quot;list[promis.geo.PolarGeometry] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">features</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">promis</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">PolarGeometry</span><span class="p">]</span>
+
+<div class="viewcode-block" id="PolarMap.to_cartesian">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.PolarMap.to_cartesian">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CartesianMap&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Projects this map to a cartesian representation according to its global reference.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The cartesian representation of this map with the given reference point being the same</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">cartesian_features</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">CartesianMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="n">cartesian_features</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PolarMap.send_to_gui">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.PolarMap.send_to_gui">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_to_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span><span class="s2">&quot;http://localhost:8000/add_geojson_map&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            url: url of the backend</span>
+<span class="sd">            timeout: request timeout in second</span>
+
+<span class="sd">        Raise:</span>
+<span class="sd">            :class:`~requests.HTTPError`: When the HTTP request returned an unsuccessful status code</span>
+<span class="sd">            :class:`~requests.ConnectionError`: If the request fails due to connection issues</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span>
+        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="n">feature</span><span class="o">.</span><span class="n">to_geo_json</span><span class="p">()</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">+=</span> <span class="s1">&#39;]&#39;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span></div>
+</div>
+
+
+<div class="viewcode-block" id="CartesianMap">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.CartesianMap">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CartesianMap</span><span class="p">(</span><span class="n">Map</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A map containing geospatial objects based on local coordinates with a global reference point.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        origin: The origin point of this map</span>
+<span class="sd">        features: A list of features that should be contained by this map</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="s2">&quot;list[promis.geo.CartesianGeometry] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">features</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">promis</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">CartesianGeometry</span><span class="p">]</span>
+
+<div class="viewcode-block" id="CartesianMap.to_polar">
+<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.CartesianMap.to_polar">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarMap</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Projects this map to a polar representation according to the map&#39;s global reference.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The cartesian representation of this map with the given reference point being the same</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">polar_features</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">PolarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="n">polar_features</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

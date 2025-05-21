@@ -1,0 +1,622 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>promis.geo.polygon &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ProMis
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../promis.html">ProMis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../star_map.html">StaR Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../geo/geo.html">Geo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../loaders/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../logic/logic.html">Logic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../estimators/estimators.html">Estimators</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">promis.geo.polygon</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for promis.geo.polygon</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module implements abstractions for geospatial, polygonal shapes in WGS84 and local cartesian</span>
+<span class="sd">coordinates using shapely.&quot;&quot;&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of ProMis and licensed under the BSD 3-Clause License.</span>
+<span class="c1"># You should have received a copy of the BSD 3-Clause License along with ProMis.</span>
+<span class="c1"># If not, see https://opensource.org/license/bsd-3-clause/.</span>
+<span class="c1">#</span>
+
+<span class="c1"># Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">degrees</span><span class="p">,</span> <span class="n">radians</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="c1"># Third Party</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">PatchCollection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.patches</span><span class="w"> </span><span class="kn">import</span> <span class="n">PathPatch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">asarray</span><span class="p">,</span> <span class="n">isfinite</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">vstack</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Polygon</span> <span class="k">as</span> <span class="n">ShapelyPolygon</span>
+
+<span class="c1"># ProMis</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.geospatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geospatial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">meters_to_radians</span><span class="p">,</span> <span class="n">radians_to_meters</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.location</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">PolarLocation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gaussian</span>
+
+<span class="c1">#: Helper to define &lt;Polar|Cartesian&gt;Location operatios within base class</span>
+<span class="n">DerivedPolygon</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;DerivedPolygon&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;Polygon&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Polygon">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.Polygon">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Polygon</span><span class="p">(</span><span class="n">Geospatial</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">locations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span> <span class="o">|</span> <span class="n">CartesianLocation</span><span class="p">],</span>
+        <span class="n">holes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span> <span class="o">|</span> <span class="n">CartesianLocation</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">covariance</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Assertions on the given locations</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;A polygon must contain at least three points!&quot;</span>
+
+        <span class="c1"># Setup attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locations</span> <span class="o">=</span> <span class="n">locations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">holes</span> <span class="o">=</span> <span class="n">holes</span> <span class="k">if</span> <span class="n">holes</span> <span class="k">else</span> <span class="p">[]</span>
+
+        <span class="c1"># Closes the ring by connecting last and first position</span>
+        <span class="k">if</span> <span class="n">locations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">!=</span> <span class="n">locations</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="ow">or</span> <span class="n">locations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">!=</span> <span class="n">locations</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">locations</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">hole</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">holes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hole</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">!=</span> <span class="n">hole</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="ow">or</span> <span class="n">hole</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">!=</span> <span class="n">hole</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">:</span>
+                <span class="n">hole</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hole</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="c1"># Setup Gaussian distribution for sampling the polygon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span>
+
+        <span class="c1"># Setup Geospatial</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">location_type</span><span class="o">=</span><span class="n">location_type</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="n">identifier</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span><span class="o">.</span><span class="n">covariance</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@covariance</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="o">=</span> <span class="n">Gaussian</span><span class="p">(</span><span class="n">vstack</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span> <span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__geo_interface__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">exterior</span> <span class="o">=</span> <span class="p">[(</span><span class="n">location</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">location</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">]</span>
+        <span class="n">interiors</span> <span class="o">=</span> <span class="p">[[(</span><span class="n">location</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">location</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">hole</span><span class="p">]</span> <span class="k">for</span> <span class="n">hole</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">holes</span><span class="p">]</span>
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[</span><span class="n">exterior</span><span class="p">]</span> <span class="o">+</span> <span class="n">interiors</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Polygon&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <span class="n">coordinates</span><span class="p">,</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="Polygon.sample">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.Polygon.sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">DerivedPolygon</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample a polar polygon given this polygon&#39;s uncertainty.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            number_of_samples: How many samples to draw</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The set of sampled polygons, each with same name, identifier etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check if a distribution is given</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">holes</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">]</span> <span class="o">*</span> <span class="n">number_of_samples</span>
+
+        <span class="c1"># Gather all the sampled polygons</span>
+        <span class="n">sampled_polygons</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">number_of_samples</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">:</span>
+            <span class="c1"># Translate each border location by sampled translation</span>
+            <span class="n">sampled_locations</span> <span class="o">=</span> <span class="p">[</span><span class="n">location</span> <span class="o">+</span> <span class="n">vstack</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">]</span>
+
+            <span class="c1"># Translate each internal border location by sampled translation</span>
+            <span class="n">sampled_holes</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">[</span><span class="n">location</span> <span class="o">+</span> <span class="n">vstack</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">hole</span><span class="p">]</span> <span class="k">for</span> <span class="n">hole</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">holes</span>
+            <span class="p">]</span>
+
+            <span class="n">sampled_polygons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span>
+                    <span class="n">sampled_locations</span><span class="p">,</span>
+                    <span class="n">sampled_holes</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sampled_polygons</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PolarPolygon">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.PolarPolygon">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PolarPolygon</span><span class="p">(</span><span class="n">Polygon</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A polygon based on WGS84 coordinates.</span>
+
+<span class="sd">    An object with only a single point may be represented by</span>
+<span class="sd">    a polygon with three times the same location.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Lets first create the perimeter of the polygon</span>
+<span class="sd">        as a list of PolarLocation objects.</span>
+
+<span class="sd">        &gt;&gt;&gt; locations = [PolarLocation(-1.0, 1.0), PolarLocation(1.0, 1.0),</span>
+<span class="sd">        ...  PolarLocation(1.0, -1.0), PolarLocation(-1.0, -1.0)]</span>
+
+<span class="sd">        Now, we can build a polygon from these locations like so:</span>
+
+<span class="sd">        &gt;&gt;&gt; polygon = PolarPolygon(locations)</span>
+
+<span class="sd">        Given another list of locations, e.g.,</span>
+
+<span class="sd">        &gt;&gt;&gt; holes = [[PolarLocation(-0.5, 0.5), PolarLocation(0.5, 0.5),</span>
+<span class="sd">        ...  PolarLocation(0.5, -0.5), PolarLocation(-0.5, -0.5)]]</span>
+
+<span class="sd">        we can also build a polygon that contains holes:</span>
+
+<span class="sd">        &gt;&gt;&gt; polygon = PolarPolygon(locations, holes)</span>
+
+<span class="sd">        Given a covariance of this polygons translation, random samples can be drawn.</span>
+
+<span class="sd">        &gt;&gt;&gt; from numpy import eye</span>
+<span class="sd">        &gt;&gt;&gt; polygon = PolarPolygon(locations, covariance=eye(2))</span>
+<span class="sd">        &gt;&gt;&gt; random_samples = polygon.sample(10)</span>
+
+<span class="sd">        PolarPolygons can also be created from numpy data.</span>
+
+<span class="sd">        &gt;&gt;&gt; from numpy import array</span>
+<span class="sd">        &gt;&gt;&gt; locations = array([[-1.0, 1.0, 1.0, -1.0], [1.0, 1.0, -1.0, -1.0]])</span>
+<span class="sd">        &gt;&gt;&gt; polygon = PolarPolygon.from_numpy(locations)</span>
+
+<span class="sd">        Finally, a PolarPolygon can be turned into a CartesianPolygon</span>
+<span class="sd">        given a reference origin in polar coordinates.</span>
+
+<span class="sd">        &gt;&gt;&gt; origin = PolarLocation(0.0, 0.0)</span>
+<span class="sd">        &gt;&gt;&gt; cartesian_polygon = polygon.to_cartesian(origin)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        locations: The points that make up this polygon; see :attr:`~.locations`</span>
+<span class="sd">        holes: The points that make up holes in this polygon</span>
+<span class="sd">        location_type: The type of this polygon</span>
+<span class="sd">        name: An optional name of this polygon</span>
+<span class="sd">        identifier: The polygon&#39;s optional unique identifier, in :math:`[0, 2**63)`</span>
+<span class="sd">        covariance: An optional matrix representing the variance of this polygon&#39;s</span>
+<span class="sd">            latitude and longitude respectively</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">locations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span><span class="p">],</span>
+        <span class="n">holes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">covariance</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Setup Polygon</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">holes</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">identifier</span><span class="p">,</span> <span class="n">covariance</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PolarPolygon.from_numpy">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.PolarPolygon.from_numpy">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_numpy</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PolarPolygon&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a polygon from a numpy representation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: An array with shape ``(2, number_of_locations)``</span>
+<span class="sd">            args: Positional arguments to be passed to the new polygon</span>
+<span class="sd">            kwargs: Keyword arguments to be passed to the new polygon</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The polygon created from the given coordinates and other parameters</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AssertionError`: If the shape or content of ``data`` is invalid</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            :meth:`~to_numpy`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Assert that data is a vertical stack of two finite values</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="k">assert</span> <span class="n">isfinite</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+        <span class="c1"># Return appropriate polygon type</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">PolarLocation</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">T</span><span class="p">],</span>
+            <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PolarPolygon.to_cartesian">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.PolarPolygon.to_cartesian">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CartesianPolygon&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Projects the polygon to a Cartesian one according to a given global reference.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            origin: The reference point by which to project onto the local tangent plane</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The cartesian representation of this polygon with the given reference point being set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">CartesianPolygon</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">location</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">(</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">],</span>
+            <span class="p">[[</span><span class="n">location</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">(</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">hole</span><span class="p">]</span> <span class="k">for</span> <span class="n">hole</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">holes</span><span class="p">],</span>
+            <span class="n">location_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">identifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="p">,</span>
+            <span class="n">covariance</span><span class="o">=</span><span class="n">radians_to_meters</span><span class="p">(</span>
+                <span class="n">array</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">radians</span><span class="p">(</span><span class="n">degree</span><span class="p">)</span> <span class="k">for</span> <span class="n">degree</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span> <span class="k">for</span> <span class="n">loc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;PolarPolygon(locations=[</span><span class="si">{</span><span class="n">locations</span><span class="si">}</span><span class="s2">]</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repr_extras</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="CartesianPolygon">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.CartesianPolygon">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CartesianPolygon</span><span class="p">(</span><span class="n">Polygon</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A cartesian polygon based on local coordinates with an optional global reference.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Lets first create the perimeter of the polygon as a list of CartesianLocation objects.</span>
+
+<span class="sd">        &gt;&gt;&gt; locations = [CartesianLocation(-1.0, 1.0), CartesianLocation(1.0, 1.0),</span>
+<span class="sd">        ...  CartesianLocation(1.0, -1.0), CartesianLocation(-1.0, -1.0)]</span>
+
+<span class="sd">        Now, we can build a polygon from these locations like so:</span>
+
+<span class="sd">        &gt;&gt;&gt; polygon = CartesianPolygon(locations)</span>
+
+<span class="sd">        Given another list of locations, e.g.,</span>
+
+<span class="sd">        &gt;&gt;&gt; holes = [[CartesianLocation(-0.5, 0.5), CartesianLocation(0.5, 0.5),</span>
+<span class="sd">        ...  CartesianLocation(0.5, -0.5), CartesianLocation(-0.5, -0.5)]]</span>
+
+<span class="sd">        we can also build a polygon that contains holes:</span>
+
+<span class="sd">        &gt;&gt;&gt; polygon = CartesianPolygon(locations, holes)</span>
+
+<span class="sd">        Given a covariance of this polygons translation, random samples can be drawn.</span>
+
+<span class="sd">        &gt;&gt;&gt; from numpy import eye</span>
+<span class="sd">        &gt;&gt;&gt; polygon = CartesianPolygon(locations, covariance=eye(2))</span>
+<span class="sd">        &gt;&gt;&gt; random_samples = polygon.sample(10)</span>
+
+<span class="sd">        CartesianPolygons can also be created from numpy data.</span>
+
+<span class="sd">        &gt;&gt;&gt; from numpy import array</span>
+<span class="sd">        &gt;&gt;&gt; locations = array([[-1.0, 1.0, 1.0, -1.0], [1.0, 1.0, -1.0, -1.0]])</span>
+<span class="sd">        &gt;&gt;&gt; polygon = CartesianPolygon.from_numpy(locations)</span>
+
+<span class="sd">        Finally, a CartesianPolygon can be turned into a PolarPolygon</span>
+<span class="sd">        given a reference origin in polar coordinates.</span>
+
+<span class="sd">        &gt;&gt;&gt; origin = PolarLocation(49.873163174, 8.653830718)</span>
+<span class="sd">        &gt;&gt;&gt; polar_polygon = polygon.to_polar(origin)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        locations: The list of locations that this shape consists of; see :attr:`~.locations`</span>
+<span class="sd">        holes: The points that make up holes in this polygon</span>
+<span class="sd">        location_type: The type of this polygon</span>
+<span class="sd">        name: The name of this polygon</span>
+<span class="sd">        identifier: The polygon&#39;s optional unique identifier, in :math:`[0, 2**63)`</span>
+<span class="sd">        covariance: An optional matrix representing the variance of this polygon&#39;s</span>
+<span class="sd">            latitude and longitude respectively</span>
+<span class="sd">        origin: A reference that can be used to project this cartesian representation (back)</span>
+<span class="sd">            into a polar one</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Shapely Polygon has some abstract methods we do not override here</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">locations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianLocation</span><span class="p">],</span>
+        <span class="n">holes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">CartesianLocation</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">covariance</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Setup attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
+
+        <span class="k">if</span> <span class="n">holes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="n">ShapelyPolygon</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">locations</span><span class="p">],</span>
+                <span class="p">[[</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">hole</span><span class="p">]</span> <span class="k">for</span> <span class="n">hole</span> <span class="ow">in</span> <span class="n">holes</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="n">ShapelyPolygon</span><span class="p">([</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">locations</span><span class="p">])</span>
+
+        <span class="c1"># Setup Polygon</span>
+        <span class="n">Polygon</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">holes</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">identifier</span><span class="p">,</span> <span class="n">covariance</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CartesianPolygon.from_numpy">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.CartesianPolygon.from_numpy">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_numpy</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CartesianPolygon&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a polygon from a numpy representation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: An array with shape ``(2, number_of_locations)``</span>
+<span class="sd">            args: Positional arguments to be passed to the new polygon</span>
+<span class="sd">            kwargs: Keyword arguments to be passed to the new polygon</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The polygon created from the given coordinates and other parameters</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AssertionError`: If the shape or content of ``data`` is invalid</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            :meth:`~to_numpy`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Assert that data is a vertical stack of two finite values</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="k">assert</span> <span class="n">isfinite</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+        <span class="c1"># Transform the holes too, if given</span>
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[</span><span class="n">CartesianLocation</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">hole</span><span class="o">.</span><span class="n">T</span><span class="p">]</span> <span class="k">for</span> <span class="n">hole</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">elif</span> <span class="s2">&quot;holes&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;holes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">[</span><span class="n">CartesianLocation</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">hole</span><span class="o">.</span><span class="n">T</span><span class="p">]</span> <span class="k">for</span> <span class="n">hole</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;holes&quot;</span><span class="p">]</span>
+            <span class="p">]</span>
+
+        <span class="c1"># Return appropriate polygon type</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">CartesianLocation</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">T</span><span class="p">],</span>
+            <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CartesianPolygon.to_polar">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.CartesianPolygon.to_polar">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarPolygon</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the polar representation of this shape.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            origin: The global reference to be used for back-projection, must be set if and only if</span>
+<span class="sd">                :attr:`~promis.geo.CartesianPolygon.origin` is ``None``</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The global, polar representation of this geometry</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check that one origin point is given</span>
+        <span class="k">if</span> <span class="n">origin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;You need to provide an explicit origin when the instance does not have one&quot;</span>
+                <span class="p">)</span>
+            <span class="n">origin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">origin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;You provided an explicit origin while the instance already has a different one&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Hole locations to polar</span>
+        <span class="n">holes</span> <span class="o">=</span> <span class="p">[[</span><span class="n">location</span><span class="o">.</span><span class="n">to_polar</span><span class="p">(</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">hole</span><span class="p">]</span> <span class="k">for</span> <span class="n">hole</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">holes</span><span class="p">]</span>
+
+        <span class="c1"># Return appropriate Polygon in polar coordinates</span>
+        <span class="k">return</span> <span class="n">PolarPolygon</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">location</span><span class="o">.</span><span class="n">to_polar</span><span class="p">(</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">locations</span><span class="p">],</span>
+            <span class="n">holes</span><span class="p">,</span>
+            <span class="n">location_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">identifier</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="p">,</span>
+            <span class="n">covariance</span><span class="o">=</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">degrees</span><span class="p">(</span><span class="n">rad</span><span class="p">)</span> <span class="k">for</span> <span class="n">rad</span> <span class="ow">in</span> <span class="n">meters_to_radians</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">distribution</span><span class="o">.</span><span class="n">covariance</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CartesianPolygon.plot">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.CartesianPolygon.plot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plots this polygon using Matplotlib.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            axis: The axis object to use for plotting</span>
+<span class="sd">            kwargs: Keyword arguments to pass to Matplotlib</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">make_compound_path</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">exterior</span><span class="o">.</span><span class="n">coords</span><span class="p">)[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]),</span>
+            <span class="o">*</span><span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="n">asarray</span><span class="p">(</span><span class="n">ring</span><span class="o">.</span><span class="n">coords</span><span class="p">)[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span> <span class="k">for</span> <span class="n">ring</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">interiors</span><span class="p">],</span>
+        <span class="p">)</span>
+
+        <span class="n">patch</span> <span class="o">=</span> <span class="n">PathPatch</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">collection</span> <span class="o">=</span> <span class="n">PatchCollection</span><span class="p">([</span><span class="n">patch</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">axis</span><span class="o">.</span><span class="n">add_collection</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">autolim</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">axis</span><span class="o">.</span><span class="n">autoscale_view</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="CartesianPolygon.distance">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.CartesianPolygon.distance">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CartesianPolygon.send_to_gui">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.CartesianPolygon.send_to_gui">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_to_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:8000/add_geojson&quot;</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Cartesian Polygon does not have geospatial feature to send to gui!&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">origin</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;, origin=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">exterior</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;CartesianPolygon(locations=[</span><span class="si">{</span><span class="n">locations</span><span class="si">}</span><span class="s2">]</span><span class="si">{</span><span class="n">origin</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repr_extras</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1"># This is required to override shapely.geometry.Polygon.__str__()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="CartesianPolygon.make_centered_box">
+<a class="viewcode-back" href="../../../geo/polygon.html#promis.geo.polygon.CartesianPolygon.make_centered_box">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_centered_box</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">width</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">height</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">offset</span><span class="p">:</span> <span class="n">CartesianLocation</span> <span class="o">=</span> <span class="n">CartesianLocation</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CartesianPolygon&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a box centered around a given offset.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            width: The width of the map in meters</span>
+<span class="sd">            height: The height of the map in meters</span>
+<span class="sd">            kwargs: Additional keyword arguments to pass to the polygon, such as an origin</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The box as a polygon</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="c1"># clockwise: top-left, ...</span>
+                <span class="n">CartesianLocation</span><span class="p">(</span><span class="n">east</span><span class="o">=</span><span class="n">offset</span><span class="o">.</span><span class="n">east</span> <span class="o">-</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">north</span><span class="o">=</span><span class="n">offset</span><span class="o">.</span><span class="n">north</span> <span class="o">+</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="n">CartesianLocation</span><span class="p">(</span><span class="n">east</span><span class="o">=</span><span class="n">offset</span><span class="o">.</span><span class="n">east</span> <span class="o">+</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">north</span><span class="o">=</span><span class="n">offset</span><span class="o">.</span><span class="n">north</span> <span class="o">+</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="n">CartesianLocation</span><span class="p">(</span><span class="n">east</span><span class="o">=</span><span class="n">offset</span><span class="o">.</span><span class="n">east</span> <span class="o">+</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">north</span><span class="o">=</span><span class="n">offset</span><span class="o">.</span><span class="n">north</span> <span class="o">-</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="n">CartesianLocation</span><span class="p">(</span><span class="n">east</span><span class="o">=</span><span class="n">offset</span><span class="o">.</span><span class="n">east</span> <span class="o">-</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">north</span><span class="o">=</span><span class="n">offset</span><span class="o">.</span><span class="n">north</span> <span class="o">-</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="p">],</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

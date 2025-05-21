@@ -1,0 +1,197 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estimators &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Filters" href="filters/filters.html" />
+    <link rel="prev" title="Over" href="../logic/spatial/over.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            ProMis
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../promis.html">ProMis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../star_map.html">StaR Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../geo/geo.html">Geo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../loaders/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../logic/logic.html">Logic</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Estimators</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="filters/filters.html">Filters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="smoothers/smoothers.html">Smoothers</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Estimators</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/estimators/estimators.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="estimators">
+<h1>Estimators<a class="headerlink" href="#estimators" title="Link to this heading"></a></h1>
+<p>The estimators package provides filtering and smoothing techniques on noisy sensor data.
+While filtering methods apply probabilistic inference to track a state based on the past, smoothing integrates a complete trace in its considerations.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Modules:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="filters/filters.html">Filters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="filters/kalman.html">Kalman Filter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="filters/kalman.html#promis.estimators.filters.kalman.Kalman"><code class="docutils literal notranslate"><span class="pre">Kalman</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="filters/kalman.html#promis.estimators.filters.kalman.Kalman.correct"><code class="docutils literal notranslate"><span class="pre">Kalman.correct()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="filters/kalman.html#promis.estimators.filters.kalman.Kalman.predict"><code class="docutils literal notranslate"><span class="pre">Kalman.predict()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="filters/extended_kalman.html">Extended Kalman Filter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="filters/extended_kalman.html#promis.estimators.filters.extended_kalman.ExtendedKalman"><code class="docutils literal notranslate"><span class="pre">ExtendedKalman</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="filters/extended_kalman.html#promis.estimators.filters.extended_kalman.ExtendedKalman.correct"><code class="docutils literal notranslate"><span class="pre">ExtendedKalman.correct()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="filters/extended_kalman.html#promis.estimators.filters.extended_kalman.ExtendedKalman.predict"><code class="docutils literal notranslate"><span class="pre">ExtendedKalman.predict()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="filters/unscented_kalman.html">Unscented Kalman Filter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="filters/unscented_kalman.html#promis.estimators.filters.unscented_kalman.UnscentedKalman"><code class="docutils literal notranslate"><span class="pre">UnscentedKalman</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="filters/unscented_kalman.html#promis.estimators.filters.unscented_kalman.UnscentedKalman.compute_sigma_points"><code class="docutils literal notranslate"><span class="pre">UnscentedKalman.compute_sigma_points()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="filters/unscented_kalman.html#promis.estimators.filters.unscented_kalman.UnscentedKalman.correct"><code class="docutils literal notranslate"><span class="pre">UnscentedKalman.correct()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="filters/unscented_kalman.html#promis.estimators.filters.unscented_kalman.UnscentedKalman.predict"><code class="docutils literal notranslate"><span class="pre">UnscentedKalman.predict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="filters/unscented_kalman.html#promis.estimators.filters.unscented_kalman.UnscentedKalman.setup_weights"><code class="docutils literal notranslate"><span class="pre">UnscentedKalman.setup_weights()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="filters/gmphd.html">Gaussian Mixture PHD Filter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd"><code class="docutils literal notranslate"><span class="pre">GaussianMixturePhd</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd.correct"><code class="docutils literal notranslate"><span class="pre">GaussianMixturePhd.correct()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd.forward_model"><code class="docutils literal notranslate"><span class="pre">GaussianMixturePhd.forward_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd.measurement_model"><code class="docutils literal notranslate"><span class="pre">GaussianMixturePhd.measurement_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="filters/gmphd.html#promis.estimators.filters.gmphd.GaussianMixturePhd.predict"><code class="docutils literal notranslate"><span class="pre">GaussianMixturePhd.predict()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="filters/extended_gmphd.html">Extended Gaussian Mixture PHD Filter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="filters/extended_gmphd.html#promis.estimators.filters.extended_gmphd.ExtendedGaussianMixturePhd"><code class="docutils literal notranslate"><span class="pre">ExtendedGaussianMixturePhd</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="filters/extended_gmphd.html#promis.estimators.filters.extended_gmphd.ExtendedGaussianMixturePhd.forward_model"><code class="docutils literal notranslate"><span class="pre">ExtendedGaussianMixturePhd.forward_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="filters/extended_gmphd.html#promis.estimators.filters.extended_gmphd.ExtendedGaussianMixturePhd.measurement_model"><code class="docutils literal notranslate"><span class="pre">ExtendedGaussianMixturePhd.measurement_model()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="smoothers/smoothers.html">Smoothers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="smoothers/rts.html">RTS Smoothing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="smoothers/rts.html#promis.estimators.smoothers.rts.Rts"><code class="docutils literal notranslate"><span class="pre">Rts</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smoothers/rts.html#promis.estimators.smoothers.rts.Rts.smooth"><code class="docutils literal notranslate"><span class="pre">Rts.smooth()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="smoothers/extended_rts.html">Extended RTS Smoothing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="smoothers/extended_rts.html#promis.estimators.smoothers.extended_rts.ExtendedRts"><code class="docutils literal notranslate"><span class="pre">ExtendedRts</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smoothers/extended_rts.html#promis.estimators.smoothers.extended_rts.ExtendedRts.smooth"><code class="docutils literal notranslate"><span class="pre">ExtendedRts.smooth()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="smoothers/unscented_rts.html">Unscented RTS Smoothing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="smoothers/unscented_rts.html#promis.estimators.smoothers.unscented_rts.UnscentedRts"><code class="docutils literal notranslate"><span class="pre">UnscentedRts</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="smoothers/unscented_rts.html#promis.estimators.smoothers.unscented_rts.UnscentedRts.smooth"><code class="docutils literal notranslate"><span class="pre">UnscentedRts.smooth()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../logic/spatial/over.html" class="btn btn-neutral float-left" title="Over" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="filters/filters.html" class="btn btn-neutral float-right" title="Filters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

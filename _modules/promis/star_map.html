@@ -1,0 +1,446 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>promis.star_map &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            ProMis
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../promis.html">ProMis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../star_map.html">StaR Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../geo/geo.html">Geo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../loaders/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../logic/logic.html">Logic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../estimators/estimators.html">Estimators</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">promis.star_map</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for promis.star_map</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module contains a class for handling probabilistic, semantic and geospatial data.&quot;&quot;&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of ProMis and licensed under the BSD 3-Clause License.</span>
+<span class="c1"># You should have received a copy of the BSD 3-Clause License along with ProMis.</span>
+<span class="c1"># If not, see https://opensource.org/license/bsd-3-clause/.</span>
+<span class="c1">#</span>
+
+<span class="c1"># Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pickle</span><span class="w"> </span><span class="kn">import</span> <span class="n">dump</span><span class="p">,</span> <span class="n">load</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">re</span><span class="w"> </span><span class="kn">import</span> <span class="n">finditer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">traceback</span><span class="w"> </span><span class="kn">import</span> <span class="n">format_exception</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn</span>
+
+<span class="c1"># Third Party</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+<span class="c1"># ProMis</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianMap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.logic.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depth</span><span class="p">,</span> <span class="n">Distance</span><span class="p">,</span> <span class="n">Over</span><span class="p">,</span> <span class="n">Relation</span>
+
+
+<div class="viewcode-block" id="StaRMap">
+<a class="viewcode-back" href="../../star_map.html#promis.star_map.StaRMap">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StaRMap</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A Statistical Relational Map.</span>
+
+<span class="sd">    Among others, this holds two types of points: the target points and the support points.</span>
+<span class="sd">    Initially the value of the relations are determined at the support points.</span>
+<span class="sd">    To determine the value at the target points, the relations are approximated using the</span>
+<span class="sd">    support points, e.g., through linear interpolation.</span>
+<span class="sd">    When solving a ProMis problem, the solution is computed at the target points.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Adding support points as CartesianRasterBands can be more efficient than adding an arbitraty</span>
+<span class="sd">        CartesianCollection.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        uam: The uncertainty annotated map as generator in Cartesian space</span>
+<span class="sd">        method: The method to approximate parameters from a set of support points;</span>
+<span class="sd">            one of {&quot;linear&quot;, &quot;nearest&quot;, &quot;gaussian_process&quot;}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">uam</span><span class="p">:</span> <span class="n">CartesianMap</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uam</span> <span class="o">=</span> <span class="n">uam</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relations</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;over&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="p">{}</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="StaRMap.initialize">
+<a class="viewcode-back" href="../../star_map.html#promis.star_map.StaRMap.initialize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evaluation_points</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">logic</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup the StaRMap for a given set of support points, number of samples and logic.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            evaluation_points: The points to initialize the StaR Map on</span>
+<span class="sd">            number_of_random_maps: The number of samples to be used per support point</span>
+<span class="sd">            logic: The set of constraints deciding which relations are computed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+            <span class="n">evaluation_points</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_mentioned_relations</span><span class="p">(</span><span class="n">logic</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StaRMap.relation_name_to_class">
+<a class="viewcode-back" href="../../star_map.html#promis.star_map.StaRMap.relation_name_to_class">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">relation_name_to_class</span><span class="p">(</span><span class="n">relation</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Relation</span><span class="p">:</span>
+        <span class="c1"># Keep in sync with clear_relations()</span>
+        <span class="k">match</span> <span class="n">relation</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">&quot;over&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Over</span>
+            <span class="k">case</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Distance</span>
+            <span class="k">case</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Depth</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Requested unknown relation &quot;</span><span class="si">{</span><span class="n">relation</span><span class="si">}</span><span class="s1">&quot; from StaR Map&#39;</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">relation_types</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">relation_and_location_types</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">info</span><span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">location_types</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">relation_arities</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_name_to_class</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">arity</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_types</span><span class="p">}</span>
+
+<div class="viewcode-block" id="StaRMap.load">
+<a class="viewcode-back" href="../../star_map.html#promis.star_map.StaRMap.load">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;StaRMap&quot;</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StaRMap.save">
+<a class="viewcode-back" href="../../star_map.html#promis.star_map.StaRMap.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StaRMap.get">
+<a class="viewcode-back" href="../../star_map.html#promis.star_map.StaRMap.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Relation</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the computed data for a relation to a location type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            relation: The relation to return</span>
+<span class="sd">            location_type: The location type to relate to</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The relation for the given location type</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation</span><span class="p">][</span><span class="n">location_type</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="StaRMap.get_all">
+<a class="viewcode-back" href="../../star_map.html#promis.star_map.StaRMap.get_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logic</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Relation</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all the relations for each location type.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of all relations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">logic</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">deepcopy</span><span class="p">({</span>
+                <span class="n">relation_type</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="n">location_type</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">location_types</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">relation_type</span><span class="p">,</span> <span class="n">location_types</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_mentioned_relations</span><span class="p">(</span><span class="n">logic</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_mentioned_relations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logic</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all relations mentioned in a logic program.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            logic: The logic program</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of the (relation_type, location_type) pairs mentioned in the program</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">relations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">arity</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_arities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Assume the ternary relation &quot;between(X, anchorage, port)&quot;.</span>
+            <span class="c1"># Then, this pattern matches &quot;, anchorage, port&quot;, i.e., what X relates to.</span>
+            <span class="n">relates_to</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">r</span><span class="s2">&quot;\s*((?:&#39;\w*&#39;)|(?:\w+))\s*&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">arity</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">relates_to</span><span class="p">:</span>
+                <span class="c1"># Prepend comma to first element if not empty</span>
+                <span class="n">relates_to</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="n">relates_to</span>
+
+            <span class="c1"># Matches something like &quot;distance(X, land)&quot;</span>
+            <span class="n">full_pattern</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">)\(X</span><span class="si">{</span><span class="n">relates_to</span><span class="si">}</span><span class="s2">\)&quot;</span>
+
+            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">finditer</span><span class="p">(</span><span class="n">full_pattern</span><span class="p">,</span> <span class="n">logic</span><span class="p">):</span>
+                <span class="k">match</span> <span class="n">arity</span><span class="p">:</span>
+                    <span class="k">case</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                            <span class="s2">&quot;Arity 1 is not supported because it always needs a location type&quot;</span>
+                        <span class="p">)</span>
+                    <span class="k">case</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">location_type</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">location_type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="s2">&quot;&#39;</span><span class="se">\&quot;</span><span class="s2">&quot;</span><span class="p">:</span>  <span class="c1"># Remove quotes</span>
+                            <span class="n">location_type</span> <span class="o">=</span> <span class="n">location_type</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">relations</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">location_type</span><span class="p">)</span>
+                    <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Only arity 2 is supported, but got </span><span class="si">{</span><span class="n">arity</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">relations</span>
+
+<div class="viewcode-block" id="StaRMap.adaptive_sample">
+<a class="viewcode-back" href="../../star_map.html#promis.star_map.StaRMap.adaptive_sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adaptive_sample</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">candidate_sampler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">],</span>
+        <span class="n">number_of_random_maps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">number_of_iterations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">number_of_improvement_points</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">what</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">scaler</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+        <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">acquisition_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;entropy&quot;</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Automatically add support points at locations where the uncertainty is high.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            candidate_sampler: The sampler that provides a candidate Collection that may be used</span>
+<span class="sd">                for computing relation parameters</span>
+<span class="sd">            number_of_random_maps: How often to sample from map data in order to</span>
+<span class="sd">                compute statistics of spatial relations</span>
+<span class="sd">            number_of_iterations: How many iterations of improvements to run</span>
+<span class="sd">            number_of_improvement_points: How many points to add to improve the map at each iteration</span>
+<span class="sd">            what: The spatial relations to compute, as a mapping of relation names to location types</span>
+<span class="sd">            scaler: How much to weigh the employed scoreing method over the distance score</span>
+<span class="sd">            value_index: Which value column of the relation&#39;s parameters to use for improvement</span>
+<span class="sd">            acquisition_method: Which improvement method to use, one of {entropy, gaussian_process}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">what</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_and_location_types</span> <span class="k">if</span> <span class="n">what</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">what</span>
+        <span class="n">all_location_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span><span class="p">]</span>
+
+        <span class="c1"># For each location_type we get one set of random maps and RTrees</span>
+        <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">all_location_types</span><span class="p">:</span>
+            <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_r_trees</span><span class="p">(</span><span class="n">location_type</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="p">)</span>
+
+            <span class="c1"># For each relation we decide new sample points based on distance and entropy scores</span>
+            <span class="k">for</span> <span class="n">relation</span><span class="p">,</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">location_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">types</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Define value function and improve Collection</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">value_function</span><span class="p">(</span><span class="n">points</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_parameters</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">improve</span><span class="p">(</span>
+                    <span class="n">candidate_sampler</span><span class="o">=</span><span class="n">candidate_sampler</span><span class="p">,</span>
+                    <span class="n">value_function</span><span class="o">=</span><span class="n">value_function</span><span class="p">,</span>
+                    <span class="n">number_of_iterations</span><span class="o">=</span><span class="n">number_of_iterations</span><span class="p">,</span>
+                    <span class="n">number_of_improvement_points</span><span class="o">=</span><span class="n">number_of_improvement_points</span><span class="p">,</span>
+                    <span class="n">scaler</span><span class="o">=</span><span class="n">scaler</span><span class="p">,</span>
+                    <span class="n">value_index</span><span class="o">=</span><span class="n">value_index</span><span class="p">,</span>
+                    <span class="n">acquisition_method</span><span class="o">=</span><span class="n">acquisition_method</span>
+                <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_make_r_trees</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="c1"># Filter relevant features, sample randomized variations of map and package into RTrees</span>
+        <span class="n">typed_map</span><span class="p">:</span> <span class="n">CartesianMap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uam</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">location_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">typed_map</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
+            <span class="n">random_maps</span> <span class="o">=</span> <span class="n">typed_map</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">number_of_random_maps</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">to_rtree</span><span class="p">()</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">random_maps</span><span class="p">],</span> <span class="n">random_maps</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_parameters</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">coordinates</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span>
+        <span class="n">relation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">r_trees</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+        <span class="n">random_maps</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianMap</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+        <span class="c1"># Get the class of the spatial relation</span>
+        <span class="n">relation_class</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_name_to_class</span><span class="p">(</span><span class="n">relation</span><span class="p">)</span>
+
+        <span class="c1"># If the map had no relevant features, fill with default values</span>
+        <span class="k">if</span> <span class="n">r_trees</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;no features for relation &quot;</span><span class="si">{</span><span class="n">relation</span><span class="si">}</span><span class="s1">&quot; for location type &quot;</span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">relation_class</span><span class="o">.</span><span class="n">empty_map_parameters</span><span class="p">()]</span> <span class="o">*</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">collection</span> <span class="o">=</span> <span class="n">CartesianCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uam</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+            <span class="n">collection</span><span class="o">.</span><span class="n">append_with_default</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">relation_class</span><span class="o">.</span><span class="n">from_r_trees</span><span class="p">(</span>
+                <span class="n">collection</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">original_geometries</span><span class="o">=</span><span class="n">random_maps</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;StaR Map encountered excpetion! &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Relation </span><span class="si">{</span><span class="n">relation</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s2"> will use default parameters. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Error was:</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">format_exception</span><span class="p">(</span><span class="n">e</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">relation_class</span><span class="o">.</span><span class="n">empty_map_parameters</span><span class="p">()]</span> <span class="o">*</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<div class="viewcode-block" id="StaRMap.sample">
+<a class="viewcode-back" href="../../star_map.html#promis.star_map.StaRMap.sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">evaluation_points</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
+        <span class="n">number_of_random_maps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">what</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute distributional clauses.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            evaluation_points: The collection of points for which the spatial relations will be computed</span>
+<span class="sd">            number_of_random_maps: How often to sample from map data in order to</span>
+<span class="sd">                compute statistics of spatial relations</span>
+<span class="sd">            what: The spatial relations to compute, as a mapping of relation names to location types</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">what</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_and_location_types</span> <span class="k">if</span> <span class="n">what</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">what</span>
+        <span class="n">all_location_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span><span class="p">]</span>
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="n">evaluation_points</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">all_location_types</span><span class="p">:</span>
+            <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_r_trees</span><span class="p">(</span><span class="n">location_type</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="p">)</span>
+
+            <span class="c1"># This could be parallelized, as each relation and location type is independent from all others</span>
+            <span class="k">for</span> <span class="n">relation</span><span class="p">,</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">location_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">types</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="n">location_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_name_to_class</span><span class="p">(</span><span class="n">relation</span><span class="p">)(</span>
+                        <span class="n">CartesianCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uam</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="n">location_type</span>
+                    <span class="p">)</span>
+
+                <span class="c1"># Update collection of sample points</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">coordinates</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_compute_parameters</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span><span class="p">)</span>
+                <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
