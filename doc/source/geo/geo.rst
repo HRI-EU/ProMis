@@ -7,9 +7,10 @@ Locations, routes, polygons and maps are all given as either Cartesian or polar 
 .. toctree::
    :caption: Modules:
 
-   location_type
    geospatial
    location
    polygon
-   route
+   polyline
    map
+   collection
+   raster_band

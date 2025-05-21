@@ -105,8 +105,8 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = []  # '_static'
-# html_favicon = "../../resources/logo.svg"
-# html_logo = "../../resources/logo.svg"
+# html_favicon = "../../images/logo.png"  # TODO: Needs version of logo with drone only
+html_logo = "../../images/logo.png"
 html_sidebars = {"**": ["globaltoc.html", "relations.html", "sourcelink.html", "searchbox.html"]}
 
 # -- Options for LaTeX output ---------------------------------------------
