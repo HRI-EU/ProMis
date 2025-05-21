@@ -136,7 +136,8 @@ class Map(ABC):
         """
 
         # TODO: investigate why the parallelization is not working
-        # (it makes all features be the same in the sampled maps)
+        # (it makes all features be the same in the sampled maps
+        #  because on Linux, processes are not individually re-seeded)
 
         # with Pool(n_jobs) as pool:
         #     sampled_feature_lists = list(
@@ -161,8 +162,6 @@ class Map(ABC):
             covariance: The covariance matrix to set for all featuers or a dictionary
                 mapping location_type to covariance matrix
         """
-
-        # TODO: investigae how the covariance of the final relation is computed
 
         if isinstance(covariance, dict):
             for feature in self.features:

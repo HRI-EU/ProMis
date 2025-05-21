@@ -149,6 +149,7 @@ class Collection(ABC):
             The value at the specified coordinate
         """
 
+        x, y = position
         return (
             self.data.loc[(self.data[self.data.columns[0]] == x) & (self.data[self.data.columns[1]] == y)]
             .to_numpy()[:, 2:]  # Get all columns except the first two
