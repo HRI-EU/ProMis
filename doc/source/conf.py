@@ -18,7 +18,7 @@ from os.path import abspath
 from os.path import dirname
 from os.path import join
 
-sys.path.insert(0, abspath(join(dirname(__file__), "../../")))  # for scripts/
+sys.path.insert(0, abspath(join(dirname(__file__), "../..")))  # for examples/
 
 # ProMis
 import promis  # noqa: E402
@@ -52,6 +52,7 @@ language = "en"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "nbsphinx",
     "sphinx_markdown_builder",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
@@ -64,6 +65,10 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinxcontrib.programoutput",
 ]
+
+# Do not run notebooks as they include time-intensive computations
+nbsphinx_execute = "never"
+nbsphinx_pandoc = "python -m pandoc"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

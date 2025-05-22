@@ -73,6 +73,7 @@ setuptools.setup(
         # Building the documentation locally with sphinx
         "doc": [
             "sphinx",
+            "nbsphinx",
             "sphinx-markdown-builder",
             "sphinx_rtd_theme",
             "sphinxcontrib-programoutput",

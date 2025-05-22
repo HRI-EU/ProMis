@@ -23,6 +23,8 @@ jobs:
 
       - name: Build documentation
         run: |
+          mkdir -p doc/source/notebooks
+          cp examples/*.ipynb doc/source/notebooks
           sphinx-build -b html doc/source _build/html
 
       - name: Deploy to GitHub Pages
