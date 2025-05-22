@@ -16,6 +16,7 @@
       <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -42,12 +43,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../promis.html">ProMis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../star_map.html">StaR Map</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geo/geo.html">Geo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../loaders/loaders.html">Loaders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../logic/logic.html">Logic</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../estimators/estimators.html">Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
 </ul>
 
         </div>
@@ -94,7 +93,7 @@
 
 
 <div class="viewcode-block" id="Solver">
-<a class="viewcode-back" href="../../../logic/solver.html#promis.logic.solver.Solver">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.logic.Solver">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Solver</span><span class="p">:</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A solver for HPLP based ProMis.</span>
@@ -117,7 +116,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">program</span> <span class="o">=</span> <span class="n">PrologString</span><span class="p">(</span><span class="n">program</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="n">DCParser</span><span class="p">())</span>
 
 <div class="viewcode-block" id="Solver.inference">
-<a class="viewcode-back" href="../../../logic/solver.html#promis.logic.solver.Solver.inference">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.logic.Solver.inference">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run probabilistic inference on the given program.</span>
 

@@ -16,6 +16,7 @@
       <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -42,12 +43,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../promis.html">ProMis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../star_map.html">StaR Map</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geo/geo.html">Geo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../loaders/loaders.html">Loaders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../logic/logic.html">Logic</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../estimators/estimators.html">Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
 </ul>
 
         </div>
@@ -108,7 +107,7 @@
 
 
 <div class="viewcode-block" id="Map">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Map</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A base class for maps.</span>
 
@@ -127,7 +126,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">features</span> <span class="ow">or</span> <span class="p">[]</span>
 
 <div class="viewcode-block" id="Map.load">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.load">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map.load">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Map&quot;</span><span class="p">:</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
@@ -135,14 +134,14 @@
 
 
 <div class="viewcode-block" id="Map.save">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.save">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.location_types">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.location_types">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map.location_types">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">location_types</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all location types contained in this map.</span>
 
@@ -154,7 +153,7 @@
 
 
 <div class="viewcode-block" id="Map.is_valid">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.is_valid">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map.is_valid">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether this map contains only valid polygonal shapes according to :mod:`shapely`.</span>
 
@@ -170,7 +169,7 @@
 
 
 <div class="viewcode-block" id="Map.filter">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.filter">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map.filter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedMap</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a map with only features of the given type.</span>
 
@@ -188,7 +187,7 @@
 
 
 <div class="viewcode-block" id="Map.to_rtree">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.to_rtree">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map.to_rtree">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_rtree</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">STRtree</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert this map into a Shapely STRtree for efficient spatial queries.</span>
 
@@ -201,7 +200,7 @@
 
 
 <div class="viewcode-block" id="Map.to_geo_json">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.to_geo_json">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map.to_geo_json">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_geo_json</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">indent</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -231,7 +230,7 @@
         <span class="k">return</span> <span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">sample</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Map.sample">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.sample">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map.sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">DerivedMap</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample random maps given this maps&#39;s feature&#39;s uncertainty.</span>
 
@@ -249,7 +248,7 @@
 
 
 <div class="viewcode-block" id="Map.apply_covariance">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.Map.apply_covariance">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Map.apply_covariance">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">covariance</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the covariance matrix of all features.</span>
 
@@ -285,7 +284,7 @@
 
 
 <div class="viewcode-block" id="PolarMap">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.PolarMap">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarMap">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PolarMap</span><span class="p">(</span><span class="n">Map</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A map containing geospatial objects based on WGS84 coordinates.</span>
 
@@ -304,7 +303,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">promis</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">PolarGeometry</span><span class="p">]</span>
 
 <div class="viewcode-block" id="PolarMap.to_cartesian">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.PolarMap.to_cartesian">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarMap.to_cartesian">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CartesianMap&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Projects this map to a cartesian representation according to its global reference.</span>
 
@@ -318,7 +317,7 @@
 
 
 <div class="viewcode-block" id="PolarMap.send_to_gui">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.PolarMap.send_to_gui">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarMap.send_to_gui">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">send_to_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span><span class="s2">&quot;http://localhost:8000/add_geojson_map&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.</span>
 
@@ -344,7 +343,7 @@
 
 
 <div class="viewcode-block" id="CartesianMap">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.CartesianMap">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianMap">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CartesianMap</span><span class="p">(</span><span class="n">Map</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A map containing geospatial objects based on local coordinates with a global reference point.</span>
 
@@ -363,7 +362,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">promis</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">CartesianGeometry</span><span class="p">]</span>
 
 <div class="viewcode-block" id="CartesianMap.to_polar">
-<a class="viewcode-back" href="../../../geo/map.html#promis.geo.map.CartesianMap.to_polar">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianMap.to_polar">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarMap</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Projects this map to a polar representation according to the map&#39;s global reference.</span>
 

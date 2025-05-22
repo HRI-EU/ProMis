@@ -16,6 +16,7 @@
       <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -42,12 +43,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../promis.html">ProMis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../star_map.html">StaR Map</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geo/geo.html">Geo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../loaders/loaders.html">Loaders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../logic/logic.html">Logic</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../estimators/estimators.html">Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
 </ul>
 
         </div>
@@ -94,7 +93,7 @@
 
 
 <div class="viewcode-block" id="SpatialLoader">
-<a class="viewcode-back" href="../../../loaders/spatial_loader.html#promis.loaders.spatial_loader.SpatialLoader">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SpatialLoader</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A base class for loaders of geospatial objects from differents sources and interfaces.&quot;&quot;&quot;</span>
 
@@ -104,19 +103,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
 
 <div class="viewcode-block" id="SpatialLoader.to_polar_map">
-<a class="viewcode-back" href="../../../loaders/spatial_loader.html#promis.loaders.spatial_loader.SpatialLoader.to_polar_map">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader.to_polar_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_polar_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarMap</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">PolarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SpatialLoader.to_cartesian_map">
-<a class="viewcode-back" href="../../../loaders/spatial_loader.html#promis.loaders.spatial_loader.SpatialLoader.to_cartesian_map">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader.to_cartesian_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CartesianMap</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_polar_map</span><span class="p">()</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="SpatialLoader.load">
-<a class="viewcode-back" href="../../../loaders/spatial_loader.html#promis.loaders.spatial_loader.SpatialLoader.load">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader.load">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_description</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Populates :attr:`~SpatialLoader.features` with from a source.</span>
@@ -128,7 +127,7 @@
 
 
 <div class="viewcode-block" id="SpatialLoader.compute_polar_bounding_box">
-<a class="viewcode-back" href="../../../loaders/spatial_loader.html#promis.loaders.spatial_loader.SpatialLoader.compute_polar_bounding_box">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader.compute_polar_bounding_box">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_polar_bounding_box</span><span class="p">(</span>
         <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>

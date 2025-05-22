@@ -1,0 +1,252 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>promis.models.gaussian_mixture &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ProMis
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">promis.models.gaussian_mixture</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for promis.models.gaussian_mixture</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module implements Gaussian Mixture Models (GMM).&quot;&quot;&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of ProMis and licensed under the BSD 3-Clause License.</span>
+<span class="c1"># You should have received a copy of the BSD 3-Clause License along with ProMis.</span>
+<span class="c1"># If not, see https://opensource.org/license/bsd-3-clause/.</span>
+<span class="c1">#</span>
+
+<span class="c1"># Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="c1"># Third Party</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">ndarray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">inv</span>
+
+<span class="c1"># ProMis</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.models.gaussian</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gaussian</span>
+
+
+<div class="viewcode-block" id="GaussianMixture">
+<a class="viewcode-back" href="../../../api.html#promis.models.GaussianMixture">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GaussianMixture</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The Gaussian Mixture Model (GMM) for representing multi-modal probability distribution.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        components: An initial list of components to consider in this GMM</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">components</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Gaussian</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Setup attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Gaussian</span><span class="p">]</span> <span class="o">=</span> <span class="n">components</span> <span class="k">if</span> <span class="n">components</span> <span class="k">else</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="o">.</span><span class="fm">__iter__</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Gaussian</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;GaussianMixture&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;GaussianMixture&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">GaussianMixture</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GaussianMixture.append">
+<a class="viewcode-back" href="../../../api.html#promis.models.GaussianMixture.append">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Appends a new Gaussian to this Mixture&#39;s list of components.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            component: The new Gaussian to append</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">component</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GaussianMixture.modes">
+<a class="viewcode-back" href="../../../api.html#promis.models.GaussianMixture.modes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">modes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract all modes of the mixture model that are above a set threshold.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            threshold: Weight that a component needs to have to be considered</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The locations of all modes with weight larger than the threshold</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Memory for all estimated modes</span>
+        <span class="n">modes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Every component with sufficient weight is considered to be a target</span>
+        <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">component</span><span class="o">.</span><span class="n">w</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+                <span class="c1"># A component with weight over 1 represents multiple targets</span>
+                <span class="n">modes</span> <span class="o">+=</span> <span class="p">[</span><span class="n">component</span><span class="o">.</span><span class="n">x</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">component</span><span class="o">.</span><span class="n">w</span><span class="p">)))]</span>
+
+        <span class="c1"># Return all extracted modes</span>
+        <span class="k">return</span> <span class="n">modes</span></div>
+
+
+<div class="viewcode-block" id="GaussianMixture.prune">
+<a class="viewcode-back" href="../../../api.html#promis.models.GaussianMixture.prune">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prune</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">merge_distance</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_components</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reduces the number of gaussian mixture components.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            threshold: Truncation threshold s.t. components with weight &lt; threshold are removed</span>
+<span class="sd">            merge_distance: Merging threshold s.t. components &#39;close enough&#39; will be merged</span>
+<span class="sd">            max_components: Maximum number of gaussians after pruning</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Select a subset of components to be pruned</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="p">[</span><span class="n">component</span> <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">component</span><span class="o">.</span><span class="n">w</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">]</span>
+
+        <span class="c1"># Create new list for pruned mixture model</span>
+        <span class="n">pruned</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Gaussian</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># While candidates for pruning exist ...</span>
+        <span class="k">while</span> <span class="n">selected</span><span class="p">:</span>
+            <span class="c1"># Find mean of component with maximum weight</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">index</span><span class="p">:</span> <span class="n">selected</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
+
+            <span class="n">mean</span> <span class="o">=</span> <span class="n">selected</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span>
+
+            <span class="c1"># Select components to be merged and remove merged from selected</span>
+            <span class="n">mergeable</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">c</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">selected</span>
+                <span class="k">if</span> <span class="p">((</span><span class="n">c</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">inv</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">P</span><span class="p">)</span> <span class="o">@</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="n">mean</span><span class="p">))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">merge_distance</span>
+            <span class="p">]</span>
+            <span class="n">selected</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">selected</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">mergeable</span><span class="p">]</span>
+
+            <span class="c1"># Compute new mixture component</span>
+            <span class="n">merged_weight</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">component</span><span class="o">.</span><span class="n">w</span> <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">mergeable</span><span class="p">])</span>
+            <span class="n">merged_mean</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span>
+                <span class="nb">sum</span><span class="p">([</span><span class="n">component</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="n">component</span><span class="o">.</span><span class="n">x</span> <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">mergeable</span><span class="p">])</span> <span class="o">/</span> <span class="n">merged_weight</span>
+            <span class="p">)</span>
+            <span class="n">merged_covariance</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span>
+                <span class="nb">sum</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="n">component</span><span class="o">.</span><span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="n">component</span><span class="o">.</span><span class="n">P</span> <span class="o">+</span> <span class="p">(</span><span class="n">mean</span> <span class="o">-</span> <span class="n">component</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">@</span> <span class="p">(</span><span class="n">mean</span> <span class="o">-</span> <span class="n">component</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">mergeable</span>
+                    <span class="p">]</span>
+                <span class="p">)</span>
+                <span class="o">/</span> <span class="n">merged_weight</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Store the component</span>
+            <span class="n">pruned</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Gaussian</span><span class="p">(</span><span class="n">merged_mean</span><span class="p">,</span> <span class="n">merged_covariance</span><span class="p">,</span> <span class="n">merged_weight</span><span class="p">))</span>
+
+        <span class="c1"># Remove components with minimum weight if maximum number is exceeded</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">pruned</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_components</span><span class="p">:</span>
+            <span class="c1"># Find index of component with minimum weight</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pruned</span><span class="p">)),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">index</span><span class="p">:</span> <span class="n">pruned</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">w</span><span class="p">)</span>
+
+            <span class="c1"># Remove the component</span>
+            <span class="k">del</span> <span class="n">pruned</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="c1"># Update GMM with pruned model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">pruned</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

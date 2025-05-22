@@ -16,6 +16,7 @@
       <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -42,12 +43,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../promis.html">ProMis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../star_map.html">StaR Map</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geo/geo.html">Geo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../loaders/loaders.html">Loaders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../logic/logic.html">Logic</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../estimators/estimators.html">Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
 </ul>
 
         </div>
@@ -111,7 +110,7 @@
 
 
 <div class="viewcode-block" id="Location">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.Location">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Location">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Location</span><span class="p">(</span><span class="n">Geospatial</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -145,7 +144,7 @@
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Point&quot;</span><span class="p">,</span> <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)}</span>
 
 <div class="viewcode-block" id="Location.from_numpy">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.Location.from_numpy">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Location.from_numpy">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_numpy</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">DerivedLocation</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedLocation</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a location from a numpy representation.</span>
@@ -207,7 +206,7 @@
         <span class="k">return</span> <span class="bp">self</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="n">vector</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Location.to_numpy">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.Location.to_numpy">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Location.to_numpy">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">DerivedLocation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the coordinates defining this location into a :class:`numpy.ndarray`.</span>
 
@@ -227,7 +226,7 @@
 
 
 <div class="viewcode-block" id="Location.sample">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.Location.sample">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Location.sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">DerivedLocation</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">DerivedLocation</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample locations given this location&#39;s distribution.</span>
 
@@ -269,7 +268,7 @@
 
 
 <div class="viewcode-block" id="PolarLocation">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.PolarLocation">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarLocation">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PolarLocation</span><span class="p">(</span><span class="n">Location</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A geospatial location representing a spatial object on earth.</span>
 
@@ -338,7 +337,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_projection</span>
 
 <div class="viewcode-block" id="PolarLocation.to_cartesian">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.PolarLocation.to_cartesian">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarLocation.to_cartesian">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="s2">&quot;PolarLocation | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CartesianLocation&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Projects this point to a Cartesian one according to the given global reference.</span>
 
@@ -374,7 +373,7 @@
 
 
 <div class="viewcode-block" id="PolarLocation.distance">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.PolarLocation.distance">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarLocation.distance">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;PolarLocation&quot;</span><span class="p">,</span> <span class="n">approximate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the horizontal geodesic distance to another location in meters.</span>
 
@@ -422,7 +421,7 @@
 
 
 <div class="viewcode-block" id="CartesianLocation">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.CartesianLocation">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianLocation">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CartesianLocation</span><span class="p">(</span><span class="n">Location</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A point in the cartesian plane based on local coordinates with an optional global reference.</span>
 
@@ -467,7 +466,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span>
 
 <div class="viewcode-block" id="CartesianLocation.to_polar">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.CartesianLocation.to_polar">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianLocation.to_polar">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="s2">&quot;PolarLocation | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarLocation</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the polar representation of this point.</span>
 
@@ -509,13 +508,13 @@
 
 
 <div class="viewcode-block" id="CartesianLocation.distance">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.CartesianLocation.distance">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianLocation.distance">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">geometry</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="CartesianLocation.send_to_gui">
-<a class="viewcode-back" href="../../../geo/location.html#promis.geo.location.CartesianLocation.send_to_gui">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianLocation.send_to_gui">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">send_to_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:8000/add_geojson&quot;</span><span class="p">,</span> <span class="n">timeout</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Cartesian Location does not have geospatial feature to send to gui!&quot;</span><span class="p">)</span></div>
 

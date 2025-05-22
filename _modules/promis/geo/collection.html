@@ -16,6 +16,7 @@
       <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -42,12 +43,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../promis.html">ProMis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../star_map.html">StaR Map</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geo/geo.html">Geo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../loaders/loaders.html">Loaders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../logic/logic.html">Logic</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../estimators/estimators.html">Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
 </ul>
 
         </div>
@@ -124,7 +123,7 @@
 
 
 <div class="viewcode-block" id="Collection">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Collection</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A collection of values over a polar or Cartesian space.</span>
 
@@ -148,7 +147,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Collection.make_latin_hypercube">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.make_latin_hypercube">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.make_latin_hypercube">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">make_latin_hypercube</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
@@ -180,7 +179,7 @@
 
 
 <div class="viewcode-block" id="Collection.load">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.load">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.load">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Collection&quot;</span><span class="p">:</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
@@ -188,14 +187,14 @@
 
 
 <div class="viewcode-block" id="Collection.save">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.save">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Collection.clear">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.clear">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.clear">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Empties out the kept data.&quot;&quot;&quot;</span>
 
@@ -203,7 +202,7 @@
 
 
 <div class="viewcode-block" id="Collection.extent">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.extent">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.extent">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">extent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the extent of this collection, i.e., the min and max coordinates.</span>
 
@@ -221,7 +220,7 @@
 
 
 <div class="viewcode-block" id="Collection.values">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.values">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.values">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unpack the location values as numpy array.</span>
 
@@ -234,7 +233,7 @@
 
 
 <div class="viewcode-block" id="Collection.coordinates">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.coordinates">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.coordinates">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unpack the location coordinates as numpy array.</span>
 
@@ -247,7 +246,7 @@
 
 
 <div class="viewcode-block" id="Collection.to_csv">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.to_csv">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.to_csv">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;w&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Saves the collection as comma-separated values file.</span>
 
@@ -260,7 +259,7 @@
 
 
 <div class="viewcode-block" id="Collection.append">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.append">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.append">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">coordinates</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span> <span class="o">|</span> <span class="n">CartesianLocation</span><span class="p">],</span>
@@ -296,7 +295,7 @@
 
 
 <div class="viewcode-block" id="Collection.append_with_default">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.append_with_default">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.append_with_default">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">append_with_default</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">coordinates</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span> <span class="o">|</span> <span class="n">CartesianLocation</span><span class="p">],</span>
@@ -316,7 +315,7 @@
 
 
 <div class="viewcode-block" id="Collection.get_basemap">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.get_basemap">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.get_basemap">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_basemap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mi">16</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtain the OSM basemap image of the collection&#39;s area.</span>
 
@@ -343,7 +342,7 @@
 
 
 <div class="viewcode-block" id="Collection.get_nearest_coordinate">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.get_nearest_coordinate">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.get_nearest_coordinate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_nearest_coordinate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">point</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the closest coordinate in this collection relative to a given point.</span>
 
@@ -359,7 +358,7 @@
 
 
 <div class="viewcode-block" id="Collection.get_distance_to">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.get_distance_to">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.get_distance_to">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_distance_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;Collection&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the distances from this collection to another.</span>
 
@@ -378,7 +377,7 @@
 
 
 <div class="viewcode-block" id="Collection.improve">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.improve">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.improve">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">improve</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">candidate_sampler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
@@ -449,7 +448,7 @@
 
 
 <div class="viewcode-block" id="Collection.get_entropy">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.get_entropy">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.get_entropy">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_entropy</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">number_of_neighbours</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
@@ -490,7 +489,7 @@
 
 
 <div class="viewcode-block" id="Collection.scatter">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.Collection.scatter">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.scatter">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">scatter</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">plot_basemap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">):</span>
@@ -526,7 +525,7 @@
 
 
 <div class="viewcode-block" id="CartesianCollection">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.CartesianCollection">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CartesianCollection</span><span class="p">(</span><span class="n">Collection</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">number_of_values</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">CartesianCollection</span><span class="o">.</span><span class="n">_columns</span><span class="p">(</span><span class="n">number_of_values</span><span class="p">),</span> <span class="n">origin</span><span class="p">,</span> <span class="n">number_of_values</span><span class="p">)</span>
@@ -548,7 +547,7 @@
         <span class="k">return</span> <span class="n">east</span> <span class="o">-</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span> <span class="o">-</span> <span class="n">south</span>
 
 <div class="viewcode-block" id="CartesianCollection.to_cartesian_locations">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.CartesianCollection.to_cartesian_locations">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection.to_cartesian_locations">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianLocation</span><span class="p">]:</span>
         <span class="n">coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
 
@@ -560,7 +559,7 @@
 
 
 <div class="viewcode-block" id="CartesianCollection.to_polar">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.CartesianCollection.to_polar">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection.to_polar">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PolarCollection&quot;</span><span class="p">:</span>
         <span class="c1"># Apply the inverse projection of the origin location</span>
         <span class="n">longitudes</span><span class="p">,</span> <span class="n">latitudes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span>
@@ -580,7 +579,7 @@
 
 
 <div class="viewcode-block" id="CartesianCollection.into">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.CartesianCollection.into">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection.into">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">into</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;Collection&quot;</span><span class="p">,</span>
@@ -605,7 +604,7 @@
 
 
 <div class="viewcode-block" id="CartesianCollection.get_interpolator">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.CartesianCollection.get_interpolator">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection.get_interpolator">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_interpolator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interpolation_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an interpolator for the data.</span>
 
@@ -639,7 +638,7 @@
 
 
 <div class="viewcode-block" id="CartesianCollection.prune">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.CartesianCollection.prune">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection.prune">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">prune</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -660,7 +659,7 @@
 
 
 <div class="viewcode-block" id="PolarCollection">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.PolarCollection">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarCollection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PolarCollection</span><span class="p">(</span><span class="n">Collection</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">number_of_values</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">PolarCollection</span><span class="o">.</span><span class="n">_columns</span><span class="p">(</span><span class="n">number_of_values</span><span class="p">),</span> <span class="n">origin</span><span class="p">,</span> <span class="n">number_of_values</span><span class="p">)</span>
@@ -680,7 +679,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">()</span><span class="o">.</span><span class="n">dimensions</span>
 
 <div class="viewcode-block" id="PolarCollection.to_polar_locations">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.PolarCollection.to_polar_locations">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarCollection.to_polar_locations">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_polar_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span><span class="p">]:</span>
         <span class="n">coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
 
@@ -692,7 +691,7 @@
 
 
 <div class="viewcode-block" id="PolarCollection.to_cartesian">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.PolarCollection.to_cartesian">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarCollection.to_cartesian">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CartesianCollection</span><span class="p">:</span>
         <span class="c1"># Apply the inverse projection of the origin location</span>
         <span class="n">easts</span><span class="p">,</span> <span class="n">norths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span>
@@ -713,8 +712,6 @@
 
 
 
-<div class="viewcode-block" id="HybridInterpolator">
-<a class="viewcode-back" href="../../../geo/collection.html#promis.geo.collection.HybridInterpolator">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">HybridInterpolator</span><span class="p">:</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
@@ -725,8 +722,7 @@
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
         <span class="n">nan_values</span> <span class="o">=</span> <span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
         <span class="n">result</span><span class="p">[</span><span class="n">nan_values</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">nan_values</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">result</span></div>
-
+        <span class="k">return</span> <span class="n">result</span>
 </pre></div>
 
            </div>

@@ -16,6 +16,7 @@
       <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -42,12 +43,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../promis.html">ProMis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../star_map.html">StaR Map</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geo/geo.html">Geo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../loaders/loaders.html">Loaders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../logic/logic.html">Logic</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../estimators/estimators.html">Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
 </ul>
 
         </div>
@@ -110,7 +109,7 @@
 
 
 <div class="viewcode-block" id="RasterBand">
-<a class="viewcode-back" href="../../../geo/raster_band.html#promis.geo.raster_band.RasterBand">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RasterBand</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A raster-band of spatially referenced data on a regular grid.</span>
 
@@ -136,13 +135,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">center_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span>
 
 <div class="viewcode-block" id="RasterBand.append">
-<a class="viewcode-back" href="../../../geo/raster_band.html#promis.geo.raster_band.RasterBand.append">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand.append">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">:</span> <span class="n">CartesianLocation</span> <span class="o">|</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> cannot be extended with locations&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RasterBand.to_graph">
-<a class="viewcode-back" href="../../../geo/raster_band.html#promis.geo.raster_band.RasterBand.to_graph">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand.to_graph">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cost_model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="n">value_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">bool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Graph</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a RasterBand into a NetworkX Graph for path planning.</span>
 
@@ -178,7 +177,7 @@
 
 
 <div class="viewcode-block" id="RasterBand.search_path">
-<a class="viewcode-back" href="../../../geo/raster_band.html#promis.geo.raster_band.RasterBand.search_path">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand.search_path">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">search_path</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">start</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -218,7 +217,7 @@
 
 
 <div class="viewcode-block" id="CartesianRasterBand">
-<a class="viewcode-back" href="../../../geo/raster_band.html#promis.geo.raster_band.CartesianRasterBand">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianRasterBand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CartesianRasterBand</span><span class="p">(</span><span class="n">RasterBand</span><span class="p">,</span> <span class="n">CartesianCollection</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A raster-band of Cartesian referenced data.</span>
 
@@ -264,7 +263,7 @@
 
 
 <div class="viewcode-block" id="PolarRasterBand">
-<a class="viewcode-back" href="../../../geo/raster_band.html#promis.geo.raster_band.PolarRasterBand">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarRasterBand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PolarRasterBand</span><span class="p">(</span><span class="n">RasterBand</span><span class="p">,</span> <span class="n">PolarCollection</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A raster-band of Polar referenced data.</span>
 
@@ -305,7 +304,7 @@
         <span class="n">PolarCollection</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PolarRasterBand.as_image">
-<a class="viewcode-back" href="../../../geo/raster_band.html#promis.geo.raster_band.PolarRasterBand.as_image">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.geo.PolarRasterBand.as_image">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">array</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the RasterBand data into a 2D array for use as image.</span>
 

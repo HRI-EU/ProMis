@@ -1,0 +1,875 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>promis.geo.helpers &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            ProMis
+              <img src="../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">promis.geo.helpers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for promis.geo.helpers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Contains helpers for dealing with distances and normalization of spherical coordinates</span>
+<span class="sd">and compass directions. Also allows for translating (collections of) points in polar coordinates.</span>
+
+<span class="sd">References:</span>
+<span class="sd"> - Introduction on `Wikipedia &lt;https://en.wikipedia.org/wiki/Great-circle_distance&gt;`__</span>
+<span class="sd"> - Simple discussion on `StackOverflow &lt;https://stackoverflow.com/q/38248046/3753684&gt;`__</span>
+<span class="sd"> - Charles F. F. Karney (2013): Algorithms for geodesics.</span>
+<span class="sd">   `Paper as PDF &lt;https://link.springer.com/content/pdf/10.1007%2Fs00190-012-0578-z.pdf&gt;`__.</span>
+<span class="sd"> - `Walter Bislin&#39;s Blog &lt;https://walter.bislins.ch/bloge/index.asp?page=Distances+on+Globe+and+Flat+Earth&gt;`__</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of ProMis and licensed under the BSD 3-Clause License.</span>
+<span class="c1"># You should have received a copy of the BSD 3-Clause License along with ProMis.</span>
+<span class="c1"># If not, see https://opensource.org/license/bsd-3-clause/.</span>
+<span class="c1">#</span>
+
+<span class="c1"># Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">atan2</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">tau</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn</span>
+
+<span class="c1"># Third Party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">absolute</span><span class="p">,</span>  <span class="c1"># NOQA; NOQA</span>
+    <span class="n">arccos</span><span class="p">,</span>
+    <span class="n">arcsin</span><span class="p">,</span>
+    <span class="n">arctan2</span><span class="p">,</span>
+    <span class="n">array</span><span class="p">,</span>
+    <span class="n">choose</span><span class="p">,</span>
+    <span class="n">clip</span><span class="p">,</span>
+    <span class="n">cos</span><span class="p">,</span>
+    <span class="n">full</span><span class="p">,</span>
+    <span class="n">hypot</span><span class="p">,</span>
+    <span class="n">isfinite</span><span class="p">,</span>
+    <span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">sin</span><span class="p">,</span>
+    <span class="n">sqrt</span><span class="p">,</span>
+    <span class="n">square</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyproj</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geod</span>
+
+<span class="c1"># Constants -------------------------------------------------------------------</span>
+
+<span class="c1">#: The mean earth radius at the equator in meters (taken from</span>
+<span class="c1">#: `Earth radius (Wikipedia) &lt;https://en.wikipedia.org/wiki/Earth_radius#Mean_radius&gt;`__).</span>
+<span class="n">MEAN_EARTH_RADIUS</span> <span class="o">=</span> <span class="mf">6371_008.8</span>
+
+<span class="c1">#: The mean earth circumference in meters (derived form :attr:`~MEAN_EARTH_RADIUS`).</span>
+<span class="n">MEAN_EARTH_CIRCUMFERENCE</span> <span class="o">=</span> <span class="n">MEAN_EARTH_RADIUS</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi</span>
+
+<span class="c1">#: The maximal earth circumference in meters (i.e. at the equator; taken from</span>
+<span class="c1">#: `Earth&#39;s circumference (Wikipedia) &lt;https://en.wikipedia.org/wiki/Earth%27s_circumference&gt;`__).</span>
+<span class="n">MAXIMUM_EARTH_CIRCUMFERENCE</span> <span class="o">=</span> <span class="mf">40_075_017.0</span>
+
+
+<span class="c1"># Types -----------------------------------------------------------------------</span>
+
+<span class="c1">#: A scalar or a numpy array</span>
+<span class="n">ScalarOrArray</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;ScalarOrArray&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">)</span>
+
+<span class="c1">#: The pyproj WGS84 object used as basis for all polar representations and coordinate projections</span>
+<span class="n">WGS84_PYPROJ_GEOD</span> <span class="o">=</span> <span class="n">Geod</span><span class="p">(</span><span class="s2">&quot;+ellps=WGS84 +units=m&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Direction">
+<a class="viewcode-back" href="../../../api.html#promis.geo.Direction">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Direction</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A simple collection of named &quot;compass&quot; bearings in degrees for self-documenting code.&quot;&quot;&quot;</span>
+
+    <span class="n">NORTH</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">EAST</span> <span class="o">=</span> <span class="mf">90.0</span>
+    <span class="n">SOUTH</span> <span class="o">=</span> <span class="mf">180.0</span>
+    <span class="n">WEST</span> <span class="o">=</span> <span class="mf">270.0</span></div>
+
+
+
+<span class="c1"># Normalize -------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_circular_range</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">minimum</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">maximum</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalizes the value to reside in :math:`[minimum, maximum[` by wrapping around.</span>
+
+<span class="sd">    Used by the other normalization functions in this package.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; normalize_circular_range(40, -180.0, +180.0)</span>
+<span class="sd">        40.0</span>
+
+<span class="sd">        &gt;&gt;&gt; normalize_circular_range(190, -180.0, +180.0)</span>
+<span class="sd">        -170.0</span>
+
+<span class="sd">        &gt;&gt;&gt; normalize_circular_range(-190, -180.0, +180.0)</span>
+<span class="sd">        170.0</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value: the value to be normalized</span>
+<span class="sd">        minimum: the minimum of the desired bounds</span>
+<span class="sd">        maximum: the maximum of the desired bounds, assumed to be truly larger than *minimum*</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The normalized value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># general approach: remove offset -&gt; normalize with span -&gt; add offset</span>
+    <span class="n">span</span> <span class="o">=</span> <span class="n">maximum</span> <span class="o">-</span> <span class="n">minimum</span>
+
+    <span class="c1"># the second `% span` is required due to floating point issues: `-1e-15 % 360` -&gt; `360.0`,</span>
+    <span class="c1"># but not less than `360.0` as required</span>
+    <span class="k">return</span> <span class="p">((</span><span class="n">value</span> <span class="o">-</span> <span class="n">minimum</span><span class="p">)</span> <span class="o">%</span> <span class="n">span</span><span class="p">)</span> <span class="o">%</span> <span class="n">span</span> <span class="o">+</span> <span class="n">minimum</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_latitude</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalizes a latitudal value to the usual bounds by wrapping around.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This is already done automatically by</span>
+<span class="sd">        :attr:`promis.geo.location.PolarLocation.latitude`.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; normalize_latitude(20.0)</span>
+<span class="sd">        20.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_latitude(-90.0)</span>
+<span class="sd">        -90.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_latitude(90.0)</span>
+<span class="sd">        90.0</span>
+
+<span class="sd">        It is also possible to wrap over the pole coordinates.</span>
+
+<span class="sd">        &gt;&gt;&gt; normalize_latitude(91.0)</span>
+<span class="sd">        89.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_latitude(185.0)</span>
+<span class="sd">        -5.0</span>
+
+<span class="sd">        Take care: this will also normalize rubbish values.</span>
+
+<span class="sd">        &gt;&gt;&gt; normalize_latitude(3229764.25)</span>
+<span class="sd">        -24.25</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value: The raw latitudal value in degrees</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The normalized value in :math:`[-90, +90]` degrees</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># touch_point_*: latitudes would meet here if values outside of [-90, +90] would be allowed</span>
+    <span class="c1"># pole_*: the actual bounds of the latitude values; they describe the south and north poles</span>
+    <span class="n">touch_point_min</span><span class="p">,</span> <span class="n">touch_point_max</span> <span class="o">=</span> <span class="o">-</span><span class="mf">180.0</span><span class="p">,</span> <span class="o">+</span><span class="mf">180.0</span>
+    <span class="n">pole_down</span><span class="p">,</span> <span class="n">pole_up</span> <span class="o">=</span> <span class="o">-</span><span class="mf">90.0</span><span class="p">,</span> <span class="o">+</span><span class="mf">90.0</span>
+
+    <span class="c1"># map into [-180.0, +180.0] by modulo exactly as with the longitude</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">normalize_circular_range</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">touch_point_min</span><span class="p">,</span> <span class="n">touch_point_max</span><span class="p">)</span>
+
+    <span class="c1"># map into [-90.0, +90.0] by mirroring, since `100°` would be `180° - 100° = 80°` and not</span>
+    <span class="c1"># `100° mod 90° = 10°` (as an example)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="n">pole_up</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">touch_point_max</span> <span class="o">-</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="n">pole_down</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">touch_point_min</span> <span class="o">-</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">clipped_below</span> <span class="o">=</span> <span class="n">choose</span><span class="p">(</span><span class="n">value</span> <span class="o">&lt;</span> <span class="n">pole_down</span><span class="p">,</span> <span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">touch_point_min</span> <span class="o">-</span> <span class="n">value</span><span class="p">))</span>
+        <span class="n">clipped_above</span> <span class="o">=</span> <span class="n">choose</span><span class="p">(</span><span class="n">value</span> <span class="o">&gt;</span> <span class="n">pole_up</span><span class="p">,</span> <span class="p">(</span><span class="n">clipped_below</span><span class="p">,</span> <span class="n">touch_point_max</span> <span class="o">-</span> <span class="n">value</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">clipped_above</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_longitude</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalizes a longitudal value to the usual bounds by wrapping.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This is already done automatically by</span>
+<span class="sd">        :attr:`promis.geo.location.PolarLocation.longitude`.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; normalize_longitude(136.0)</span>
+<span class="sd">        136.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_longitude(-86.0)</span>
+<span class="sd">        -86.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_longitude(-180.0)</span>
+<span class="sd">        -180.0</span>
+
+<span class="sd">        You can also get rid of redundant values, e.g. at 180.0°,</span>
+<span class="sd">        as well as wrap around the boundaries.</span>
+
+<span class="sd">        &gt;&gt;&gt; normalize_longitude(+180.0)</span>
+<span class="sd">        -180.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_longitude(185.0)</span>
+<span class="sd">        -175.0</span>
+
+<span class="sd">        Take care: this will also normalize rubbish values.</span>
+
+<span class="sd">        &gt;&gt;&gt; normalize_longitude(3229764.25)</span>
+<span class="sd">        -155.75</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value: the raw longitudal value in degrees</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        the normalized value in :math:`[-180, +180[` degrees</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">normalize_circular_range</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="o">-</span><span class="mf">180.0</span><span class="p">,</span> <span class="o">+</span><span class="mf">180.0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_direction</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalizes a direction (azimuth/yaw) value to the usual 360° compass values.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; normalize_direction(45.0)</span>
+<span class="sd">        45.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_direction(250.0)</span>
+<span class="sd">        250.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_direction(-6.0)</span>
+<span class="sd">        354.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_direction(360.0)</span>
+<span class="sd">        0.0</span>
+<span class="sd">        &gt;&gt;&gt; normalize_direction(450.0)</span>
+<span class="sd">        90.0</span>
+
+<span class="sd">        Take care: this will also normalize rubbish values.</span>
+
+<span class="sd">        &gt;&gt;&gt; normalize_longitude(3229764.25)</span>
+<span class="sd">        -155.75</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value: the raw value in degrees</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        the normalized value in :math:`[0, 360[` degrees</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">normalize_circular_range</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">360.0</span><span class="p">)</span>
+
+
+<span class="c1"># Difference ------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">difference_circular_range</span><span class="p">(</span>
+    <span class="n">value_a</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">value_b</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">minimum</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">maximum</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates differences on a circular number line, where minimum and maximum meet.</span>
+
+<span class="sd">    The values do not need to be normalized.</span>
+
+<span class="sd">    If the difference between ``value_a`` and ``value_b`` is not finite</span>
+<span class="sd">    (i.e. ``NaN``, ``+Inf`` or ``-Inf``) a warning is printed and ``NaN`` is returned.</span>
+<span class="sd">    Both other values are assumed to be finite.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value_a: the first value</span>
+<span class="sd">        value_b: the second value</span>
+<span class="sd">        minimum: the minimum of the desired bounds</span>
+<span class="sd">        maximum: the maximum of the desired bounds, assumed to be strictly larger than ``minimum``</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        the normalized value in :math:`[0, (maximum - minimum)/2]`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">raw_difference</span> <span class="o">=</span> <span class="n">value_a</span> <span class="o">-</span> <span class="n">value_b</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">isfinite</span><span class="p">(</span><span class="n">raw_difference</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;difference_circular_range(): &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;difference between </span><span class="si">{</span><span class="n">value_a</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">value_b</span><span class="si">}</span><span class="s2"> was not a valid number: </span><span class="si">{</span><span class="n">raw_difference</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="ne">UserWarning</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">span</span> <span class="o">=</span> <span class="n">maximum</span> <span class="o">-</span> <span class="n">minimum</span>
+    <span class="n">difference</span><span class="p">:</span> <span class="n">ScalarOrArray</span> <span class="o">=</span> <span class="n">raw_difference</span> <span class="o">%</span> <span class="n">span</span>
+
+    <span class="c1"># take the smaller one of the two possible distances, i.e.</span>
+    <span class="c1"># the smaller path around the circular range</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Try the cae where we have floats, not arrays</span>
+        <span class="k">if</span> <span class="n">difference</span> <span class="o">&gt;</span> <span class="n">span</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">span</span> <span class="o">-</span> <span class="n">difference</span>
+        <span class="k">return</span> <span class="n">difference</span>
+
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">ScalarOrArray</span><span class="p">,</span>
+            <span class="n">choose</span><span class="p">(</span><span class="n">difference</span> <span class="o">&gt;</span> <span class="n">span</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="p">(</span><span class="n">difference</span><span class="p">,</span> <span class="n">span</span> <span class="o">-</span> <span class="n">difference</span><span class="p">)),</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">difference_latitude</span><span class="p">(</span><span class="n">value_a</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">value_b</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the difference between two latitudal values.</span>
+
+<span class="sd">    The values do not need to be normalized.</span>
+
+<span class="sd">    If the difference between ``value_a`` and ``value_b`` is not</span>
+<span class="sd">    finite (i.e. ``NaN``, ``+Inf`` or ``-Inf``) a warning is printed and ``NaN`` is returned.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; difference_latitude(-45.0, +50.0).item()</span>
+<span class="sd">        95.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_latitude(-90.0, -90.0).item()</span>
+<span class="sd">        0.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_latitude(-90.0, +90.0).item()  # the maximum distance</span>
+<span class="sd">        180.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_latitude(-90.0, +190.0).item()</span>
+<span class="sd">        80.0</span>
+
+<span class="sd">        Take care: this will also calculate distances for rubbish values.</span>
+
+<span class="sd">        &gt;&gt;&gt; difference_latitude(95324.0, 3224.25).item()</span>
+<span class="sd">        60.25</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value_a: the first latitude in degrees</span>
+<span class="sd">        value_b: the second latitude in degrees</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The difference between the two values in degrees in :math:`[0, 180]`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Normalize values</span>
+    <span class="n">value_a</span> <span class="o">=</span> <span class="n">normalize_latitude</span><span class="p">(</span><span class="n">value_a</span><span class="p">)</span>
+    <span class="n">value_b</span> <span class="o">=</span> <span class="n">normalize_latitude</span><span class="p">(</span><span class="n">value_b</span><span class="p">)</span>
+
+    <span class="c1"># Compute difference</span>
+    <span class="n">difference</span><span class="p">:</span> <span class="n">ScalarOrArray</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">value_a</span> <span class="o">-</span> <span class="n">value_b</span><span class="p">)</span>
+
+    <span class="c1"># Give a warning if difference is not a finite number</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">isfinite</span><span class="p">(</span><span class="n">difference</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;difference_latitude(): &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;difference between </span><span class="si">{</span><span class="n">value_a</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">value_b</span><span class="si">}</span><span class="s2"> was not a valid number: </span><span class="si">{</span><span class="n">difference</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="ne">UserWarning</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">difference</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">difference_longitude</span><span class="p">(</span><span class="n">value_a</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">value_b</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the difference between two longitudal values.</span>
+
+<span class="sd">    The values do not need to be normalized.</span>
+
+<span class="sd">    If the difference between ``value_a`` and ``value_b`` is</span>
+<span class="sd">    not finite (i.e. ``NaN``, ``+Inf`` or ``-Inf``) a warning is printed and ``NaN`` is returned.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; difference_longitude(-145.0, +150.0)</span>
+<span class="sd">        65.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_longitude(-90.0, -90.0)</span>
+<span class="sd">        0.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_longitude(-90.0, +90.0)  # the maximum distance</span>
+<span class="sd">        180.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_longitude(-180.0, +190.0)</span>
+<span class="sd">        10.0</span>
+
+<span class="sd">        Take care: this will also calculate distances for rubbish values.</span>
+
+<span class="sd">        &gt;&gt;&gt; difference_longitude(95324.0, 3224.25)</span>
+<span class="sd">        60.25</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value_a: the first longitude in degrees</span>
+<span class="sd">        value_b: the second longitude in degrees</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The difference between the two values in degrees in :math:`[0, 180]`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">difference_circular_range</span><span class="p">(</span><span class="n">value_a</span><span class="p">,</span> <span class="n">value_b</span><span class="p">,</span> <span class="o">-</span><span class="mf">180.0</span><span class="p">,</span> <span class="o">+</span><span class="mf">180.0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">difference_direction</span><span class="p">(</span><span class="n">value_a</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">value_b</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculates the difference between two directional (azimuthal/yaw) values.</span>
+
+<span class="sd">    The values do not need to be normalized.</span>
+
+<span class="sd">    If the difference between ``value_a`` and ``value_b`` is not</span>
+<span class="sd">    finite (i.e. ``NaN``, ``+Inf`` or ``-Inf``) a warning is printed and ``NaN`` is returned.</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">        &gt;&gt;&gt; difference_direction(145.0, 165.0)</span>
+<span class="sd">        20.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_direction(42.0, 42.0)</span>
+<span class="sd">        0.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_direction(350.0, 334.5)</span>
+<span class="sd">        15.5</span>
+<span class="sd">        &gt;&gt;&gt; difference_direction(270.0, 90.0)  # the maximum distance</span>
+<span class="sd">        180.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_direction(365.0, 1.0)</span>
+<span class="sd">        4.0</span>
+<span class="sd">        &gt;&gt;&gt; difference_direction(370.0, -20.0)</span>
+<span class="sd">        30.0</span>
+
+<span class="sd">        Take care: this will also calculate distances for rubbish values.</span>
+
+<span class="sd">        &gt;&gt;&gt; difference_direction(95324.0, 3224.25)</span>
+<span class="sd">        60.25</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value_a: the first direction in degrees</span>
+<span class="sd">        value_b: the second direction in degrees</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The difference between the two values in degrees in :math:`[0, 180]`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">difference_circular_range</span><span class="p">(</span><span class="n">value_a</span><span class="p">,</span> <span class="n">value_b</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">+</span><span class="mf">360.0</span><span class="p">)</span>
+
+
+<span class="c1"># Translation -----------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">translate_floats</span><span class="p">(</span>
+    <span class="n">longitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">latitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">distance</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simply a convenience method for calling :func:`~.translate_numpy` with a single point.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        longitude: the original longitude in degrees</span>
+<span class="sd">        latitude: the original latitude in degrees</span>
+<span class="sd">        direction: the direction to translate into in degrees</span>
+<span class="sd">        distance: the distance to translate by in meters</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        a pair ``(longitude, latitude)`` with the new coordinates and the back azimuth</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Uses the numpy variant as it would be converted to an array in pyproj internally</span>
+    <span class="n">coordinates_array</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="n">longitude</span><span class="p">,</span> <span class="n">latitude</span><span class="p">]])</span>
+    <span class="n">result</span><span class="p">,</span> <span class="n">back</span> <span class="o">=</span> <span class="n">translate_numpy</span><span class="p">(</span><span class="n">coordinates_array</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">distance</span><span class="p">)</span>
+    <span class="n">new_coordinates</span> <span class="o">=</span> <span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">new_coordinates</span><span class="p">,</span> <span class="n">back</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">translate_numpy</span><span class="p">(</span>
+    <span class="n">coordinates</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">direction</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">distance</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Translates the given point(s) by a given distance and direction/azimuth.</span>
+
+<span class="sd">    Everything is assumed to be in degrees.</span>
+<span class="sd">    Furthermore, this methods returns the back azimuth as documented below.</span>
+
+<span class="sd">    Under the hood uses :meth:`pyproj.Geod.fwd`, which computes the *forward transformation* or</span>
+<span class="sd">    *forward azimuth*. This walks the given distance on the great circle arc given by the</span>
+<span class="sd">    direction/azimuth. It uses the direction to define the initial azimuth, as the real</span>
+<span class="sd">    azimuth will probably change along the great circle path (unless going exactly</span>
+<span class="sd">    north/south or east/west).</span>
+<span class="sd">    See also `this website &lt;https://www.movable-type.co.uk/scripts/latlong.html&gt;`__,</span>
+<span class="sd">    sections &quot;Bearing&quot; and &quot;Midpoint&quot;.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        See see the underlying geographiclib library, &lt;geodesic.h&gt;, *geod_direct()* for</span>
+<span class="sd">        details on the behaviour poles and other special cases. It&#39;s rather strange.</span>
+<span class="sd">        Also keep in mind that this method suffers from numerical issues like pretty</span>
+<span class="sd">        much anything involving floating point computations.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This is already provided in an object-oriented fashion by</span>
+<span class="sd">        - :meth:`promis.geo.location.PolarLocation.translate`</span>
+<span class="sd">        - :meth:`promis.geo.polygon.PolarPolygon.translate`</span>
+<span class="sd">        - :meth:`promis.geo.route.PolarPolyLine.translate`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        coordinates: the coordinates as a numpy array with dimensions ``(number of points, 2)``,</span>
+<span class="sd">            where the first component describes the longitude and the second one the latitude</span>
+<span class="sd">        direction: The direction/azimuth to head to in degrees in :math:`[0, 360]`</span>
+<span class="sd">            (0° is north, 90° is east)</span>
+<span class="sd">        distance: The distance to transpose by in meters; should not be</span>
+<span class="sd">            very close to zero if the the backwards azimuth shall be used</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (1) The new coordinates in the same format as the inout</span>
+<span class="sd">        (2) The backwards azimuth in :math:`[0, 360)`, i.e. the direction which</span>
+<span class="sd">            could be used to travel from the modified location back to the</span>
+<span class="sd">            original one by translating given that ``direction`` and</span>
+<span class="sd">            the same ``distance``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Convert from [0, 360[ to [-180, +180]</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="o">&gt;</span> <span class="mi">180</span><span class="p">:</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="n">direction</span> <span class="o">-</span> <span class="mi">360</span>
+
+    <span class="n">coordinates</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">coordinates</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">back_azimuth</span> <span class="o">=</span> <span class="n">WGS84_PYPROJ_GEOD</span><span class="o">.</span><span class="n">fwd</span><span class="p">(</span>
+        <span class="n">lons</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="n">lats</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="n">az</span><span class="o">=</span><span class="n">full</span><span class="p">((</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">direction</span><span class="p">),</span>
+        <span class="n">dist</span><span class="o">=</span><span class="n">full</span><span class="p">((</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">distance</span><span class="p">),</span>
+        <span class="n">radians</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># back azimuth is in [-180, +180], so we need to convert to [0, 360[</span>
+    <span class="c1"># see the underlying *geographiclib* library, &lt;geodesic.h&gt;, `geod_direct()`:</span>
+    <span class="c1"># https://geographiclib.sourceforge.io/1.49/C/geodesic_8h.html#a676f59f07987ddd3dd4109fcfeccdb9d</span>
+    <span class="n">back_azimuth</span><span class="p">[</span><span class="n">back_azimuth</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">360</span>
+    <span class="n">back_azimuth</span><span class="p">[</span><span class="n">back_azimuth</span> <span class="o">==</span> <span class="mf">360.0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">return</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">back_azimuth</span>
+
+
+<span class="c1"># Distance --------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">fast_distance_geo</span><span class="p">(</span>
+    <span class="n">latitudes</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span>
+    <span class="n">longitudes</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span>
+    <span class="n">center_latitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">center_longitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Approximates the great circle distance of all points to the center.</span>
+
+<span class="sd">    Warnings:</span>
+<span class="sd">        All coordinates are assumed to be within about 250 km of the center</span>
+<span class="sd">        to provide reasonable accuracy. Then, it was determined experimentally</span>
+<span class="sd">        that the error compared to the great-circle distance was always below 5%.</span>
+<span class="sd">        This was done by setting ``@hypothesis.settings(max_examples=50000)`` on the test case</span>
+<span class="sd">        ``TestDistanceCalculation.test_fast_distance_geo`` and observing that it did not fail.</span>
+
+<span class="sd">    Depending on the latitude **of the center**, the *equirectangular approximation*</span>
+<span class="sd">    or the *polar coordinate flat-earth formula* are used.</span>
+<span class="sd">    Both assume a spherical world and then flatten it onto a plane.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        latitudes: the latitude values, in radians</span>
+<span class="sd">        longitudes: the longitude values, in radians</span>
+<span class="sd">        center_latitude: the latitude of the center, in radians</span>
+<span class="sd">        center_longitude: the longitude of the center, in radians</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        :func:`~haversine_numpy`: about three times slower but more precise</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        - Based on</span>
+<span class="sd">          `Movable Type Scripts: Calculate distance, bearing and more</span>
+<span class="sd">          between Latitude/Longitude points</span>
+<span class="sd">          &lt;https://www.movable-type.co.uk/scripts/latlong.html&gt;`__</span>
+<span class="sd">          (as of Dec. 2020), Section &quot;Equirectangular approximation&quot;.</span>
+<span class="sd">          In that source: ``phi = latitude``, ``lambda = longitude``, ``theta = co-latitude`` and</span>
+<span class="sd">          ``R = (mean) earth radius``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">delta_lambda</span> <span class="o">=</span> <span class="n">difference_circular_range</span><span class="p">(</span><span class="n">longitudes</span><span class="p">,</span> <span class="n">center_longitude</span><span class="p">,</span> <span class="o">-</span><span class="n">pi</span><span class="p">,</span> <span class="o">+</span><span class="n">pi</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+
+    <span class="c1"># The border value of about 75.0° latitude was determined</span>
+    <span class="c1"># by eye-balling from some Tissot&#39;s indicatrixes</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">center_latitude</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.3962634015954636</span><span class="p">:</span>
+        <span class="c1"># move all locations to the northern hemisphere first if required</span>
+        <span class="k">if</span> <span class="n">center_latitude</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">center_latitude</span> <span class="o">=</span> <span class="o">-</span><span class="n">center_latitude</span>
+            <span class="n">latitudes</span> <span class="o">=</span> <span class="o">-</span><span class="n">latitudes</span>
+            <span class="k">del</span> <span class="n">longitudes</span><span class="p">,</span> <span class="n">center_longitude</span>  <span class="c1"># they are now wrong</span>
+
+        <span class="c1"># use the &quot;polar coordinate flat-earth formula&quot;</span>
+        <span class="n">theta_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">latitudes</span>
+        <span class="n">theta_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">center_latitude</span>
+        <span class="n">summed</span> <span class="o">=</span> <span class="n">square</span><span class="p">(</span><span class="n">theta_1</span><span class="p">)</span> <span class="o">+</span> <span class="n">square</span><span class="p">(</span><span class="n">theta_2</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">theta_1</span> <span class="o">*</span> <span class="n">theta_2</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">delta_lambda</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="n">summed</span> <span class="o">=</span> <span class="n">clip</span><span class="p">(</span>
+            <span class="n">summed</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="p">)</span>  <span class="c1"># for numerical stability as above sum may be slightly negative</span>
+
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">summed</span><span class="p">)</span> <span class="o">*</span> <span class="n">MEAN_EARTH_RADIUS</span><span class="p">)</span>
+
+    <span class="c1"># use the &quot;equirectangular approximation&quot;</span>
+    <span class="n">d_lat</span> <span class="o">=</span> <span class="n">difference_circular_range</span><span class="p">(</span><span class="n">latitudes</span><span class="p">,</span> <span class="n">center_latitude</span><span class="p">,</span> <span class="o">-</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">+</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+    <span class="n">d_lon</span> <span class="o">=</span> <span class="n">delta_lambda</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">center_latitude</span><span class="p">)</span>
+    <span class="n">dist_degrees</span> <span class="o">=</span> <span class="n">hypot</span><span class="p">(</span><span class="n">d_lat</span><span class="p">,</span> <span class="n">d_lon</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+
+    <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">dist_degrees</span> <span class="o">*</span> <span class="n">MEAN_EARTH_RADIUS</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">haversine_numpy</span><span class="p">(</span>
+    <span class="n">latitudes</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span>
+    <span class="n">longitudes</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">,</span>
+    <span class="n">center_latitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">center_longitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the great circle distance between each point to the center in meters.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">         &quot;The min() function protects against possible roundoff errors that could</span>
+<span class="sd">         sabotage computation of the arcsine if the two points are very nearly</span>
+<span class="sd">         antipodal (that is, on opposite sides of the Earth). Under these conditions,</span>
+<span class="sd">         the Haversine Formula is ill-conditioned (see the discussion below), but</span>
+<span class="sd">         the error, perhaps as large as 2 km [...], is in the context of a</span>
+<span class="sd">         distance near 20,000 km [...].&quot;</span>
+<span class="sd">         (Source: `Movable Type Scripts: GIS FAQ Q5.1: Great circle distance between 2 points</span>
+<span class="sd">         &lt;https://www.movable-type.co.uk/scripts/gis-faq-5.1.html&gt;`__)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        latitudes: the latitude values, in radians</span>
+<span class="sd">        longitudes: the longitude values, in radians</span>
+<span class="sd">        center_latitude: the latitude of the center, in radians</span>
+<span class="sd">        center_longitude: the longitude of the center, in radians</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        :func:`~fast_distance_geo`: an approximation that is about three times faster</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The great circle distance between each point to the center in meters.</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        - `Wikipedia: Haversine formula &lt;https://en.wikipedia.org/wiki/Haversine_formula&gt;`__</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">d_lat</span> <span class="o">=</span> <span class="n">latitudes</span> <span class="o">-</span> <span class="n">center_latitude</span>
+    <span class="n">d_lon</span> <span class="o">=</span> <span class="n">longitudes</span> <span class="o">-</span> <span class="n">center_longitude</span>
+    <span class="n">summed</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">d_lat</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">cos</span><span class="p">(</span><span class="n">latitudes</span><span class="p">)</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">center_latitude</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">d_lon</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="c1"># the intermediate result is the great circle distance in radians</span>
+    <span class="n">d_rad</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">arcsin</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="n">summed</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">))</span>
+
+    <span class="c1"># the great circle distance will be in the same units as MEAN_EARTH_RADIUS</span>
+    <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">ScalarOrArray</span><span class="p">,</span> <span class="n">d_rad</span> <span class="o">*</span> <span class="n">MEAN_EARTH_RADIUS</span><span class="p">)</span>
+
+
+<span class="c1"># Conversion between meters and radians ---------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">meters_to_radians</span><span class="p">(</span><span class="n">meters</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Meters to radians (latitude or longitude) at the equator.&quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">meters</span> <span class="o">/</span> <span class="n">MEAN_EARTH_CIRCUMFERENCE</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">radians_to_meters</span><span class="p">(</span><span class="n">radians</span><span class="p">:</span> <span class="n">ScalarOrArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScalarOrArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Radians (latitude or longitude) at the equator to meters.&quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">radians</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">pi</span><span class="p">))</span> <span class="o">*</span> <span class="n">MEAN_EARTH_CIRCUMFERENCE</span>
+
+
+<span class="c1"># Cartesian to Spherical ------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cartesian_to_spherical</span><span class="p">(</span><span class="n">xyz</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts cartesian coordinates on a unit sphere to spherical coordinates.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        xyz: The cartesian coordinates, expected as an array where each</span>
+<span class="sd">            line contains three coordinates for a point.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The coordinates as latitude and longitude in radians,</span>
+<span class="sd">        such that :math:`-\\frac{π}{2} ≤ φ ≤ +\\frac{π}{2}` is the</span>
+<span class="sd">        latitude and :math:`-π ≤ θ &lt; +π` is the longitude.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        :class:`AssertionError`: if not all pints lie on the unit sphere, as</span>
+<span class="sd">            then the altitude would be relevant but it is not considered by this conversion</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        - `Movable Type Scripts: Vector-based geodesy</span>
+<span class="sd">          &lt;https://www.movable-type.co.uk/scripts/latlong-vectors.html&gt;`__</span>
+<span class="sd">        - `The relevant Wikipedia article</span>
+<span class="sd">          &lt;https://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates&gt;`__.</span>
+<span class="sd">          Note: In these formulas, mathematicians&#39; coordinates are used,</span>
+<span class="sd">          where :math:`0 ≤ φ ≤ π` is the latitude coming down from the pole</span>
+<span class="sd">          and :math:`0 ≤ θ ≤ 2π` is the longitude, with the prime meridian being at :math:`π`.</span>
+<span class="sd">          We convert these to the usual coordinate conventions of the geographic</span>
+<span class="sd">          community within this method.</span>
+<span class="sd">        - The `nvector library &lt;https://github.com/pbrod/nvector/&gt;`__ provides</span>
+<span class="sd">          a possible alternative implementation (see section &quot;Example 3:</span>
+<span class="sd">          &#39;ECEF-vector to geodetic latitude&#39;&quot;).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># elevation / r:</span>
+    <span class="n">elevation</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">xyz</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">xyz</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">xyz</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">numpy</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">absolute</span><span class="p">(</span><span class="n">elevation</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-9</span><span class="p">),</span> <span class="s2">&quot;not all points lie on the unit sphere&quot;</span>
+
+    <span class="c1"># also normalize because the floating point representation of the cartesian</span>
+    <span class="c1"># coordinates might have slightly messed with it; this value moves the borders</span>
+    <span class="c1"># of the clipping slightly inwards in other words: it makes the clipped values</span>
+    <span class="c1"># lie *strict* within the bounds, and never with equality</span>
+    <span class="n">move_in</span> <span class="o">=</span> <span class="mf">1e-14</span>  <span class="c1"># empirically worked well</span>
+
+    <span class="c1"># latitude / theta:</span>
+    <span class="c1"># we know that the elevation is very close to 1, so we do not ned to divide by it</span>
+    <span class="n">latitudes</span> <span class="o">=</span> <span class="n">arccos</span><span class="p">(</span><span class="n">xyz</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="n">latitudes</span> <span class="o">=</span> <span class="n">clip</span><span class="p">(</span><span class="n">latitudes</span><span class="p">,</span> <span class="n">move_in</span><span class="p">,</span> <span class="n">pi</span> <span class="o">-</span> <span class="n">move_in</span><span class="p">)</span>  <span class="c1"># clip at the poles</span>
+    <span class="n">latitudes</span> <span class="o">-=</span> <span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># convert from mathematical to geographic convention</span>
+
+    <span class="c1"># longitude / phi</span>
+    <span class="n">longitudes</span> <span class="o">=</span> <span class="n">arctan2</span><span class="p">(</span><span class="n">xyz</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">xyz</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="c1"># we also clip here although wrapping using modulo 2*pi would be more appropriate</span>
+    <span class="c1"># however, this had introduced new numerical new problems which are avoided by clipping</span>
+    <span class="c1"># This also guarantees that each longitude is strictly less than 180°</span>
+    <span class="n">longitudes</span> <span class="o">=</span> <span class="n">clip</span><span class="p">(</span><span class="n">longitudes</span><span class="p">,</span> <span class="o">-</span><span class="n">pi</span> <span class="o">+</span> <span class="n">move_in</span><span class="p">,</span> <span class="o">+</span><span class="n">pi</span> <span class="o">-</span> <span class="n">move_in</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">latitudes</span><span class="p">,</span> <span class="n">longitudes</span>
+
+
+<span class="c1"># Mean computation on angles and coordinates ----------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mean_coordinate</span><span class="p">(</span><span class="n">latitudes</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">longitudes</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes a reasonable mean coordinate if possible.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        latitudes: The array of latitude values to compute the mean of, in degrees.</span>
+<span class="sd">            Will be flattened.</span>
+<span class="sd">        longitudes: The array of longitude values to compute the mean of, in degrees.</span>
+<span class="sd">            Will be flattened. Must be of the same length as ``latitudes``.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The mean coordinate of the given ones, in degrees as ``(latitude, longitude)``.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If no meaningful mean (of the longitudes) can be computed.</span>
+<span class="sd">            See :func:`~mean_angle`.</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        - :func:`~mean_angle`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">latitudes</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">longitudes</span><span class="p">),</span> <span class="s2">&quot;Both coordinate arrays must have the same length&quot;</span>
+
+    <span class="c1"># In case of the latitude values, the &quot;ambiguous&quot; case of antipodal angles/points can</span>
+    <span class="c1"># be solved by observing that only latitude values between -90° and +90° are allowed.</span>
+    <span class="c1"># Therefore, +/- 0° is a reasonable result in this case.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">latitude</span> <span class="o">=</span> <span class="n">mean_angle</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">latitudes</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">latitude</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c1"># In the case of longitudes, simply let the ValueError raise as there is nothing we can do here</span>
+    <span class="n">longitude</span> <span class="o">=</span> <span class="n">mean_angle</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">longitudes</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">latitude</span><span class="p">),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">longitude</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">mean_angle</span><span class="p">(</span><span class="n">radians</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Computes a reasonable mean value if possible.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        radians: The array of angles to compute the mean of, in radians. Will be flattened.</span>
+<span class="sd">        tolerance: If both components of the cartesian intermediate representation</span>
+<span class="sd">            are less than this value, a ``ValueError`` with a descriptive error</span>
+<span class="sd">            message will be raised.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The mean angle of the given ones</span>
+
+<span class="sd">    References:</span>
+<span class="sd">        - `Mean of circular quantities (section Mean of angles) on Wikipedia</span>
+<span class="sd">          &lt;https://en.wikipedia.org/wiki/Mean_of_circular_quantities#Mean_of_angles&gt;`</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If no meaningful mean can be computed. This is the case</span>
+<span class="sd">            when two antipodal angles are given or the sum of multiple ones is &quot;antipodal&quot;.</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        - :func:`~mean_coordinate`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">sin</span><span class="p">(</span><span class="n">radians</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">cos</span><span class="p">(</span><span class="n">radians</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tolerance</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tolerance</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The mean angle of nearly antipodal is ambiguous. &quot;</span>
+            <span class="s2">&quot;If this arises while computing mean points on polygons and routes, &quot;</span>
+            <span class="s2">&quot;the geometry likely is just so large that many approximations will not work anymore. &quot;</span>
+            <span class="s2">&quot;Consider splitting them up into smaller ones.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">atan2</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">%</span> <span class="n">tau</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

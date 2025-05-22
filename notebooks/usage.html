@@ -1,0 +1,461 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usage &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Graphical User Interface" href="../gui.html" />
+    <link rel="prev" title="Installation" href="../installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            ProMis
+              <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Uncertainty-Annotated-Maps">Uncertainty Annotated Maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Statistical-Relational-Maps">Statistical Relational Maps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Probabilistic-Mission-Design">Probabilistic Mission Design</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Usage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/usage.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Usage">
+<h1>Usage<a class="headerlink" href="#Usage" title="Link to this heading"></a></h1>
+<section id="Dependencies">
+<h2>Dependencies<a class="headerlink" href="#Dependencies" title="Link to this heading"></a></h2>
+<p>We start by importing some of ProMis’ core packages and third party dependencies.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Probabilistic Mission Design and Statistical Relational Maps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProMis</span><span class="p">,</span> <span class="n">StaRMap</span>
+<span class="c1"># Geographic data handling</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianRasterBand</span><span class="p">,</span> <span class="n">CartesianCollection</span>
+<span class="c1"># Data loading from OpenStreetMap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">OsmLoader</span>
+
+<span class="c1"># Third Party dependencies we will need</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">eye</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">exists</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Uncertainty-Annotated-Maps">
+<h2>Uncertainty Annotated Maps<a class="headerlink" href="#Uncertainty-Annotated-Maps" title="Link to this heading"></a></h2>
+<p>Probabilistic missions are built on an uncertainty aware environment representation we call Uncertainty Annotated Maps (UAM). Here, to obtain a UAM, we query crowd-sourced data from OpenStreetMap (OSM) using ProMis’ OsmLoader class. The OsmLoader expects a feature description consisting of a location type that identifies the respective set of features and a ‘filter’ describing the OSM tags and their values to be selected.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The features we will load from OpenStreetMap</span>
+<span class="c1"># The dictionary key will be stored as the respective features location_type</span>
+<span class="c1"># The dictionary value will be used to query the relevant geometry via Overpass</span>
+<span class="n">feature_description</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;park&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;leisure&#39; = &#39;park&#39;]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;highway&#39; = &#39;primary&#39;]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;secondary&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;highway&#39; = &#39;secondary&#39;]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;tertiary&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;highway&#39; = &#39;tertiary&#39;]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;service&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;highway&#39; = &#39;service&#39;]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;crossing&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;footway&#39; = &#39;crossing&#39;]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;bay&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;natural&#39; = &#39;bay&#39;]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rail&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;railway&#39; = &#39;rail&#39;]&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>Since we do not know how noisy the OSM data actually is, we define some noise ourselves for demonstration purposes. In an actual application, you would insert your (neural) sensors and mapping modules’ accuracy information here.</p>
+<p>Here, the environment features will be assumed to be placed where we expect them with a random translation sampled from a Gaussian with one of the following covariance matrices.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Covariance matrices for some of the features</span>
+<span class="c1"># Used to draw random translations representing uncertainty for the respective features</span>
+<span class="n">covariance</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="mi">15</span> <span class="o">*</span> <span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+    <span class="s2">&quot;secondary&quot;</span><span class="p">:</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+    <span class="s2">&quot;tertiary&quot;</span><span class="p">:</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+    <span class="s2">&quot;service&quot;</span><span class="p">:</span> <span class="mf">2.5</span> <span class="o">*</span> <span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+    <span class="s2">&quot;operator&quot;</span><span class="p">:</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">eye</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<p>As a last piece of information before the UAM can be queried, we need to define the area in which our agent’s mission will take place in.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The mission area&#39;s origin in polar coordinates as well as area extends in meters</span>
+<span class="n">origin</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.878091</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.654052</span><span class="p">)</span>
+<span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="mf">1000.0</span>
+</pre></div>
+</div>
+</div>
+<p>Finally, we can query the relevant environment features from OSM. We also apply our uncertainties in the data, place the position of the agent’s operator at the center of the mission area, and store the resulting UAM to disk.</p>
+<p>Note that this step requires a working internet connection.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Setting up the Uncertainty Annotated Map from OpenStreetMap data</span>
+<span class="n">uam</span> <span class="o">=</span> <span class="n">OsmLoader</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span> <span class="n">feature_description</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span><span class="o">.</span><span class="n">to_cartesian_map</span><span class="p">()</span>
+
+<span class="c1"># Adding the operator&#39;s location and applying out assumed levels of uncertainty</span>
+<span class="n">uam</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CartesianLocation</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="s2">&quot;operator&quot;</span><span class="p">))</span>
+<span class="n">uam</span><span class="o">.</span><span class="n">apply_covariance</span><span class="p">(</span><span class="n">covariance</span><span class="p">)</span>
+
+<span class="c1"># We store the UAM to disk for later usage</span>
+<span class="n">uam</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/uam.pkl&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Statistical-Relational-Maps">
+<h2>Statistical Relational Maps<a class="headerlink" href="#Statistical-Relational-Maps" title="Link to this heading"></a></h2>
+<p>Equipped with out UAM from the last steps, it is time to prepare a StaR Map of the environment. Before fitting the actual StaR Map parameters, we should now start considering our actual mission requirements and state some rules that will govern our agent’s actions. If we don’t make these consideration now, we could still compute a StaR Map, but this way we can automize the choice of which spatial relations ought to be computed.</p>
+<p>Here, we will define our knowledge in Hybrid ProbLog where rules are written as clauses parameterized either by a probability density function (e.g., as in the <code class="docutils literal notranslate"><span class="pre">initial_charge</span></code> clause) or a probability (e.g., as in the <code class="docutils literal notranslate"><span class="pre">vlos</span></code> clause). One reads a comma <code class="docutils literal notranslate"><span class="pre">,</span></code> as a conjunction (AND), and a semicolon as a disjunction (OR). We refer to an agent’s state (here, its east/north location in a Cartesian coordinate system) with the variable <code class="docutils literal notranslate"><span class="pre">X</span></code>.</p>
+<p>For example, our toy example assumes visual line of sight (VLOS) is likely given (P = 0.8) if we have foggy weather and the distance to the operator is less than 50 meters, or if the weather is clear and the distance is within 100 meters.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Properties of the agent perceived through sensors or external sources</span>
+<span class="c1"># such as the weather report</span>
+<span class="n">perception</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    % UAV properties</span>
+<span class="s2">    initial_charge ~ normal(90, 5).</span>
+<span class="s2">    charge_cost ~ normal(-0.1, 0.2).</span>
+<span class="s2">    weight ~ normal(0.2, 0.1).</span>
+
+<span class="s2">    % Weather conditions</span>
+<span class="s2">    1/10::fog; 9/10::clear.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="c1"># Background knowledge on rules that we want to govern an aerial agents&#39; actions</span>
+<span class="n">background_knowledge</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    % Visual line of sight</span>
+<span class="s2">    0.8::vlos(X) :-</span>
+<span class="s2">        fog, distance(X, operator) &lt; 50;</span>
+<span class="s2">        clear, distance(X, operator) &lt; 100;</span>
+<span class="s2">        clear, over(X, bay), distance(X, operator) &lt; 400.</span>
+
+<span class="s2">    % Sufficient charge to return to operator</span>
+<span class="s2">    can_return(X) :-</span>
+<span class="s2">        B is initial_charge, O is charge_cost,</span>
+<span class="s2">        D is distance(X, operator), 0 &lt; B + (2 * O * D).</span>
+
+<span class="s2">    % Permits related to local features</span>
+<span class="s2">    permits(X) :-</span>
+<span class="s2">        distance(X, service) &lt; 15;</span>
+<span class="s2">        distance(X, primary) &lt; 15;</span>
+<span class="s2">        distance(X, secondary) &lt; 10;</span>
+<span class="s2">        distance(X, tertiary) &lt; 5;</span>
+<span class="s2">        distance(X, rail) &lt; 5;</span>
+<span class="s2">        distance(X, crossing) &lt; 5;</span>
+<span class="s2">        over(X, park).</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="c1"># The definition of our probabilistic mission landscape that will be queried by ProMis</span>
+<span class="n">landscape_definition</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    % Definition of a valid mission</span>
+<span class="s2">    landscape(X) :-</span>
+<span class="s2">        vlos(X), weight &lt; 25, can_return(X);</span>
+<span class="s2">        permits(X), can_return(X).</span>
+<span class="s2">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</div>
+<p>Now its time to compute the StaR Map. For this, we load the UAM from disk, define some points in the mission area to compute the StaR Map for and initialize it for the rules we defined above.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Setting up the probabilistic spatial relations from the UAM we previously computed</span>
+<span class="n">star_map</span> <span class="o">=</span> <span class="n">StaRMap</span><span class="p">(</span><span class="n">CartesianMap</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/uam.pkl&quot;</span><span class="p">))</span>
+
+<span class="c1"># Initializing the StaR Map on a raster of points evenly spaced out across the mission area,</span>
+<span class="c1"># sampling 25 random variants of the UAM for estimating the spatial relation parameters</span>
+<span class="n">evaluation_points</span> <span class="o">=</span> <span class="n">CartesianRasterBand</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+<span class="n">star_map</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">evaluation_points</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">logic</span><span class="o">=</span><span class="n">background_knowledge</span><span class="p">)</span>
+
+<span class="c1"># We store the StaR Map to disk</span>
+<span class="n">star_map</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/star_map.pkl&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Let’s inspect the parameters of the some StaR Map relations by visualizing the estimated values. We do so by accessing the parameters (a <code class="docutils literal notranslate"><span class="pre">promis.geo.Collection</span></code> holding mean and variances for each sampled point), and interpolating to a more finge-granular grid over the mission area.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualize the spatial relations with an OSM basemap in the background</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_collection</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">value_index</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="c1"># Fine-granular interpolation target for the spatial relations</span>
+    <span class="n">mission_area</span> <span class="o">=</span> <span class="n">CartesianRasterBand</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+
+    <span class="n">image</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">into</span><span class="p">(</span><span class="n">mission_area</span><span class="p">)</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">value_index</span><span class="o">=</span><span class="n">value_index</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">plot_basemap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rasterized</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;coolwarm_r&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+    <span class="n">cbar</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="mf">18.5</span><span class="p">,</span> <span class="n">fraction</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+    <span class="n">cbar</span><span class="o">.</span><span class="n">solids</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">set_style</span><span class="p">():</span>
+    <span class="c1"># Set axes labeling</span>
+    <span class="n">ticks</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">]</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;0.5&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">]</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Northing / km&quot;</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">ticks</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="n">height</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">:</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Easting / km&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">ticks</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the StaR Map data and prepare the figure</span>
+<span class="n">star_map</span> <span class="o">=</span> <span class="n">StaRMap</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/star_map.pkl&quot;</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+
+<span class="c1"># We can query each relation from the StaR Map given its name and the location type it relates to</span>
+<span class="n">over_park</span> <span class="o">=</span> <span class="n">star_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;over&quot;</span><span class="p">,</span> <span class="s2">&quot;park&quot;</span><span class="p">)</span>
+<span class="n">distance_primary</span> <span class="o">=</span> <span class="n">star_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;distance&quot;</span><span class="p">,</span> <span class="s2">&quot;primary&quot;</span><span class="p">)</span>
+
+<span class="n">show_collection</span><span class="p">(</span><span class="n">over_park</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;$P(over(X, park))$&#39;</span><span class="p">)</span>
+<span class="n">show_collection</span><span class="p">(</span><span class="n">distance_primary</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;$\mu$ of $distance(X, primary)$&#39;</span><span class="p">)</span>
+<span class="n">show_collection</span><span class="p">(</span><span class="n">distance_primary</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;$\sigma$ of $distance(X, primary)$&#39;</span><span class="p">)</span>
+<span class="n">show_collection</span><span class="p">(</span><span class="n">distance_primary</span> <span class="o">&gt;</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;$P(distance(X, primary)$ &gt; 25m&#39;</span><span class="p">)</span>
+
+<span class="c1"># Show results</span>
+<span class="n">set_style</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_usage_16_0.png" src="../_images/notebooks_usage_16_0.png" />
+</div>
+</div>
+<p>While this already allows us some reasoning with ProMis on what the agent may or may not be allowed to do, we should improve our relations spatial resoltion before continuing. We can do so by applying StaR Maps adaptive sampling functionality, which will sample each relation based on an acquisition function. Currently, local entropy and Gaussian Process uncertainty together with a distance based score are provided.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the StaR Map data and run an auto-improvement, store the improved one</span>
+<span class="n">star_map</span> <span class="o">=</span> <span class="n">StaRMap</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/star_map.pkl&quot;</span><span class="p">)</span>
+<span class="n">star_map</span><span class="o">.</span><span class="n">adaptive_sample</span><span class="p">(</span>
+    <span class="n">candidate_sampler</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="o">.</span><span class="n">make_latin_hypercube</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">include_corners</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">number_of_random_maps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">number_of_iterations</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+    <span class="n">number_of_improvement_points</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">acquisition_method</span> <span class="o">=</span> <span class="s2">&quot;gaussian_process&quot;</span>
+<span class="p">)</span>
+<span class="n">star_map</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/improved_star_map.pkl&quot;</span><span class="p">)</span>
+
+<span class="c1"># Show the improved spatial relations</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">))</span>
+
+<span class="c1"># We can query each relation from the StaR Map given its name and the location type it relates to</span>
+<span class="n">over_park</span> <span class="o">=</span> <span class="n">star_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;over&quot;</span><span class="p">,</span> <span class="s2">&quot;park&quot;</span><span class="p">)</span>
+<span class="n">distance_primary</span> <span class="o">=</span> <span class="n">star_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;distance&quot;</span><span class="p">,</span> <span class="s2">&quot;primary&quot;</span><span class="p">)</span>
+
+<span class="n">show_collection</span><span class="p">(</span><span class="n">over_park</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;$P(over(X, park))$&#39;</span><span class="p">)</span>
+<span class="n">show_collection</span><span class="p">(</span><span class="n">distance_primary</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;$\mu$ of $distance(X, primary)$&#39;</span><span class="p">)</span>
+<span class="n">show_collection</span><span class="p">(</span><span class="n">distance_primary</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;$\sigma$ of $distance(X, primary)$&#39;</span><span class="p">)</span>
+<span class="n">show_collection</span><span class="p">(</span><span class="n">distance_primary</span> <span class="o">&gt;</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;$P(distance(X, primary)$ &gt; 25m&#39;</span><span class="p">)</span>
+
+<span class="c1"># Show results</span>
+<span class="n">set_style</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_usage_18_0.png" src="../_images/notebooks_usage_18_0.png" />
+</div>
+</div>
+</section>
+<section id="Probabilistic-Mission-Design">
+<h2>Probabilistic Mission Design<a class="headerlink" href="#Probabilistic-Mission-Design" title="Link to this heading"></a></h2>
+<p>We can now continue employing ProMis’ core functionality: The inference of Probabilistic Mission Landscapes (PML). A PML is a scalar field that expresses at each point in the agent’s state-space how probable the stated rules of the <code class="docutils literal notranslate"><span class="pre">landscape</span></code> clause are satisfied.</p>
+<p>To do so, we employ the <code class="docutils literal notranslate"><span class="pre">ProMis</span></code> class. Similarly to the sampling of StaR Map relations, we can provide ProMis with evaluation points to solve for and approximate the rest of the PML. Furthermore, ProMis can also run an adaptive solving scheme to improve its spatial accuracy.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the improved StaRMap and evaluate</span>
+<span class="n">promis</span> <span class="o">=</span> <span class="n">ProMis</span><span class="p">(</span><span class="n">StaRMap</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/improved_star_map.pkl&quot;</span><span class="p">))</span>
+
+<span class="c1"># Solve an initial landscape from a few samples</span>
+<span class="n">program</span> <span class="o">=</span> <span class="n">perception</span> <span class="o">+</span> <span class="n">background_knowledge</span> <span class="o">+</span> <span class="n">landscape_definition</span>
+<span class="n">landscape</span> <span class="o">=</span> <span class="n">CartesianCollection</span><span class="o">.</span><span class="n">make_latin_hypercube</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">include_corners</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">promis</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">landscape</span><span class="p">,</span> <span class="n">logic</span><span class="o">=</span><span class="n">program</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">landscape</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/initial_landscape.pkl&quot;</span><span class="p">)</span>
+
+<span class="c1"># Improve the landscape twice to show the effect of the adaptive solve function</span>
+<span class="n">promis</span><span class="o">.</span><span class="n">adaptive_solve</span><span class="p">(</span>
+    <span class="n">landscape</span><span class="p">,</span>
+    <span class="n">logic</span><span class="o">=</span><span class="n">program</span><span class="p">,</span>
+    <span class="n">candidate_sampler</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="o">.</span><span class="n">make_latin_hypercube</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">include_corners</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">number_of_improvement_points</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">number_of_iterations</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">acquisition_method</span><span class="o">=</span><span class="s2">&quot;gaussian_process&quot;</span>
+<span class="p">)</span>
+<span class="n">landscape</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/improved_landscape.pkl&quot;</span><span class="p">)</span>
+
+<span class="n">promis</span><span class="o">.</span><span class="n">adaptive_solve</span><span class="p">(</span>
+    <span class="n">landscape</span><span class="p">,</span>
+    <span class="n">logic</span><span class="o">=</span><span class="n">program</span><span class="p">,</span>
+    <span class="n">candidate_sampler</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="o">.</span><span class="n">make_latin_hypercube</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">include_corners</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+    <span class="n">number_of_improvement_points</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">number_of_iterations</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">acquisition_method</span><span class="o">=</span><span class="s2">&quot;gaussian_process&quot;</span>
+<span class="p">)</span>
+<span class="n">landscape</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data/twice_improved_landscape.pkl&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Let’s inspect the resulting landscapes!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show the Probabilistic Mission Landscapes we obtained</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">))</span>
+
+<span class="c1"># Load and scatter each landscape</span>
+<span class="n">show_collection</span><span class="p">(</span><span class="n">CartesianCollection</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;data/landscape.pkl&quot;</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;Initial Landscape&#39;</span><span class="p">)</span>
+<span class="n">show_collection</span><span class="p">(</span><span class="n">CartesianCollection</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;data/improved_landscape.pkl&quot;</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;Improved Landscape&#39;</span><span class="p">)</span>
+<span class="n">show_collection</span><span class="p">(</span><span class="n">CartesianCollection</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;data/twice_improved_landscape.pkl&quot;</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="sa">r</span><span class="s1">&#39;Twice Improved Landscape&#39;</span><span class="p">)</span>
+
+<span class="c1"># Show results</span>
+<span class="n">set_style</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_usage_22_0.png" src="../_images/notebooks_usage_22_0.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../gui.html" class="btn btn-neutral float-right" title="Graphical User Interface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

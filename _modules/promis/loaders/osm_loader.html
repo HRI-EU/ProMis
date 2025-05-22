@@ -16,6 +16,7 @@
       <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -42,12 +43,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../promis.html">ProMis</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../star_map.html">StaR Map</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../geo/geo.html">Geo</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../loaders/loaders.html">Loaders</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../logic/logic.html">Logic</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../estimators/estimators.html">Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
 </ul>
 
         </div>
@@ -98,7 +97,7 @@
 
 
 <div class="viewcode-block" id="OsmLoader">
-<a class="viewcode-back" href="../../../loaders/osm_loader.html#promis.loaders.osm_loader.OsmLoader">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.loaders.OsmLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OsmLoader</span><span class="p">(</span><span class="n">SpatialLoader</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A loader for spatial data from OpenStreetMaps (OSM) via the overpy package.&quot;&quot;&quot;</span>
 
@@ -117,7 +116,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">feature_description</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
 
 <div class="viewcode-block" id="OsmLoader.load">
-<a class="viewcode-back" href="../../../loaders/osm_loader.html#promis.loaders.osm_loader.OsmLoader.load">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.loaders.OsmLoader.load">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_description</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">osm_filter</span> <span class="ow">in</span> <span class="n">feature_description</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_load_routes</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
@@ -252,7 +251,7 @@
                 <span class="k">break</span>
 
 <div class="viewcode-block" id="OsmLoader.relation_to_polygon">
-<a class="viewcode-back" href="../../../loaders/osm_loader.html#promis.loaders.osm_loader.OsmLoader.relation_to_polygon">[docs]</a>
+<a class="viewcode-back" href="../../../api.html#promis.loaders.OsmLoader.relation_to_polygon">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">relation_to_polygon</span><span class="p">(</span><span class="n">relation</span><span class="p">:</span> <span class="n">Relation</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarPolygon</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn an OSM relation into a PolarPolygon.</span>
