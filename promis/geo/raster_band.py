@@ -48,15 +48,17 @@ class RasterBand(ABC):
 
     def to_graph(
         self,
-        cost_model: Callable[[float], float] = lambda x: 1 - x,
-        value_filter: Callable[[float], bool] = lambda: True,
+        cost_model: Callable[[tuple[Any], tuple[Any], float, float], float] = lambda source, dest, w1, w2: 1
+        - w1,
+        value_filter: Callable[[tuple[Any], float], bool] = lambda node, value: True,
     ) -> Graph:
         """Convert a RasterBand into a NetworkX Graph for path planning.
 
         Args:
-            cost_model: A function that maps RasterBand values to edge weights
-            value_filter: A function that is applied to RasterBand values to decide if they
-                should become edges in the graph
+            cost_model: A function that maps ``(source_node, target_node, source_value, dest_value)``
+                to edge weights
+            value_filter: A function that is applied to ``(node, value)`` to decide if they
+                should become nodes in the graph
 
         Returns:
             The corresponding graph where the cost of visiting a node is
@@ -78,14 +80,31 @@ class RasterBand(ABC):
         # Connect each node to k nearest actual neighbors
         tree = KDTree(coordinates)
         for i, coordinate in enumerate(coordinates):
+            value = values[i]
+
             dists, indices = tree.query(coordinate, k=5)  # 4 + 1 to include itself
             assert dists[0] == 0, "KDTree query should return itself first"
-            for j in range(1, len(indices)):  # skip index 0 (self)
-                neighbor = coordinates[indices[j]]
 
-                if value_filter(values[indices[j]]):
-                    weight = cost_model(values[indices[j]])
-                    graph.add_edge(coordinate, neighbor, weight=weight, dist=dists[j])
+            for j in range(1, len(indices)):  # skip index 0 (self)
+                dist = dists[j]
+
+                # Skip neighbors that are not axis-parallel. E.g., diagonal can sneak in here
+                # at the edges of the grid where there are not enough neighbors.
+                # We assume that resolution is uniform in both directions
+                if dist > max(self.pixel_width, self.pixel_height) * 1.1:
+                    continue
+
+                neighbor_coord = coordinates[indices[j]]
+                neighbor_value = values[indices[j]]
+
+                if value_filter(neighbor_coord, neighbor_value):
+                    weight = cost_model(
+                        coordinate,
+                        neighbor_coord,
+                        value,
+                        neighbor_value,
+                    )
+                    graph.add_edge(coordinate, neighbor_coord, weight=weight, dist=dist)
 
         return graph
 
@@ -94,7 +113,7 @@ class RasterBand(ABC):
         start: tuple[float, float],
         goal: tuple[float, float],
         graph: Graph | None = None,
-        cost_model: Callable[[float], float] = lambda x: 1 - x,
+        cost_model: Callable[[float], float] = lambda x: 1 - x,  # TODO this is an odd API
         value_filter: Callable[[float], float] = lambda x: True,
         min_cost: float = 0.3,
     ) -> NDArray:
@@ -164,13 +183,13 @@ class RasterBand(ABC):
         for label, graph in graphs.items():
             # Add nodes
             for node in graph.nodes:
-                stacked_graph.add_node((node[0], node[1], label))
+                stacked_graph.add_node((node[0], node[1], *label))
 
             # Add normal edges
             for edge in graph.edges:
                 stacked_graph.add_edge(
-                    (edge[0][0], edge[0][1], label),
-                    (edge[1][0], edge[1][1], label),
+                    (edge[0][0], edge[0][1], *label),
+                    (edge[1][0], edge[1][1], *label),
                     # copy all edge attributes
                     **graph[edge[0]][edge[1]],
                 )
