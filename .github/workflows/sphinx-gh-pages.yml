@@ -20,7 +20,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install ".[doc]"
           pip install git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
-          apt-get install pandoc -y
+          sudo apt-get install pandoc -y
 
       - name: Build documentation
         run: |
