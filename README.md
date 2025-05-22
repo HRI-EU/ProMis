@@ -8,7 +8,7 @@ The implementation of *CoCo* builds on [ProMis](https://github.com/HRI-EU/ProMis
 Most of the implementation is contained in `promis/coco.py` and is then used in `examples/coco/`.
 
 Specifically, in the latter you can find the central `coco.ipynb` notebook demonstrating how to use CoCo.
-It also forms the basis of the experiments in the paper, which can be executed by running the `record_test_run.py` script on a computer with a working [Crazyflie 2.1](https://www.bitcraze.io/products/old-products/crazyflie-2-1/) + [ROS2](docs.ros.org/en/rolling) setup.
+It also forms the basis of the experiments in the paper, which can be executed by running the `record_flight.py` script on a computer with a working [Crazyflie 2.1](https://www.bitcraze.io/products/old-products/crazyflie-2-1/) + [ROS2](docs.ros.org/en/rolling) setup.
 The file `convert_rosbag_to_csv.py` helps to convert the recorded ROS2 bag files into a CSV format for easier analysis.
 All recordings must eventually be stored in `examples/coco/data/`.
 
