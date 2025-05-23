@@ -44,13 +44,17 @@ export default class Layer {
     this.name = name || ""; // String type field
     this.markers = markers || []; // Array type field
 
+    const widthHeight = Layer.findWidthHeight(markers);
+    this.width = widthHeight[0]; // Int type field
+    this.height = widthHeight[1]; // Int type field
+
     this.visible = true;
     this.settingsMenuExpanded = false;
     this.colorMenuExpanded = false;
     this.editName = false;
 
-    this.hue = typeof hue === "number" ? hue : 0.0; // Float type field
-    this.opacity = 0.6;
+    this.hue = typeof hue === "number" ? hue : 180; // Int type field
+    this.opacity = 60; // Int type field
 
     this.renderMode = RenderMode.Voronoi;
     this.radius = radius || 1.0; // Float type field
@@ -191,5 +195,34 @@ export default class Layer {
     var latCenter = latMinMax[0] + 0.5 * (latMinMax[1] - latMinMax[0]);
     var lngCenter = lngMinMax[0] + 0.5 * (lngMinMax[1] - lngMinMax[0]);
     return [latCenter, lngCenter];
+  }
+
+  static findWidthHeight(markers) {
+    // length of markers array
+    const len = markers.length;
+    if (len === 0) {
+      return [0, 0];
+    }
+    // width counter
+    // check to compare lat or long
+    const calcWidth = Math.abs(markers[1].position[0] - markers[0].position[0]) < Math.abs(markers[1].position[1] - markers[0].position[1]);
+    let width = 1;
+    // compare each pair of markers
+    // calculate the dLat and dLng
+    // if dLat < dlong then increase width
+    // else found width
+    // height is then len / width
+    for (let i = 1; i < len - 1; i++) {
+      let j = 0;
+      const dLat = Math.abs(markers[i].position[0] - markers[j].position[0]);
+      const dLng = Math.abs(markers[i].position[1] - markers[j].position[1]);
+      const cond = calcWidth ? dLat < dLng : dLat > dLng;
+      if (cond) {
+        width++;
+      } else {
+        return calcWidth ? [width, Math.floor(len / width)] : [Math.floor(len / width), width];
+      }
+    }
+    return calcWidth ? [width, 1] : [1, width];
   }
 }

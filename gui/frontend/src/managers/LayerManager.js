@@ -128,22 +128,23 @@ class LayerManager {
   }
 
   //Change layer color
-  changeLayerColor(layerId, hue) {
-    var pos = LayerManager.findLayerPos(this.layers, layerId);
-    this.layers[pos].hue = hue;
+  changeLayerColor(layer, hue) {
+    layer.hue = hue;
     C().updateSidebarRight();
-    if (this.layers[pos].visible){
-      C().mapMan.updateLayerColor(this.layers[pos]);
+    if (layer.visible){
+      C().mapMan.updateLayerColor(layer);
     }
   }
 
   //Change layer opacity
-  changeLayerOpacity(layerId, opacity) {
-    var pos = LayerManager.findLayerPos(this.layers, layerId);
-    this.layers[pos].opacity = opacity;
+  changeLayerOpacity(layer, opacity, commited=true) {
+    layer.opacity = opacity;
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
-    updateLayerConfig(this.layers[pos]);
+    if (layer.visible){
+      C().mapMan.updateLayerColor(layer);
+    }
+    if (commited) 
+      updateLayerConfig(layer);
   }
 
   //Change layer render mode
