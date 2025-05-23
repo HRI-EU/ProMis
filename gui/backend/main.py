@@ -1,26 +1,31 @@
-from numpy import eye
 import re
-from typing import Set
-
-
-from promis import ProMis, StaRMap
-from promis.geo import PolarLocation, CartesianRasterBand, PolarMap, PolarPolyLine, PolarPolygon, CartesianCollection
-from promis.loaders import OsmLoader
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import ValidationError
-from uuid import uuid4
-
-from .models.Config import LayerConfig, DynamicLayer, LocationTypeTable
-from .models.Marker import Marker
-from .models.Line import Line
-from .models.Polygon import Polygon
-from .models.Layer import Layer
-from .models.RunRequest import RunRequest
-from .models.LocationTypeTable import LocationTypeEntry
-from .models.Colors import get_random_color
 from geojson_pydantic import Feature
+from numpy import eye
+from pydantic import ValidationError
+
+from promis import ProMis, StaRMap
+from promis.geo import (
+    CartesianCollection,
+    CartesianRasterBand,
+    PolarLocation,
+    PolarMap,
+    PolarPolygon,
+    PolarPolyLine,
+)
+from promis.loaders import OsmLoader
+
+from .models.colors import get_random_color
+from .models.config import DynamicLayer, LayerConfig, LocationTypeTable
+from .models.layer import Layer
+from .models.line import Line
+from .models.location_type_table import LocationTypeEntry
+from .models.marker import Marker
+from .models.polygon import Polygon
+from .models.run_request import RunRequest
 
 # typing
 
@@ -37,7 +42,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def find_necessary_type(source: str) -> Set[str]:
+def find_necessary_type(source: str) -> set[str]:
     spatial_relation = r"(distance|over)"
 
     p = re.compile(spatial_relation +  r"(\(\s*[A-Z],\s*)([\w]*)(\))")
@@ -55,16 +60,16 @@ def create_hash(text:str):
 def _get_config() -> LayerConfig:
     config = LayerConfig([])
     try:
-        with open('./config/config.json', 'r') as f:
+        with open('./config/config.json') as f:
             config = f.read()
             try:
                 config = LayerConfig.model_validate_json(config)
             except ValidationError as e:
                 print(e)
                 raise HTTPException(status_code=500, detail="fail to parse config file")
-    except FileNotFoundError as er:
+    except FileNotFoundError:
         # create an empty file in place
-        with open('./models/default_layer.json', 'r') as f:
+        with open('./models/default_layer.json') as f:
             default_layer = f.read()
             try:
                 default_layer = Layer.model_validate_json(default_layer)
@@ -74,20 +79,20 @@ def _get_config() -> LayerConfig:
                 raise HTTPException(status_code=500, detail="fail to parse default layer")
         with open('./config/config.json', 'w', encoding='utf-8') as f:
             f.write(config.model_dump_json(indent=2))
-        
+
     return config
 
 def _get_dynamic_layer() -> DynamicLayer:
     dynamic_layer = DynamicLayer(markers=[], polylines=[], polygons=[])
     try:
-        with open('./config/dynamic_layer.json', 'r') as f:
+        with open('./config/dynamic_layer.json') as f:
             dynamic_layer = f.read()
             try:
                 dynamic_layer = DynamicLayer.model_validate_json(dynamic_layer)
             except ValidationError as e:
                 print(e)
                 raise HTTPException(status_code=500, detail="fail to parse dynamic layer")
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         # create a file with default origin in place non file found
         default_origin = Marker(id="0",
                         latlng= (49.877, 8.653),
@@ -103,16 +108,16 @@ def _get_dynamic_layer() -> DynamicLayer:
 def _get_location_type_table() -> LocationTypeTable:
     location_type_table = LocationTypeTable([])
     try:
-        with open('./config/location_type_table.json', 'r') as f:
+        with open('./config/location_type_table.json') as f:
             location_type_table = f.read()
             try:
                 location_type_table = LocationTypeTable.model_validate_json(location_type_table)
             except ValidationError as e:
                 print(e)
                 raise HTTPException(status_code=500, detail="fail to parse location type table file")
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         # create an empty file in place non file found
-        with open('./models/default_loc_table.json', 'r') as f:
+        with open('./models/default_loc_table.json') as f:
             default_loc_table = f.read()
             try:
                 location_type_table = LocationTypeTable.model_validate_json(default_loc_table)
@@ -135,24 +140,24 @@ def _rm_unnecessary_loc_type(table: LocationTypeTable, source: str):
 
 def create_hash_uam(req: RunRequest):
     # prepare for hash
-    reqDict = req.model_dump()
-    _rm_unnecessary_loc_type(reqDict["location_types"], reqDict["source"])
-    del reqDict["source"]
-    del reqDict["resolutions"]
-    del reqDict["support_resolutions"]
-    del reqDict["sample_size"]
-    del reqDict["interpolation"]
+    req_dict = req.model_dump()
+    _rm_unnecessary_loc_type(req_dict["location_types"], req_dict["source"])
+    del req_dict["source"]
+    del req_dict["resolutions"]
+    del req_dict["support_resolutions"]
+    del req_dict["sample_size"]
+    del req_dict["interpolation"]
 
-    return create_hash(repr(reqDict))
+    return create_hash(repr(req_dict))
 
-def create_hash_starmap(req: RunRequest, dynamic_layer: DynamicLayer, hashVal: int):
+def create_hash_starmap(req: RunRequest, dynamic_layer: DynamicLayer, hash_val: int):
     # prepare for hash
-    reqDict = req.model_dump()
-    del reqDict["source"]
-    reqDict["hashVal"] = hashVal
-    reqDict["dynamic_layer"] = dynamic_layer
+    req_dict = req.model_dump()
+    del req_dict["source"]
+    req_dict["hashVal"] = hash_val
+    req_dict["dynamic_layer"] = dynamic_layer
 
-    return create_hash(repr(reqDict))
+    return create_hash(repr(req_dict))
 
 @app.post("/loadmapdata")
 def load_map_data(req: RunRequest):
@@ -164,15 +169,15 @@ def load_map_data(req: RunRequest):
     feature_description = req.location_types
 
     # prepare for hash
-    hashVal = create_hash_uam(req)
+    hash_val = create_hash_uam(req)
 
     # remove all location type with empty filter
 
     _rm_unnecessary_loc_type(feature_description, source)
     # load the cache info
     try:
-        with open(f"./cache/uam_{hashVal}.pickle", 'rb') as f:
-            uam = PolarMap.load(f"./cache/uam_{hashVal}.pickle")
+        with open(f"./cache/uam_{hash_val}.pickle", 'rb'):
+            uam = PolarMap.load(f"./cache/uam_{hash_val}.pickle")
             has_cache = True
             print("found cache map data in loadmapdata")
     except FileNotFoundError:
@@ -180,13 +185,13 @@ def load_map_data(req: RunRequest):
 
     if (not has_cache):
         uam = OsmLoader(mission_center, (width, height), feature_description).to_polar_map()
-        
-        uam.save(f"./cache/uam_{hashVal}.pickle")
-    
-    return hashVal
+
+        uam.save(f"./cache/uam_{hash_val}.pickle")
+
+    return hash_val
 
 @app.post("/starmap/{hashVal}")
-def calculate_star_map(req: RunRequest, hashVal: int):
+def calculate_star_map(req: RunRequest, hash_val: int):
     origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
     width, height = dimensions
@@ -195,20 +200,20 @@ def calculate_star_map(req: RunRequest, hashVal: int):
 
     # load the cache info
     try:
-        with open(f"./cache/uam_{hashVal}.pickle", 'rb') as f:
-            polar_map = PolarMap.load(f"./cache/uam_{hashVal}.pickle")
+        with open(f"./cache/uam_{hash_val}.pickle", 'rb'):
+            polar_map = PolarMap.load(f"./cache/uam_{hash_val}.pickle")
 
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="No map data found on this request.")
-    
+
     # get dynamic markers, line and polygons
     dynamic_layer = _get_dynamic_layer()
-    
+
     markers = dynamic_layer.markers
     polylines = dynamic_layer.polylines
     polygons = dynamic_layer.polygons
 
-    star_map_hash_val = create_hash_starmap(req, dynamic_layer, hashVal)
+    star_map_hash_val = create_hash_starmap(req, dynamic_layer, hash_val)
 
     # load the cache info
     #try:
@@ -223,7 +228,7 @@ def calculate_star_map(req: RunRequest, hashVal: int):
             continue
         polar_marker = PolarLocation(marker.latlng[1], marker.latlng[0], location_type=marker.location_type)
         polar_map.features.append(polar_marker)
-    
+
     for polyline in polylines:
         if polyline.location_type == "":
             continue
@@ -239,22 +244,22 @@ def calculate_star_map(req: RunRequest, hashVal: int):
         locations = []
         for location in polygon.latlngs:
             locations.append(PolarLocation(location[1], location[0]))
-        
+
         polygon_feature = PolarPolygon(locations, location_type=polygon.location_type)
         polar_map.features.append(polygon_feature)
 
     uam = polar_map.to_cartesian()
-    
+
     # apply covariance
     loc_type_table = _get_location_type_table()
     loc_to_uncertainty = dict()
     for entry in loc_type_table:
         if entry.uncertainty != 0:
             loc_to_uncertainty[entry.location_type] = entry.uncertainty * eye(2)
-    
+
     uam.apply_covariance(loc_to_uncertainty)
 
-    # Setting up the probabilistic spatial relations from the UAM 
+    # Setting up the probabilistic spatial relations from the UAM
     star_map = StaRMap(uam)
 
     # Initializing the StaR Map on a raster of points evenly spaced out across the mission area,
@@ -266,7 +271,11 @@ def calculate_star_map(req: RunRequest, hashVal: int):
 
 
     star_map.adaptive_sample(
-        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin, width, height, number_of_samples=1000, include_corners=True),
+        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin,
+                                                                           width,
+                                                                           height,
+                                                                           number_of_samples=1000,
+                                                                           include_corners=True),
         number_of_random_maps=5,
         number_of_iterations=15,
         number_of_improvement_points=100,
@@ -276,11 +285,11 @@ def calculate_star_map(req: RunRequest, hashVal: int):
     #star_map.save(f"./cache/starmap_{star_map_hash_val}.pickle")
 
     app.star_map = star_map
-    
+
     return star_map_hash_val
 
 @app.post("/inference/{hashVal}")
-def inference(req: RunRequest, hashVal: int):
+def inference(req: RunRequest, hash_val: int):
     # load the cache info
     #try:
     #    with open(f"./cache/starmap_{hashVal}.pickle", 'rb') as f:
@@ -290,14 +299,18 @@ def inference(req: RunRequest, hashVal: int):
     #    raise HTTPException(status_code=404, detail="No star map found on this request.")
 
     star_map = app.star_map
-    
+
     program = req.source
     origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
     width, height = dimensions
     interpolation = req.interpolation
 
-    landscape = CartesianCollection.make_latin_hypercube(origin, width, height, number_of_samples=25, include_corners=True)
+    landscape = CartesianCollection.make_latin_hypercube(origin,
+                                                         width,
+                                                         height,
+                                                         number_of_samples=25,
+                                                         include_corners=True)
 
 
     # Solve mission constraints using StaRMap parameters and multiprocessing
@@ -305,24 +318,32 @@ def inference(req: RunRequest, hashVal: int):
     promis.solve(landscape, logic=program, n_jobs=4, batch_size=1)
 
     promis.adaptive_solve(
-        landscape, 
-        logic=program, 
-        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin, width, height, number_of_samples=1000, include_corners=True), 
-        n_jobs=4, 
-        batch_size=1, 
-        number_of_improvement_points=100, 
+        landscape,
+        logic=program,
+        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin,
+                                                                            width,
+                                                                            height,
+                                                                            number_of_samples=1000,
+                                                                            include_corners=True),
+        n_jobs=4,
+        batch_size=1,
+        number_of_improvement_points=100,
         number_of_iterations=5,
         interpolation_method=interpolation,
         acquisition_method="gaussian_process"
     )
 
     promis.adaptive_solve(
-        landscape, 
-        logic=program, 
-        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin, width, height, number_of_samples=1000, include_corners=True), 
-        n_jobs=4, 
-        batch_size=25, 
-        number_of_improvement_points=100, 
+        landscape,
+        logic=program,
+        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin,
+                                                                            width,
+                                                                            height,
+                                                                            number_of_samples=1000,
+                                                                            include_corners=True),
+        n_jobs=4,
+        batch_size=25,
+        number_of_improvement_points=100,
         number_of_iterations=5,
         interpolation_method=interpolation,
         acquisition_method="gaussian_process"
@@ -429,21 +450,23 @@ def add_geo_object(new_obj: Feature):
         app.temp_dyn_obj_and_loc_type["loc_type_entries"].append(new_loc_type_entry)
     else:
         color = loc_type_entry.color
-    
+
     coords = new_obj.geometry.coordinates
 
     match new_obj.geometry.type:
         case "Point":
-            marker = Marker(id=str(new_obj.id), 
-                            latlng=[coords[1], coords[0]] , 
-                            shape=new_obj.properties["shape"] if "shape" in new_obj.properties else 'defaultMarker',
-                            name=new_obj.properties["name"] if "name" in new_obj.properties else '3rd Party',
+            marker = Marker(id=str(new_obj.id),
+                            latlng=[coords[1], coords[0]] ,
+                            shape=new_obj.properties["shape"] if "shape" in new_obj.properties
+                                  else 'defaultMarker',
+                            name=new_obj.properties["name"] if "name" in new_obj.properties
+                                  else '3rd Party',
                             location_type=location_type,
                             color=color)
             update_dynamic_layer_entry(marker)
             app.temp_dyn_obj_and_loc_type["markers"].append(marker)
         case "LineString":
-            line = Line(id=str(new_obj.id), 
+            line = Line(id=str(new_obj.id),
                         latlngs=[[loc[1], loc[0]] for loc in coords],
                         location_type=location_type,
                         color=color)
@@ -458,7 +481,7 @@ def add_geo_object(new_obj: Feature):
                     hole = [(loc[1], loc[0]) for loc in coords[ind]]
                     hole = hole[:-1]
                     holes.append(hole)
-            polygon = Polygon(id=str(new_obj.id), 
+            polygon = Polygon(id=str(new_obj.id),
                               latlngs=latlngs,
                               holes=holes,
                               location_type=location_type,
@@ -486,5 +509,3 @@ def fetch_external_update():
     app.temp_dyn_obj_and_loc_type["polygons"] = []
     app.temp_dyn_obj_and_loc_type["loc_type_entries"] = []
     return result
-    
-

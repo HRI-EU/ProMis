@@ -109,12 +109,27 @@ export async function updateLayerConfig(layer) {
 
   // revert layer back to original state
   revertLayer(layer, markerLayer, leafletOverlay);
+
+  const body = JSON.stringify(layerCpy, function (key, value) {
+        if (value && typeof value === 'object' && key === "") {
+          var replacement = {};
+          for (var k in value) {
+            if (Object.hasOwnProperty.call(value, k)) {
+              const camelToSnakeCase = str => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+              const snake_k = camelToSnakeCase(k);
+              replacement[snake_k] = value[k];
+            }
+          }
+          return replacement;
+        }
+        return value;
+      }, 2);
   
   // send the updated configuration data to the backend
   try {
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify(layerCpy, null, 2),
+      body: body,
       headers: {
         "Content-Type": "application/json",
       },

@@ -96,6 +96,23 @@ function MapComponent() {
       const dynamic_layer = configs[1];
       const location_type_table = configs[2];
       if (layer_config !== null) {
+        // change field name of layer_config from snake_case to camelCase
+        // iterate over layer_config and change field name from snake_case to camelCase
+        for (const layer of layer_config) {
+          for (var prop in layer) {
+            if (Object.prototype.hasOwnProperty.call(layer, prop)) {
+              // check if the property name is in snake_case
+              if (prop.includes("_")) {
+                // change the property name to camelCase
+                const newProp = prop.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+                layer[newProp] = layer[prop];
+                delete layer[prop];
+              }
+            }
+          }
+        }
+        
+
         C().layerMan.importAllLayers(layer_config);
       }
       if (dynamic_layer !== null) {

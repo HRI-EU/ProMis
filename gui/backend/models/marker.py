@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class Marker(BaseModel):
     id: str
     latlng: tuple[float, float]

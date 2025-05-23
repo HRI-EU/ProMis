@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class LocationTypeEntry(BaseModel):
     id: int
     location_type: str

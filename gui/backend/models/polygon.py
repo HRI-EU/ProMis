@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class Polygon(BaseModel):
     id: str
     latlngs: list[tuple[float, float]]

@@ -1,9 +1,11 @@
 from pydantic import BaseModel, RootModel
-from .Layer import Layer
-from .Marker import Marker
-from .Line import Line
-from .Polygon import Polygon
-from .LocationTypeTable import LocationTypeEntry
+
+from .layer import Layer
+from .line import Line
+from .location_type_table import LocationTypeEntry
+from .marker import Marker
+from .polygon import Polygon
+
 
 class LayerConfig(RootModel):
     root: list[Layer]
@@ -13,7 +15,7 @@ class LayerConfig(RootModel):
 
     def __getitem__(self, item):
         return self.root[item]
-    
+
     def __setitem__(self, key, value):
         self.root[key] = value
 
@@ -80,7 +82,7 @@ class LocationTypeTable(RootModel):
 
     def __getitem__(self, item):
         return self.root[item]
-    
+
     def __setitem__(self, key, value):
         self.root[key] = value
 
