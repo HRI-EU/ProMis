@@ -1,31 +1,59 @@
 [
   {
     "id": 3838605292,
-    "location_type": "primary_road",
+    "location_type": "primary",
     "filter": "['highway' = 'primary']",
     "color": "blue",
-    "uncertainty": 10
+    "uncertainty": 15
   },
   {
     "id": 1880208973,
-    "location_type": "secondary_road",
+    "location_type": "secondary",
     "filter": "['highway' = 'secondary']",
     "color": "red",
     "uncertainty": 10
   },
   {
     "id": 1622829938,
-    "location_type": "tertiary_road",
+    "location_type": "tertiary",
     "filter": "['highway' = 'tertiary']",
     "color": "green",
-    "uncertainty": 10
+    "uncertainty": 5
   },
   {
     "id": 2543436890,
     "location_type": "park",
     "filter": "['leisure' = 'park']",
     "color": "yellow",
-    "uncertainty": 10
+    "uncertainty": 0
+  },
+  {
+    "id": 2543416890,
+    "location_type": "service",
+    "filter": "['highway' = 'service']",
+    "color": "orange",
+    "uncertainty": 2.5
+  },
+  {
+    "id": 2443436890,
+    "location_type": "crossing",
+    "filter": "['footway' = 'crossing']",
+    "color": "purple",
+    "uncertainty": 0
+  },
+  {
+    "id": 2543436690,
+    "location_type": "bay",
+    "filter": "['natural' = 'bay']",
+    "color": "white",
+    "uncertainty": 0
+  },
+  {
+    "id": 2542436890,
+    "location_type": "rail",
+    "filter": "['railway' = 'rail']",
+    "color": "brown",
+    "uncertainty": 0
   },
   {
     "id": 2075396262,

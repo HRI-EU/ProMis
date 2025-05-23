@@ -4,7 +4,7 @@ from typing import Set
 
 
 from promis import ProMis, StaRMap
-from promis.geo import PolarLocation, CartesianRasterBand, PolarMap, PolarRoute, PolarPolygon
+from promis.geo import PolarLocation, CartesianRasterBand, PolarMap, PolarPolyLine, PolarPolygon, CartesianCollection
 from promis.loaders import OsmLoader
 
 from fastapi import FastAPI, HTTPException
@@ -187,11 +187,10 @@ def load_map_data(req: RunRequest):
 
 @app.post("/starmap/{hashVal}")
 def calculate_star_map(req: RunRequest, hashVal: int):
-    mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
+    origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
     width, height = dimensions
     sample_size = req.sample_size
-    interpolation = req.interpolation
     logic = req.source
 
     # load the cache info
@@ -231,7 +230,7 @@ def calculate_star_map(req: RunRequest, hashVal: int):
         locations = []
         for location in polyline.latlngs:
             locations.append(PolarLocation(location[1], location[0]))
-        polyline_feature = PolarRoute(locations, location_type=polyline.location_type)
+        polyline_feature = PolarPolyLine(locations, location_type=polyline.location_type)
         polar_map.features.append(polyline_feature)
 
     for polygon in polygons:
@@ -255,19 +254,24 @@ def calculate_star_map(req: RunRequest, hashVal: int):
     
     uam.apply_covariance(loc_to_uncertainty)
 
-    # We create a statistical relational map (StaR Map) to represent the 
-    # stochastic relationships in the environment, computing a raster of 1000 x 1000 points
-    # using linear interpolation of a sample set
-    target_resolution = req.resolutions
-    target = CartesianRasterBand(mission_center, target_resolution, width, height)
-    star_map = StaRMap(target, uam, method=interpolation)
+    # Setting up the probabilistic spatial relations from the UAM 
+    star_map = StaRMap(uam)
 
-    # The sample points for which the relations will be computed directly
+    # Initializing the StaR Map on a raster of points evenly spaced out across the mission area,
+    # sampling 25 random variants of the UAM for estimating the spatial relation parameters
     support_resolutions = req.support_resolutions
-    support = CartesianRasterBand(mission_center, support_resolutions, width, height)
+    evaluation_points = CartesianRasterBand(origin, support_resolutions, width, height)
 
-    # We now compute the Distance and Over relationships for the selected points
-    star_map.initialize(support, sample_size, logic)
+    star_map.initialize(evaluation_points, sample_size, logic)
+
+
+    star_map.adaptive_sample(
+        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin, width, height, number_of_samples=1000, include_corners=True),
+        number_of_random_maps=5,
+        number_of_iterations=15,
+        number_of_improvement_points=100,
+        acquisition_method = "gaussian_process"
+    )
 
     #star_map.save(f"./cache/starmap_{star_map_hash_val}.pickle")
 
@@ -287,16 +291,42 @@ def inference(req: RunRequest, hashVal: int):
 
     star_map = app.star_map
     
-    logic = req.source
-    mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
+    program = req.source
+    origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
     width, height = dimensions
-    support_resolutions = req.support_resolutions
-    support = CartesianRasterBand(mission_center, support_resolutions, width, height)
+    interpolation = req.interpolation
+
+    landscape = CartesianCollection.make_latin_hypercube(origin, width, height, number_of_samples=25, include_corners=True)
+
 
     # Solve mission constraints using StaRMap parameters and multiprocessing
     promis = ProMis(star_map)
-    landscape = promis.solve(support, logic, n_jobs=4, batch_size=15)
+    promis.solve(landscape, logic=program, n_jobs=4, batch_size=1)
+
+    promis.adaptive_solve(
+        landscape, 
+        logic=program, 
+        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin, width, height, number_of_samples=1000, include_corners=True), 
+        n_jobs=4, 
+        batch_size=1, 
+        number_of_improvement_points=100, 
+        number_of_iterations=5,
+        interpolation_method=interpolation,
+        acquisition_method="gaussian_process"
+    )
+
+    promis.adaptive_solve(
+        landscape, 
+        logic=program, 
+        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin, width, height, number_of_samples=1000, include_corners=True), 
+        n_jobs=4, 
+        batch_size=25, 
+        number_of_improvement_points=100, 
+        number_of_iterations=5,
+        interpolation_method=interpolation,
+        acquisition_method="gaussian_process"
+    )
 
     polar_pml = landscape.to_polar()
     return  [[row["latitude"], row["longitude"], row["v0"]] for _, row in polar_pml.data.iterrows()]
