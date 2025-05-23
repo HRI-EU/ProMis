@@ -462,7 +462,7 @@ def translate_numpy(
         This is already provided in an object-oriented fashion by
         - :meth:`promis.geo.location.PolarLocation.translate`
         - :meth:`promis.geo.polygon.PolarPolygon.translate`
-        - :meth:`promis.geo.route.PolarRoute.translate`
+        - :meth:`promis.geo.route.PolarPolyLine.translate`
 
     Args:
         coordinates: the coordinates as a numpy array with dimensions ``(number of points, 2)``,

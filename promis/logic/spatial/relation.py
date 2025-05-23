@@ -155,7 +155,7 @@ class Relation(ABC):
         """Compute relation for a Cartesian collection of points and a set of R-trees.
 
         Args:
-            support: The collection of Cartesian points to compute Over for
+            support: The collection of Cartesian points to compute the relation for
             r_trees: Random variations of the features of a map indexible by an STRtree each
             location_type: The type of features this relates to
             original_geometries: The geometries indexed by the STRtrees
@@ -205,8 +205,8 @@ class ScalarRelation(Relation):
         super().__init__(parameters, location_type)
 
         self.problog_name = problog_name
-
         self.parameters.data["v1"] = clip(self.parameters.data["v1"], enforced_min_variance, None)
+        self.enforced_min_variance = enforced_min_variance
 
     def __lt__(self, value: float) -> CartesianCollection:
         means = self.parameters.data["v0"]
@@ -220,17 +220,16 @@ class ScalarRelation(Relation):
                 self.parameters.resolution,
                 self.parameters.width,
                 self.parameters.height,
-                number_of_values=1,
             )
             probabilities.data["v0"] = cdf
         else:
             probabilities = CartesianCollection(self.parameters.origin)
-            probabilities.append(self.parameters.to_cartesian_locations(), cdf)
+            probabilities.append(self.parameters.coordinates(), vstack(cdf))
 
         return probabilities
 
     def __gt__(self, value: float) -> CartesianCollection:
-        # Use the existing __lt__ method to compute the inverse
+        # Uses the existing __lt__ method to compute the inverse
         probabilities = self < value
         probabilities.data["v0"] = 1.0 - probabilities.data["v0"]
 
@@ -242,8 +241,10 @@ class ScalarRelation(Relation):
         else:
             relation = f"{self.problog_name}(x_{index}, {self.location_type})"
 
+        mean = self.parameters.data['v0'][index]
+        std = sqrt(clip(self.parameters.data['v1'][index], self.enforced_min_variance, None))
         distribution = (
-            f"normal({self.parameters.data['v0'][index]}, {self.parameters.data['v1'][index]})"
+            f"normal({mean}, {std})"
         )
 
         return f"{relation} ~ {distribution}.\n"

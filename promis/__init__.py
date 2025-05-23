@@ -13,7 +13,7 @@ from promis.promis import ProMis
 from promis.star_map import StaRMap
 
 __all__ = ["ProMis", "StaRMap"]
-__version__ = "0.1.0"
+__version__ = "2.0.0"
 __author__ = "Simon Kohaut"
 
 

@@ -15,15 +15,15 @@ from typing import TypeAlias
 from promis.geo.collection import CartesianCollection, Collection, PolarCollection
 from promis.geo.geospatial import Geospatial
 from promis.geo.helpers import Direction
-from promis.geo.location import CartesianLocation, PolarLocation
-from promis.geo.map import CartesianMap, PolarMap
+from promis.geo.location import CartesianLocation, Location, PolarLocation
+from promis.geo.map import CartesianMap, Map, PolarMap
 from promis.geo.polygon import CartesianPolygon, PolarPolygon
 from promis.geo.raster_band import CartesianRasterBand, PolarRasterBand, RasterBand
-from promis.geo.route import CartesianRoute, PolarRoute
+from promis.geo.polyline import CartesianPolyLine, PolarPolyLine, PolyLine
 
 # Type aliases
-CartesianGeometry: TypeAlias = CartesianLocation | CartesianMap | CartesianPolygon | CartesianRoute
-PolarGeometry: TypeAlias = PolarLocation | PolarMap | PolarPolygon | PolarRoute
+CartesianGeometry: TypeAlias = CartesianLocation | CartesianMap | CartesianPolygon | CartesianPolyLine
+PolarGeometry: TypeAlias = PolarLocation | PolarMap | PolarPolygon | PolarPolyLine
 
 
 __all__ = [
@@ -34,15 +34,18 @@ __all__ = [
     "CartesianMap",
     "CartesianPolygon",
     "CartesianRasterBand",
-    "RasterBand",
-    "CartesianRoute",
+    "CartesianPolyLine",
     "Direction",
     "Geospatial",
+    "Location",
+    "Map",
     "PolarCollection",
     "PolarGeometry",
     "PolarLocation",
     "PolarMap",
     "PolarPolygon",
     "PolarRasterBand",
-    "PolarRoute",
+    "PolarPolyLine",
+    "PolyLine",
+    "RasterBand",
 ]

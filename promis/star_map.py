@@ -9,34 +9,21 @@
 #
 
 # Standard Library
-import warnings
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from copy import deepcopy
-from itertools import product
 from pickle import dump, load
 from re import finditer
-from time import time
 from traceback import format_exception
-from typing import TypedDict
 from warnings import warn
 
 # Third Party
-from numpy import array, sort, unique
-from numpy.random import choice
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, WhiteKernel
-from sklearn.preprocessing import StandardScaler, normalize
+from numpy import array
+from numpy.typing import NDArray
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianLocation, CartesianMap, RasterBand
+from promis.geo import CartesianCollection, CartesianMap
 from promis.logic.spatial import Depth, Distance, Over, Relation
-
-
-class _RelationInformation(TypedDict):
-    collection: CartesianCollection
-    approximator: None | object
 
 
 class StaRMap:
@@ -53,7 +40,6 @@ class StaRMap:
         CartesianCollection.
 
     Args:
-        target: The collection of points to output for each relation
         uam: The uncertainty annotated map as generator in Cartesian space
         method: The method to approximate parameters from a set of support points;
             one of {"linear", "nearest", "gaussian_process"}
@@ -61,50 +47,25 @@ class StaRMap:
 
     def __init__(
         self,
-        target: CartesianCollection,
         uam: CartesianMap,
-        method: str = "linear",
     ) -> None:
-        """Setup the StaR Map environment representation."""
-
-        # Setup distance and over relations
         self.uam = uam
-        self.target = target  # Assumes that self.uam is already set
-        self.method = method
+        self.relations = {
+            "over": {}, "distance": {}, "depth": {}
+        }
 
-        # Each relation is stored as collection of support points and fitted approximator
-        self.relations: dict[str, dict[str | None, _RelationInformation]]
-        self.clear_relations()
-
-    def initialize(self, support: CartesianCollection, number_of_random_maps: int, logic: str):
+    def initialize(self, evaluation_points: CartesianCollection, number_of_random_maps: int, logic: str):
         """Setup the StaRMap for a given set of support points, number of samples and logic.
 
         Args:
-            support: The support points to be computed
+            evaluation_points: The points to initialize the StaR Map on
             number_of_random_maps: The number of samples to be used per support point
             logic: The set of constraints deciding which relations are computed
         """
 
-        self.add_support_points(
-            support, number_of_random_maps, self._get_mentioned_relations(logic)
+        self.sample(
+            evaluation_points, number_of_random_maps, self._get_mentioned_relations(logic)
         )
-
-    def clear_relations(self):
-        """Clear out the stored relations data."""
-
-        # Keep in sync with relation_name_to_class()
-        self.relations = {
-            "over": defaultdict(self._empty_relation),
-            "distance": defaultdict(self._empty_relation),
-            "depth": defaultdict(self._empty_relation),
-        }
-
-    def _empty_relation(self) -> _RelationInformation:
-        return {
-            # Two values for storing mean and variance
-            "collection": CartesianCollection(self.target.origin, 2),
-            "approximator": None,
-        }
 
     @staticmethod
     def relation_name_to_class(relation: str) -> Relation:
@@ -135,27 +96,6 @@ class StaRMap:
     def relation_arities(self) -> dict[str, int]:
         return {name: self.relation_name_to_class(name).arity() for name in self.relation_types}
 
-    @property
-    def target(self) -> CartesianCollection:
-        return self._target
-
-    @target.setter
-    def target(self, target: CartesianCollection) -> None:
-        # Validate that target and UAM have the same origin coordinates
-        # TODO: Why does PolarLocation not have a __eq__ method?
-        if any(target.origin.to_numpy() != self.uam.origin.to_numpy()):
-            raise ValueError(
-                "StaRMap target and UAM must have the same origin but were: "
-                f"{target.origin} and {self.uam.origin}"
-            )
-
-        # Actually store the target
-        self._target = target
-
-        # Make sure to refit if target changes
-        if self.is_fitted:
-            self.fit()
-
     @staticmethod
     def load(path) -> "StaRMap":
         with open(path, "rb") as file:
@@ -164,59 +104,6 @@ class StaRMap:
     def save(self, path):
         with open(path, "wb") as file:
             dump(self, file)
-
-    @property
-    def method(self) -> str:
-        return self._method
-
-    @method.setter
-    def method(self, method: str) -> None:
-        if method not in ["linear", "nearest", "gaussian_process"]:
-            raise NotImplementedError(f'StaRMap does not support the method "{method}"')
-        self._method = method
-
-        # Make sure to refit if method changes
-        if self.is_fitted:
-            self.fit()
-
-    def fit(self, what: dict[str, list[str]] | None = None) -> None:
-        if what is None:
-            what = self.relation_and_location_types  # Inefficient, but works
-
-        # Predict for each value
-        for relation, location_types in what.items():
-            for location_type in location_types:
-                # Not all relations must be present for all location types
-                if relation not in self.relations or location_type not in self.relations[relation]:
-                    continue  # Nothing to do here
-
-                info = self.relations[relation][location_type]
-
-                match self.method:
-                    case "gaussian_process":
-                        # Setup input scaler
-                        scaler = StandardScaler().fit(self.target.coordinates())
-
-                        # Fit GP to relation data and store approximator
-                        gaussian_process, _ = self._train_gaussian_process(info["collection"], None)
-                        info["approximator"] = (gaussian_process, scaler)
-
-                    # Could easily be extended to other methods, like spline interpolation
-                    case "linear" | "nearest":
-                        # If `collection` is a reaster band, this will be particularly efficient
-                        info["approximator"] = info["collection"].get_interpolator(self.method)
-
-                    case _:
-                        raise NotImplementedError(f"Unsupported method {self.method} in StaRMap!")
-
-    @property
-    def is_fitted(self) -> bool:
-        # In the beginning, self.relations might not be defined yet
-        return hasattr(self, "relations") and all(
-            info["approximator"] is not None
-            for entries in self.relations.values()
-            for info in entries.values()
-        )
 
     def get(self, relation: str, location_type: str) -> Relation:
         """Get the computed data for a relation to a location type.
@@ -229,40 +116,25 @@ class StaRMap:
             The relation for the given location type
         """
 
-        parameters = deepcopy(self.target)
-        coordinates = parameters.coordinates()
+        return deepcopy(self.relations[relation][location_type])
 
-        info = self.relations[relation][location_type]
-        if info["approximator"] is None:
-            raise ValueError(
-                f'Relation "{relation}" for location type "{location_type}" has not been fitted yet.'
-            )
-
-        if self.method == "gaussian_process":
-            gp, scaler = info["approximator"]
-            approximated = gp.predict(scaler.transform(coordinates))
-        else:
-            approximated = info["approximator"](coordinates)
-
-        parameters.data["v0"] = approximated[:, 0]
-        parameters.data["v1"] = approximated[:, 1]
-
-        return self.relation_name_to_class(relation)(parameters, location_type)
-
-    def get_all(self) -> list[Relation]:
+    def get_all(self, logic: str = None) -> list[Relation]:
         """Get all the relations for each location type.
 
         Returns:
             A list of all relations
         """
 
-        relations = self.relations.keys()
-        location_types = self.location_types
+        if logic is not None:
+            return deepcopy({
+                relation_type: {
+                    location_type: self.relations[relation_type][location_type]
+                    for location_type in location_types
+                }
+                for relation_type, location_types in self._get_mentioned_relations(logic).items()
+            })
 
-        return [
-            self.get(relation, location_type)
-            for relation, location_type in product(relations, location_types)
-        ]
+        return deepcopy(self.relations)
 
     def _get_mentioned_relations(self, logic: str) -> dict[str, set[str]]:
         """Get all relations mentioned in a logic program.
@@ -303,146 +175,113 @@ class StaRMap:
 
         return relations
 
-    def get_from_logic(self, logic: str) -> list[Relation]:
-        """Get all relations mentioned in a logic program.
-
-        Args:
-            logic: The logic program
-
-        Returns:
-            A list of the Relations mentioned in the program
-        """
-
-        return [
-            self.get(relation_type, location_type)
-            for relation_type, location_types in self._get_mentioned_relations(logic).items()
-            for location_type in location_types
-        ]
-
-    def _train_gaussian_process(
+    def adaptive_sample(
         self,
-        support: CartesianCollection,
-        pretrained_gp: tuple[GaussianProcessRegressor, StandardScaler] | None = None,
-    ) -> tuple[GaussianProcessRegressor, float]:
-        # Fit input scaler on target space
-        if pretrained_gp is not None:
-            input_scaler = pretrained_gp[1]
-        else:
-            input_scaler = StandardScaler().fit(self.target.coordinates())
-
-        # Setup kernel and GP
-        kernel = 1 * RBF(array([1.0, 1.0])) + WhiteKernel()
-        if pretrained_gp is not None:
-            kernel.set_params(**(pretrained_gp[0].kernel_.get_params()))
-
-        gaussian_process = GaussianProcessRegressor(
-            kernel=kernel, n_restarts_optimizer=5, normalize_y=True
-        )
-
-        # Fit on support data
-        # TODO: This has raised ConvergenceWarnings in the past that where no actual problems
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-
-            start = time()
-            gaussian_process.fit(input_scaler.transform(support.coordinates()), support.values())
-            elapsed = time() - start
-
-        return gaussian_process, elapsed
-
-    def auto_improve(
-        self,
+        candidate_sampler: Callable[[int], NDArray],
         number_of_random_maps: int,
+        number_of_iterations: int,
         number_of_improvement_points: int,
-        relations: list[str],
-        location_types: list[str],
-    ) -> None:
+        what: dict[str, Iterable[str | None]] | None = None,
+        scaler: float = 10.0,
+        value_index: int = 0,
+        acquisition_method: str = "entropy"
+    ):
         """Automatically add support points at locations where the uncertainty is high.
 
-        Warning:
-            Currently only works with RasterBand targets!
-
         Args:
+            candidate_sampler: The sampler that provides a candidate Collection that may be used
+                for computing relation parameters
             number_of_random_maps: How often to sample from map data in order to
                 compute statistics of spatial relations
-            number_of_improvement_points: How many points to add to improve the map
-            relations: The spatial relations to compute
-            location_types: The location types to compute
+            number_of_iterations: How many iterations of improvements to run
+            number_of_improvement_points: How many points to add to improve the map at each iteration
+            what: The spatial relations to compute, as a mapping of relation names to location types
+            scaler: How much to weigh the employed scoreing method over the distance score
+            value_index: Which value column of the relation's parameters to use for improvement
+            acquisition_method: Which improvement method to use, one of {entropy, gaussian_process}
         """
 
-        if not isinstance(self.target, RasterBand):
-            raise NotImplementedError(
-                "StaRMap auto_improve() currently only works with RasterBand targets"
-            )
+        what = self.relation_and_location_types if what is None else what
+        all_location_types = [location_type for types in what.values() for location_type in types]
 
-        for relation, location_type in product(relations, location_types):
-            gaussian_process, scaler = self.relations[relation][location_type]["approximator"]
+        # For each location_type we get one set of random maps and RTrees
+        for location_type in all_location_types:
+            r_trees, random_maps = self._make_r_trees(location_type, number_of_random_maps)
 
-            std = gaussian_process.predict(
-                scaler.transform(self.target.coordinates()), return_std=True
-            )[1]
+            # For each relation we decide new sample points based on distance and entropy scores
+            for relation, types in what.items():
+                if location_type not in types:
+                    continue
 
-            # We decide improvement points for mean and variance separately
-            improvement_collection = CartesianCollection(self.target.origin)
-            uncertainty = deepcopy(self.target)
-            uncertainty.data["v0"] = std[:, 0]
-            uncertainty_image = uncertainty.as_image()
+                # Define value function and improve Collection
+                def value_function(points):
+                    return self._compute_parameters(points, relation, location_type, r_trees, random_maps)
 
-            improvement_points = choice(
-                uncertainty_image.shape[0] * uncertainty_image.shape[1],
-                size=number_of_improvement_points,
-                replace=False,
-                p=normalize(array([uncertainty_image.ravel()]), norm="l1").ravel(),
-            )
-
-            locations = [
-                CartesianLocation(
-                    uncertainty.data["east"][index],
-                    uncertainty.data["north"][index],
+                self.relations[relation][location_type].parameters.improve(
+                    candidate_sampler=candidate_sampler,
+                    value_function=value_function,
+                    number_of_iterations=number_of_iterations,
+                    number_of_improvement_points=number_of_improvement_points,
+                    scaler=scaler,
+                    value_index=value_index,
+                    acquisition_method=acquisition_method
                 )
-                for index in improvement_points
-            ]
 
-            improvement_collection.append_with_default(locations, 0.0)
-            self.add_support_points(
-                improvement_collection, number_of_random_maps, [relation], [location_type]
-            )
+    def _make_r_trees(self, location_type: str, number_of_random_maps: int):
+        # Filter relevant features, sample randomized variations of map and package into RTrees
+        typed_map: CartesianMap = self.uam.filter(location_type)
+        if typed_map.features:
+            random_maps = typed_map.sample(number_of_random_maps)
+            return [instance.to_rtree() for instance in random_maps], random_maps
+        else:
+            return None, None
 
-    def prune(
+    def _compute_parameters(
         self,
-        threshold: float,
-        relations: list[str],
-        location_types: list[str],
-    ):
-        for relation, location_type in product(relations, location_types):
-            coordinates = self.relations[relation][location_type]["collection"].coordinates()
-            clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=threshold).fit(
-                coordinates
+        coordinates: NDArray,
+        relation: str,
+        location_type: str,
+        r_trees: list,
+        random_maps: list[CartesianMap]
+    ) -> NDArray:
+        # Get the class of the spatial relation
+        relation_class = self.relation_name_to_class(relation)
+
+        # If the map had no relevant features, fill with default values
+        if r_trees is None:
+            warn(
+                f'no features for relation "{relation}" for location type "{location_type}"'
             )
 
-            pruning_index = sort(unique(clusters.labels_, return_index=True)[1])
-            pruned_coordinates = coordinates[pruning_index]
-            pruned_values = self.relations[relation][location_type]["collection"].values()[
-                pruning_index
-            ]
+            return array([relation_class.empty_map_parameters()] * coordinates.shape[0])
 
-            self.relations[relation][location_type]["collection"].clear()
-            self.relations[relation][location_type]["collection"].append(
-                pruned_coordinates, pruned_values
+        try:
+            collection = CartesianCollection(self.uam.origin)
+            collection.append_with_default(coordinates, 0.0)
+
+            return relation_class.from_r_trees(
+                collection, r_trees, location_type, original_geometries=random_maps
+            ).parameters.values()
+
+        except Exception as e:
+            warn(
+                f"StaR Map encountered excpetion! "
+                f"Relation {relation} for {location_type} will use default parameters. "
+                f"Error was:\n{''.join(format_exception(e))}"
             )
 
-        self.fit(relations, location_types)
+            return array([relation_class.empty_map_parameters()] * coordinates.shape[0])
 
-    def add_support_points(
+    def sample(
         self,
-        support: CartesianCollection,
+        evaluation_points: CartesianCollection,
         number_of_random_maps: int,
         what: dict[str, Iterable[str | None]] | None = None,
     ):
         """Compute distributional clauses.
 
         Args:
-            support: The Collection of points for which the spatial relations will be computed
+            evaluation_points: The collection of points for which the spatial relations will be computed
             number_of_random_maps: How often to sample from map data in order to
                 compute statistics of spatial relations
             what: The spatial relations to compute, as a mapping of relation names to location types
@@ -450,53 +289,24 @@ class StaRMap:
 
         what = self.relation_and_location_types if what is None else what
         all_location_types = [location_type for types in what.values() for location_type in types]
+        coordinates = evaluation_points.coordinates()
 
         for location_type in all_location_types:
-            # Get all relevant features from map
-            typed_map: CartesianMap = self.uam.filter(location_type)
+            r_trees, random_maps = self._make_r_trees(location_type, number_of_random_maps)
 
-            # Setup data structures
-            random_maps = typed_map.sample(number_of_random_maps, n_jobs=8)
-            r_trees = [instance.to_rtree() for instance in random_maps]
-
-            # This could be parallelized, as each relation and location type is independent
-            # from all others.
+            # This could be parallelized, as each relation and location type is independent from all others
             for relation, types in what.items():
-                if relation not in what or location_type not in types:
+                if location_type not in types:
                     continue
 
-                # Determine relation class and collection to write to
-                relation_class = self.relation_name_to_class(relation)
-                info = self.relations[relation][location_type]
-                value_collection = info["collection"]
-
-                # If the map had no relevant features, fill with default values
-                if not typed_map.features:
-                    value_collection.append_with_default(
-                        support.coordinates(), relation_class.empty_map_parameters()
-                    )
-                    warn(
-                        f'no features for relation "{relation}" for location type "{location_type}"'
-                    )
-                    continue
-
-                try:
-                    # Compute the relation value for each support point
-                    instantiated_relation: Relation = relation_class.from_r_trees(
-                        support, r_trees, location_type, original_geometries=random_maps
-                    )
-                    values = instantiated_relation.parameters
-                    value_collection.append(values.coordinates(), values.values())
-
-                except Exception as e:
-                    warn(
-                        f"StaR Map encountered excpetion! "
-                        f"Relation {relation} for {location_type} will use default parameters. "
-                        f"Error was:\n{''.join(format_exception(e))}"
+                if location_type not in self.relations[relation].keys():
+                    self.relations[relation][location_type] = self.relation_name_to_class(relation)(
+                        CartesianCollection(self.uam.origin, 2),
+                        location_type
                     )
 
-                    value_collection.append_with_default(
-                        support.coordinates(), relation_class.empty_map_parameters()
-                    )
-
-        self.fit(what)
+                # Update collection of sample points
+                self.relations[relation][location_type].parameters.append(
+                    coordinates,
+                    self._compute_parameters(coordinates, relation, location_type, r_trees, random_maps)
+                )

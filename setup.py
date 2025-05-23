@@ -37,10 +37,10 @@ setuptools.setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: BSD-3",
+        "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     install_requires=[
         # general tools
         "rich",
@@ -59,12 +59,13 @@ setuptools.setup(
         # probabilistic logic and modelling
         "pyro-ppl",
         "pysdd",
-        "problog @ git+https://github.com/simon-kohaut/problog.git@dcproblog_develop",
+        "gpytorch",
         # plotting and visualization
         "fastapi[standard]",
         "graphviz",
         "seaborn",
         "smopy",
+        "ipywidgets",
         # networking
         "requests",
     ],
@@ -72,6 +73,7 @@ setuptools.setup(
         # Building the documentation locally with sphinx
         "doc": [
             "sphinx",
+            "nbsphinx",
             "sphinx-markdown-builder",
             "sphinx_rtd_theme",
             "sphinxcontrib-programoutput",
