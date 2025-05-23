@@ -16,7 +16,7 @@ from overpy import Overpass, Relation
 from overpy.exception import OverpassGatewayTimeout, OverpassTooManyRequests
 
 # ProMis
-from promis.geo import PolarLocation, PolarPolygon, PolarRoute
+from promis.geo import PolarLocation, PolarPolygon, PolarPolyLine
 from promis.loaders.spatial_loader import SpatialLoader
 
 
@@ -28,15 +28,16 @@ class OsmLoader(SpatialLoader):
         origin: PolarLocation,
         dimensions: tuple[float, float],
         feature_description: dict | None,
+        timeout: float = 5.0
     ):
         # Initialize Overpass API
         self.overpass_api = Overpass()
         super().__init__(origin, dimensions)
 
         if feature_description is not None:
-            self.load(feature_description)
+            self.load(feature_description, timeout)
 
-    def load(self, feature_description: dict[str, str]) -> None:
+    def load(self, feature_description: dict[str, str], timeout: float = 5.0) -> None:
         for location_type, osm_filter in feature_description.items():
             self._load_routes(osm_filter, location_type)
             self._load_polygons(osm_filter, location_type)
@@ -46,8 +47,8 @@ class OsmLoader(SpatialLoader):
         filters: str,
         name: str,
         timeout: float = 5.0,
-    ) -> list[PolarRoute]:
-        """Loads all selected ways from OSM as PolarRoute.
+    ) -> list[PolarPolyLine]:
+        """Loads all selected ways from OSM as PolarPolyLine.
 
         Args:
             tag: The tag that way and relation will be qualitfied with, required to
@@ -56,7 +57,7 @@ class OsmLoader(SpatialLoader):
             location_type: The type to assign to each loaded route
 
         Returns:
-            A list of all found map features as PolarRoutes
+            A list of all found map features as PolarPolyLines
         """
 
         # Compute bounding box and format it for Overpass
@@ -75,7 +76,7 @@ class OsmLoader(SpatialLoader):
                 )
 
                 self.features += [
-                    PolarRoute(
+                    PolarPolyLine(
                         [
                             PolarLocation(
                                 latitude=float(node.lat), longitude=float(node.lon), location_type=name
@@ -99,8 +100,8 @@ class OsmLoader(SpatialLoader):
         filters: str,
         name: str,
         timeout: float = 5.0,
-    ) -> list[PolarRoute]:
-        """Loads all selected ways from OSM as PolarRoute.
+    ) -> list[PolarPolyLine]:
+        """Loads all selected ways from OSM as PolarPolyLine.
 
         Args:
             tag: The tag that way and relation will be qualitfied with, required to
@@ -109,7 +110,7 @@ class OsmLoader(SpatialLoader):
             location_type: The type to assign to each loaded route
 
         Returns:
-            A list of all found map features as PolarRoutes
+            A list of all found map features as PolarPolyLines
         """
 
         # Compute bounding box and format it for Overpass

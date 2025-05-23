@@ -9,9 +9,7 @@
 #
 
 # Standard Library
-from copy import deepcopy
 from multiprocessing import Pool
-from typing import Literal
 
 # Third Party
 from numpy import array
@@ -37,14 +35,14 @@ class ProMis:
 
     def solve(
         self,
-        support: CartesianCollection,
+        evaluation_points: CartesianCollection,
         logic: str,
         n_jobs: int | None = None,
         batch_size: int = 10,
-        method: Literal["linear", "nearest"] = "linear",
         show_progress: bool = False,
         print_first: bool = False,
-    ) -> CartesianCollection:
+        interpolation_method: str = "linear",
+    ) -> None:
         """Solve the given ProMis problem.
 
         It searches the provided logic for the used relations and location types and
@@ -58,24 +56,17 @@ class ProMis:
             logic: The constraints of the landscape(X) predicate, including its definition
             n_jobs: How many workers to use in parallel
             batch_size: How many pixels to infer at once
-            method: Interpolation method, either 'linear' or 'nearest'
             show_progress: Whether to show a progress bar
             print_first: Whether to print the first program to stdout
-
-        Returns:
-            The Probabilistic Mission Landscape as well as time to
-            generate the code, time to compile and time for inference in seconds.
+            interpolation_method: The interpolation method used to get from StaR Map known values
+                to evluation points
         """
 
-        # During inference, we set the ProMis support points as StaRMap target
-        target = deepcopy(self.star_map.target)
-        self.star_map.target = support
-
         # Get all relevant relations from the StaRMap
-        relations = self.star_map.get_from_logic(logic)
+        relations = self.star_map.get_all(logic)
 
         # For each point in the target CartesianCollection, we need to run a query
-        number_of_queries = len(support.data)
+        number_of_queries = len(evaluation_points.data)
         queries = [f"query(landscape(x_{index})).\n" for index in range(number_of_queries)]
 
         # We batch up queries into separate programs
@@ -90,8 +81,13 @@ class ProMis:
                 if batch_index >= number_of_queries:
                     break
 
-                for relation in relations:
-                    program += relation.index_to_distributional_clause(batch_index)
+                for relation_type in relations.keys():
+                    for location_type in relations[relation_type].keys():
+                        relation = relations[relation_type][location_type]
+                        relation.parameters = relation.parameters.into(
+                            evaluation_points, interpolation_method, in_place=False
+                        )
+                        program += relation.index_to_distributional_clause(batch_index)
 
                 program += queries[batch_index]
 
@@ -129,19 +125,57 @@ class ProMis:
                     flattened_data.extend(batch)
 
         # Write results to the CartesianCollection where the tata is known
-        inference_results = deepcopy(support)
-        inference_results.data["v0"] = array(flattened_data)
+        evaluation_points.data["v0"] = array(flattened_data)
 
-        # Interpolate the results to the target of the StaRMap
-        target_results = deepcopy(target)
-        target_results.data["v0"] = inference_results.get_interpolator(method)(
-            target_results.coordinates()
+    def adaptive_solve(
+        self,
+        initial_evaluation_points,
+        candidate_sampler,
+        logic,
+        number_of_iterations: int,
+        number_of_improvement_points: int,
+        n_jobs: int | None = None,
+        batch_size: int = 10,
+        scaler: float = 10.0,
+        interpolation_method: str = "linear",
+        acquisition_method: str = "entropy"
+    ):
+        """Automatically add support points at locations where the uncertainty is high.
+
+        Args:
+            number_of_random_maps: How often to sample from map data in order to
+                compute statistics of spatial relations
+            number_of_improvement_points: How many points to add to improve the map
+            relations: The spatial relations to compute
+            location_types: The location types to compute
+            interpolation_method: The interpolation method used to get from StaR Map known values
+                to evluation points
+            acquisition_method: The method to inform the adaptive solving process,
+                one of {entropy, gaussian_process}
+        """
+
+        self.solve(initial_evaluation_points, logic, n_jobs, batch_size)
+
+        def value_function(points):
+            evaluation_points = CartesianCollection(self.star_map.uam.origin)
+            evaluation_points.append_with_default(points, 0.0)
+            self.solve(
+                evaluation_points,
+                logic,
+                n_jobs,
+                batch_size,
+                interpolation_method=interpolation_method
+            )
+            return evaluation_points.data["v0"].to_numpy()[:, None]
+
+        initial_evaluation_points.improve(
+            candidate_sampler=candidate_sampler,
+            value_function=value_function,
+            number_of_iterations=number_of_iterations,
+            number_of_improvement_points=number_of_improvement_points,
+            scaler=scaler,
+            acquisition_method=acquisition_method
         )
-
-        # Restore prior target of StaRMap
-        self.star_map.target = target
-
-        return target_results
 
     @staticmethod
     def _run_inference(solver: Solver) -> list[float]:

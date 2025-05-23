@@ -3,9 +3,9 @@ requires = ["setuptools>=40.8.0", "wheel"]
 build-backend = "setuptools.build_meta:__legacy__"
 
 [tool.ruff]
-select = ["E", "F", "W", "I", "N", "UP"]
+lint.select = ["E", "F", "W", "I", "N", "UP"]
 
-line-length = 100
+line-length = 110
 
 # The lowest supported version
 target-version = "py310"
@@ -13,7 +13,7 @@ target-version = "py310"
 # GitLab CI code quality report
 output-format = "grouped" 
 
-[tool.ruff.pep8-naming]
+[tool.ruff.lint.pep8-naming]
 ignore-names = [
     "i",
     "j",

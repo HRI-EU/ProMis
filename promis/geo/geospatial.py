@@ -123,7 +123,7 @@ class Geospatial(ABC):
                 **kwargs,
             ),
         )
-    
+
     def send_to_gui(self, url: str ="http://localhost:8000/add_geojson", timeout: int = 1):
         """Send an HTTP POST-request to the GUI backend.
 
