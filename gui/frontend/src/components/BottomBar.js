@@ -1,9 +1,9 @@
 import * as React from "react";
 import "./BottomBar.css";
-import hljs from "highlight.js";
 import "highlight.js/styles/atom-one-dark.css";
 import { C } from "../managers/Core";
 import LocationTypeSetting from "./LocationTypeSetting";
+import SourceCodeInterface from "./SourceCodeInterface";
 
 //MUI elements
 import Box from "@mui/material/Box";
@@ -12,15 +12,12 @@ import Button from "@mui/material/Button";
 import LoadingButton from '@mui/lab/LoadingButton';
 import Fab from "@mui/material/Fab";
 import Grid from "@mui/material/Grid2";
-import Chip from "@mui/material/Chip";
 import Alert from "@mui/material/Alert";
 import IconButton from '@mui/material/IconButton';
 import Collapse from "@mui/material/Collapse";
 import { FormControl, InputLabel, MenuItem, ThemeProvider } from "@mui/material";
 import { createTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
-import EditIcon from '@mui/icons-material/Edit';
-import DoneIcon from '@mui/icons-material/Done';
 
 //Icon imports
 import TerminalIcon from "@mui/icons-material/TerminalRounded";
@@ -28,7 +25,6 @@ import TerminalTwoToneIcon from '@mui/icons-material/TerminalTwoTone';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import PlayCircleIcon from "@mui/icons-material/PlayCircleOutline";
-import FileUploadIcon from "@mui/icons-material/FileUploadOutlined";
 import CloseIcon from "@mui/icons-material/CloseRounded";
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
@@ -44,6 +40,41 @@ const darkTheme = createTheme({
     mode: 'dark',
   },
 });
+
+const defaultSourceCode = `% UAV properties
+initial_charge ~ normal(90, 5).
+charge_cost ~ normal(-0.1, 0.2).
+weight ~ normal(0.2, 0.1).
+
+% Weather conditions
+1/10::fog; 9/10::clear.
+
+% Visual line of sight
+0.8::vlos(X) :- 
+    fog, distance(X, operator) < 50;
+    clear, distance(X, operator) < 100;
+    clear, over(X, bay), distance(X, operator) < 400.
+
+% Sufficient charge to return to operator
+can_return(X) :-
+    B is initial_charge, O is charge_cost,
+    D is distance(X, operator), 0 < B + (2 * O * D).
+
+% Permits related to local features
+permits(X) :- 
+    distance(X, service) < 15; 
+    distance(X, primary) < 15;
+    distance(X, secondary) < 10; 
+    distance(X, tertiary) < 5;
+    distance(X, rail) < 5; 
+    distance(X, crossing) < 5; 
+    over(X, park).
+
+% Definition of a valid mission
+landscape(X) :- 
+    vlos(X), weight < 25, can_return(X); 
+    permits(X), can_return(X).
+`;
 
 
 export default class BottomBar extends React.Component {
@@ -66,6 +97,7 @@ export default class BottomBar extends React.Component {
       supportResolutionHeight: 25,
       sampleSize: 25,
       runningState: 0,
+      sourceCode: defaultSourceCode
     };
   }
 
@@ -73,44 +105,6 @@ export default class BottomBar extends React.Component {
   highlightSourceElement = false;
 
   inputSize = 100;
-
-  // Create a reference to the code element
-  codeRef = React.createRef(null);
-
-  // Create a reference to the hidden file input element
-  hiddenFileInput = React.createRef(null);
-
-
-  // to handle the user-selected file
-  handleChange = (event) => {
-    if (event.target.files.length === 0) {
-      return;
-    }
-    const file = event.target.files[0];
-    const fileReader = new FileReader(file);
-    fileReader.onloadend = () => {
-      C().sourceMan.importSource(fileReader.result);
-    };
-    fileReader.readAsText(file);
-  };
-
-  // reset the file input to allow the same file to be uploaded again
-  componentDidMount() {
-    if (this.hiddenFileInput.current) {
-      this.hiddenFileInput.current.setAttribute("onclick", "this.value=null;");
-    }
-  }
-
-  // Highlight the code when the component updates
-  componentDidUpdate() {
-    if (this.codeRef.current === null) {
-      return;
-    }
-    
-    this.codeRef.current.removeAttribute("data-highlighted");
-    hljs.highlightAll(this.codeRef.current);
-    //console.log("highlighted");
-  }
 
   // function to update the UI
   updateUI = () => {
@@ -140,7 +134,7 @@ export default class BottomBar extends React.Component {
   // Toggle the running state of the source code
   toggleRun = async () => {
     // check if source code is available
-    if (!C().sourceMan.hasSource) {
+    if (this.state.sourceCode === "") {
       // toggle source code and hide running params and location type
       this.setState({ sourceCodeToggled: true, runningParamsToggled: false, locationTypeToggled: false });
       this.highlightSourceElement = true;
@@ -169,6 +163,7 @@ export default class BottomBar extends React.Component {
 
     // prepare the run parameters
     let runParam = {
+      sourceCode: this.state.sourceCode,
       dimensionWidth: this.state.dimensionWidth,
       dimensionHeight: this.state.dimensionHeight,
       resolutionWidth: this.state.resolutionWidth,
@@ -197,20 +192,6 @@ export default class BottomBar extends React.Component {
     // only for testing purposes
     //this.setState({ runningState: (this.state.runningState + 1) % 4 });
   };
-
-  // Toggle the file input
-  toggleFile = () => {
-    if (C().sourceMan.hasSource) {
-      C().sourceMan.removeSource();
-      return;
-    }
-    this.hiddenFileInput.current.click();
-  };
-
-  updateEditor = (e) => {
-    // update the source code
-    C().sourceMan.importSource(e.target.value);
-  }
 
   toggleRunningParams = () => {
     // if the location type setting is toggled, close it
@@ -249,33 +230,6 @@ export default class BottomBar extends React.Component {
     }
     // toggle the source code
     this.setState({ sourceCodeToggled: !this.state.sourceCodeToggled });
-  }
-
-
-  editorValue = () => {
-    if (!C().sourceMan.hasSource) {
-      return "No Model";
-    }
-    if (C().sourceMan.source.slice(-2) == "\n ") {
-      return C().sourceMan.source.slice(0, -1);
-    }
-    return C().sourceMan.source;
-  }
-
-  checkTab = (element, event) => {
-    let code = element.value;
-    if(event.key == "Tab") {
-      /* Tab key pressed */
-      event.preventDefault(); // stop normal
-      let before_tab = code.slice(0, element.selectionStart); // text before tab
-      let after_tab = code.slice(element.selectionEnd, element.value.length); // text after tab
-      let cursor_pos = element.selectionStart + 1; // where cursor moves after tab - moving forward by 1 char to after tab
-      element.value = before_tab + "\t" + after_tab; // add tab char
-      // move cursor
-      element.selectionStart = cursor_pos;
-      element.selectionEnd = cursor_pos;
-      C().sourceMan.importSource(element.value); // Update text to include indent
-    }
   }
 
   createSelectItems = () => {
@@ -824,117 +778,12 @@ export default class BottomBar extends React.Component {
         }
 
         {this.state.sourceCodeToggled ?
-        <Grid
-          style={{
-            width: "100%"
-          }}
-        >
-          
-          <Grid
-            container
-            spacing={0}
-            direction="row"
-            alignItems="center"
-            justifyContent="start"
-            m={0}
-            style={{ 
-              marginLeft: "32px" ,
-              marginTop: "10px",
-            }}
-            sx={{ display: "flex" }}
-          >
-            <Chip
-              icon={
-                C().sourceMan.hasSource ? (
-                  <CloseIcon style={{ color: "#ffffff" }} />
-                ) : (
-                  <FileUploadIcon style={{ color: "#ffffff" }} />
-                )
-              }
-              onClick={this.toggleFile}
-              label={C().sourceMan.hasSource ? "Remove source" : "Import source"}
-              variant="outlined"
-              style={{
-                color: "#ffffff",
-                borderColor: "#7e86bd22",
-                minWidth: "150px",
-              }}
-            />
-            <input
-              type="file"
-              accept=".pl"
-              onChange={this.handleChange}
-              ref={this.hiddenFileInput}
-              style={{ display: "none" }} // Make the file input element invisible
-            />
-
-            
-            
-            <Chip
-              icon={
-                C().sourceMan.edit ? (
-                  <DoneIcon style={{ color: "#ffffff" }} />
-                ) : (
-                  <EditIcon style={{ color: "#ffffff" }} />
-                )
-              }
-              onClick={() => C().sourceMan.toggleEdit()}
-              label={C().sourceMan.edit ? "Done" : "Edit"}
-              variant="outlined"
-              style={{
-                color: "#ffffff",
-                borderColor: "#7e86bd22",
-                minWidth: "80px",
-                marginLeft: "8px",
-              }}
-            />
-            
-          </Grid>
-
-          <Grid
-            container
-            spacing={0}
-            direction="column"
-            alignItems="center"
-            justifyContent="start"
-            m={0}
-            sx={{ 
-              display: "flex",
-              marginTop: "12px",
-              paddingLeft: "32px",
-              paddingRight: "32px",
-            }}
-          >
-            {C().sourceMan.edit ? 
-              <textarea id="editing"
-                className={this.highlightSourceElement ? "errorSignal": ""}
-                value={this.editorValue()}
-                onChange={(e) => this.updateEditor(e)}
-                onKeyDown={(e) => this.checkTab(e.target, e)}
-                style={{
-                  height: "200px",
-                  color: "#ffffff",
-                  paddingLeft: "16px",
-                }}
-              >
-              </textarea>
-              :
-              <pre
-                className={this.highlightSourceElement ? "errorSignal": ""}
-                id="highlighting"
-              >
-                <code 
-                  id="codeBlock"
-                  ref={this.codeRef}
-                  className={C().sourceMan.hasSource ? "prolog" : ""}
-                >
-                  {this.editorValue()}
-                </code>
-              </pre>
-            }
-          </Grid>
-        </Grid>
-
+        
+        <SourceCodeInterface 
+          sourceCode={this.state.sourceCode}
+          onEdit={(value) => this.setState({sourceCode: value})}
+          highlightSourceElement={this.highlightSourceElement}
+        />
         : null
         }
 

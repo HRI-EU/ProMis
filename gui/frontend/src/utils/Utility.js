@@ -96,6 +96,24 @@ function revertLayers(layers, markerLayers, leafletOverlays){
   });
 }
 
+function layerToBody(layer){
+  const body = JSON.stringify(layer, function (key, value) {
+    if (value && typeof value === 'object' && key === "") {
+      var replacement = {};
+      for (var k in value) {
+        if (Object.hasOwnProperty.call(value, k)) {
+          const camelToSnakeCase = str => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+          const snake_k = camelToSnakeCase(k);
+          replacement[snake_k] = value[k];
+        }
+      }
+      return replacement;
+    }
+    return value;
+  }, 2);
+  return body;
+}
+
 // function to update the configuration data on the backend
 export async function updateLayerConfig(layer) {
   const url = "http://localhost:8000/update_layer_config_entry";
@@ -110,20 +128,7 @@ export async function updateLayerConfig(layer) {
   // revert layer back to original state
   revertLayer(layer, markerLayer, leafletOverlay);
 
-  const body = JSON.stringify(layerCpy, function (key, value) {
-        if (value && typeof value === 'object' && key === "") {
-          var replacement = {};
-          for (var k in value) {
-            if (Object.hasOwnProperty.call(value, k)) {
-              const camelToSnakeCase = str => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-              const snake_k = camelToSnakeCase(k);
-              replacement[snake_k] = value[k];
-            }
-          }
-          return replacement;
-        }
-        return value;
-      }, 2);
+  const body = layerToBody(layerCpy)
   
   // send the updated configuration data to the backend
   try {
@@ -185,11 +190,19 @@ export async function updateTotalConfig(layers) {
   revertLayers(layers, markerLayers, leafletOverlays);
   // create the configuration data
 
+
+  let body = "[";
+  layersCpy.forEach((layer) => {
+    body += layerToBody(layer);
+    body += ',';
+  })
+  body = body.slice(0, -1)
+  body += ']';
   // send the updated configuration data to the backend
   try {
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify(layersCpy, null, 2),
+      body: body,
       headers: {
         "Content-Type": "application/json",
       },

@@ -1,49 +1,12 @@
 import { C } from "./Core.js";
 import { updateConfigLocationTypes } from "../utils/Utility.js";
 
-const defaultSourceCode = `% UAV properties
-initial_charge ~ normal(90, 5).
-charge_cost ~ normal(-0.1, 0.2).
-weight ~ normal(0.2, 0.1).
-
-% Weather conditions
-1/10::fog; 9/10::clear.
-
-% Visual line of sight
-0.8::vlos(X) :- 
-    fog, distance(X, operator) < 50;
-    clear, distance(X, operator) < 100;
-    clear, over(X, bay), distance(X, operator) < 400.
-
-% Sufficient charge to return to operator
-can_return(X) :-
-    B is initial_charge, O is charge_cost,
-    D is distance(X, operator), 0 < B + (2 * O * D).
-
-% Permits related to local features
-permits(X) :- 
-    distance(X, service) < 15; 
-    distance(X, primary) < 15;
-    distance(X, secondary) < 10; 
-    distance(X, tertiary) < 5;
-    distance(X, rail) < 5; 
-    distance(X, crossing) < 5; 
-    over(X, park).
-
-% Definition of a valid mission
-landscape(X) :- 
-    vlos(X), weight < 25, can_return(X); 
-    permits(X), can_return(X).
-`;
 
 class SourceCodeManager {
   constructor() {
-    this.hasSource = true;
-    this.source = defaultSourceCode;
     this.success = true;
     this.closed = true;
     this.origin = "";
-    this.edit = false;
     this.locationTypes = [];
     this.interpolation = "linear";
   }
@@ -57,6 +20,7 @@ class SourceCodeManager {
 
 
   getRequestBody({
+    sourceCode,
     dimensionWidth
     , dimensionHeight
     , resolutionWidth
@@ -82,7 +46,7 @@ class SourceCodeManager {
 
     const originLatLong = C().mapMan.latlonFromMarkerName(this.origin);
     const body = {
-      source: this.source,
+      source: sourceCode,
       origin: [originLatLong.lat, originLatLong.lng],
       dimensions: [dimensionWidth, dimensionHeight],
       resolutions: [resolutionWidth, resolutionHeight],
@@ -95,6 +59,7 @@ class SourceCodeManager {
   }
 
   async intermediateCalls({
+    sourceCode,
     dimensionWidth
     , dimensionHeight
     , resolutionWidth
@@ -108,10 +73,6 @@ class SourceCodeManager {
       this.closed = true;
     }
 
-    if (!this.hasSource){
-      console.log("No source code!!!");
-      return;
-    }
     // check if origin is set
     if (this.origin === ""){
       console.log("No origin set!!!");
@@ -119,6 +80,7 @@ class SourceCodeManager {
     }
 
     const bodyParams = {
+      sourceCode,
       dimensionWidth
       , dimensionHeight
       , resolutionWidth
@@ -139,7 +101,11 @@ class SourceCodeManager {
         },
       });
       if (!response.ok) {
-        throw new Error("error during endpoint:" + endpoint + "\nreport error: " + response.status);
+        console.log(body)
+        const result = await response.json();
+        throw new Error("error during calling:" + response.url + "\nreport error: " + response.status + "\n"
+            + "result:" + "\n" + JSON.stringify(result)
+        );
       }
       if (endpoint !== "inference") {
         const success = await response.text();
@@ -164,11 +130,6 @@ class SourceCodeManager {
     }
   }
 
-  toggleEdit() {
-    this.edit = !this.edit;
-    C().updateBottomBar();
-  }
-
   closeAlert() {
     this.closed = true;
     C().updateBottomBar();
@@ -184,35 +145,11 @@ class SourceCodeManager {
     C().updateBottomBar();
   }
 
-  /**
-   * Import source code
-   * @param {string} source
-   */
-  importSource(source) {
-    
-    if (source.slice(-1) == "\n") {
-      source += " ";
-    }
-
-    this.hasSource = true;
-    this.source = source;
-    C().updateBottomBar();
-  }
-
-  //Remove the source code
-  removeSource() {
-    this.hasSource = false;
-    this.source = "";
-    C().updateBottomBar();
-  }
-
   updateLocationTypes(locationTypes) {
     this.locationTypes = locationTypes;
     updateConfigLocationTypes(locationTypes);
     // TODOS: update polygons and polylines and marker appropriately
   }
-
-  
 }
 
 export default SourceCodeManager;

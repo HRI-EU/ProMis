@@ -190,7 +190,7 @@ def load_map_data(req: RunRequest):
 
     return hash_val
 
-@app.post("/starmap/{hashVal}")
+@app.post("/starmap/{hash_val}")
 def calculate_star_map(req: RunRequest, hash_val: int):
     origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
@@ -288,7 +288,7 @@ def calculate_star_map(req: RunRequest, hash_val: int):
 
     return star_map_hash_val
 
-@app.post("/inference/{hashVal}")
+@app.post("/inference/{hash_val}")
 def inference(req: RunRequest, hash_val: int):
     # load the cache info
     #try:
