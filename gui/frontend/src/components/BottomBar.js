@@ -291,7 +291,7 @@ export default class BottomBar extends React.Component {
     return items;
   }
   createInterpolationItems = () => {
-    let items = ["linear", "nearest", "gaussian_process"];
+    let items = ["linear", "nearest", "hybrid", "gaussian_process"];
     return items.map((item, index) => {
       return <MenuItem key={index} value={item}>{item}</MenuItem>
     });

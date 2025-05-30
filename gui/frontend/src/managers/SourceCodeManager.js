@@ -10,7 +10,7 @@ weight ~ normal(0.2, 0.1).
 1/10::fog; 9/10::clear.
 
 % Visual line of sight
-vlos(X) :- 
+0.8::vlos(X) :- 
     fog, distance(X, operator) < 50;
     clear, distance(X, operator) < 100;
     clear, over(X, bay), distance(X, operator) < 400.
@@ -22,9 +22,12 @@ can_return(X) :-
 
 % Permits related to local features
 permits(X) :- 
-    distance(X, service) < 15; distance(X, primary) < 15;
-    distance(X, secondary) < 10; distance(X, tertiary) < 5;
-    distance(X, crossing) < 5; distance(X, rail) < 5;
+    distance(X, service) < 15; 
+    distance(X, primary) < 15;
+    distance(X, secondary) < 10; 
+    distance(X, tertiary) < 5;
+    distance(X, rail) < 5; 
+    distance(X, crossing) < 5; 
     over(X, park).
 
 % Definition of a valid mission
