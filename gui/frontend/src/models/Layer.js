@@ -100,13 +100,25 @@ export default class Layer {
     const markersValMinMax = [0, 0];
     const markersLatMinMax = [90, -90]; //Every value will be smaller than 90 and bigger than -90
     const markersLngMinMax = [180, -180];
-    data.forEach((row) => {
+    var latitudeIndex = 0;
+    var longitudeIndex = 1;
+    data.forEach((row, index) => {
+      if (index === 0) {
+        row.forEach((header, index) => {
+          if (header === "latitude") {
+            latitudeIndex = index;
+          } else if (header === "longitude"){
+            longitudeIndex = index;
+          }
+        })
+        return;
+      }
       if (
-        Layer.validLatitude(parseFloat(row[0])) &&
-        Layer.validLongitude(parseFloat(row[1]))
+        Layer.validLatitude(parseFloat(row[latitudeIndex])) &&
+        Layer.validLongitude(parseFloat(row[longitudeIndex]))
       ) {
         markers.push({
-          position: [parseFloat(row[0]), parseFloat(row[1])],
+          position: [parseFloat(row[latitudeIndex]), parseFloat(row[longitudeIndex])],
           probability: parseFloat(row[2]),
           radius: radius
         });
