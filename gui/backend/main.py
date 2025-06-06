@@ -190,7 +190,7 @@ def load_map_data(req: RunRequest):
 
     return hash_val
 
-@app.post("/starmap/{hashVal}")
+@app.post("/starmap/{hash_val}")
 def calculate_star_map(req: RunRequest, hash_val: int):
     origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
@@ -269,18 +269,7 @@ def calculate_star_map(req: RunRequest, hash_val: int):
 
     star_map.initialize(evaluation_points, sample_size, logic)
 
-
-    star_map.adaptive_sample(
-        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin,
-                                                                           width,
-                                                                           height,
-                                                                           number_of_samples=1000,
-                                                                           include_corners=True),
-        number_of_random_maps=5,
-        number_of_iterations=15,
-        number_of_improvement_points=100,
-        acquisition_method = "gaussian_process"
-    )
+    # origin, width, height, num_iteration, num_improvement
 
     #star_map.save(f"./cache/starmap_{star_map_hash_val}.pickle")
 
@@ -288,7 +277,7 @@ def calculate_star_map(req: RunRequest, hash_val: int):
 
     return star_map_hash_val
 
-@app.post("/inference/{hashVal}")
+@app.post("/inference/{hash_val}")
 def inference(req: RunRequest, hash_val: int):
     # load the cache info
     #try:
@@ -304,50 +293,19 @@ def inference(req: RunRequest, hash_val: int):
     origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
     width, height = dimensions
-    interpolation = req.interpolation
+    support_resolution = req.support_resolutions
+    target_resolutions = req.resolutions
+    interpolation = req.interpolation # for into methods
 
-    landscape = CartesianCollection.make_latin_hypercube(origin,
-                                                         width,
-                                                         height,
-                                                         number_of_samples=25,
-                                                         include_corners=True)
+    # raster before
+    landscape = CartesianRasterBand(origin, support_resolution, width, height)
 
 
     # Solve mission constraints using StaRMap parameters and multiprocessing
     promis = ProMis(star_map)
     promis.solve(landscape, logic=program, n_jobs=4, batch_size=1)
 
-    promis.adaptive_solve(
-        landscape,
-        logic=program,
-        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin,
-                                                                            width,
-                                                                            height,
-                                                                            number_of_samples=1000,
-                                                                            include_corners=True),
-        n_jobs=4,
-        batch_size=1,
-        number_of_improvement_points=100,
-        number_of_iterations=5,
-        interpolation_method=interpolation,
-        acquisition_method="gaussian_process"
-    )
-
-    promis.adaptive_solve(
-        landscape,
-        logic=program,
-        candidate_sampler=lambda: CartesianCollection.make_latin_hypercube(origin,
-                                                                            width,
-                                                                            height,
-                                                                            number_of_samples=1000,
-                                                                            include_corners=True),
-        n_jobs=4,
-        batch_size=25,
-        number_of_improvement_points=100,
-        number_of_iterations=5,
-        interpolation_method=interpolation,
-        acquisition_method="gaussian_process"
-    )
+    landscape = landscape.into(CartesianRasterBand(origin, target_resolutions, width, height), interpolation)
 
     polar_pml = landscape.to_polar()
     return  [[row["latitude"], row["longitude"], row["v0"]] for _, row in polar_pml.data.iterrows()]
