@@ -144,6 +144,12 @@
 
         <span class="c1"># Get all relevant relations from the StaRMap</span>
         <span class="n">relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">star_map</span><span class="o">.</span><span class="n">get_all</span><span class="p">(</span><span class="n">logic</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">relation_type</span> <span class="ow">in</span> <span class="n">relations</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">relation</span> <span class="o">=</span> <span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span>
+                <span class="n">relation</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">into</span><span class="p">(</span>
+                    <span class="n">evaluation_points</span><span class="p">,</span> <span class="n">interpolation_method</span><span class="p">,</span> <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
 
         <span class="c1"># For each point in the target CartesianCollection, we need to run a query</span>
         <span class="n">number_of_queries</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">evaluation_points</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -164,9 +170,6 @@
                 <span class="k">for</span> <span class="n">relation_type</span> <span class="ow">in</span> <span class="n">relations</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                     <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                         <span class="n">relation</span> <span class="o">=</span> <span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span>
-                        <span class="n">relation</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">into</span><span class="p">(</span>
-                            <span class="n">evaluation_points</span><span class="p">,</span> <span class="n">interpolation_method</span><span class="p">,</span> <span class="n">in_place</span><span class="o">=</span><span class="kc">False</span>
-                        <span class="p">)</span>
                         <span class="n">program</span> <span class="o">+=</span> <span class="n">relation</span><span class="o">.</span><span class="n">index_to_distributional_clause</span><span class="p">(</span><span class="n">batch_index</span><span class="p">)</span>
 
                 <span class="n">program</span> <span class="o">+=</span> <span class="n">queries</span><span class="p">[</span><span class="n">batch_index</span><span class="p">]</span>

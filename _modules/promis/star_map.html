@@ -348,10 +348,6 @@
 
         <span class="c1"># If the map had no relevant features, fill with default values</span>
         <span class="k">if</span> <span class="n">r_trees</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;no features for relation &quot;</span><span class="si">{</span><span class="n">relation</span><span class="si">}</span><span class="s1">&quot; for location type &quot;</span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
-            <span class="p">)</span>
-
             <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">relation_class</span><span class="o">.</span><span class="n">empty_map_parameters</span><span class="p">()]</span> <span class="o">*</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
         <span class="k">try</span><span class="p">:</span>
