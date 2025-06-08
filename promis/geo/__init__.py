@@ -18,8 +18,8 @@ from promis.geo.helpers import Direction
 from promis.geo.location import CartesianLocation, Location, PolarLocation
 from promis.geo.map import CartesianMap, Map, PolarMap
 from promis.geo.polygon import CartesianPolygon, PolarPolygon
-from promis.geo.raster_band import CartesianRasterBand, PolarRasterBand, RasterBand
 from promis.geo.polyline import CartesianPolyLine, PolarPolyLine, PolyLine
+from promis.geo.raster_band import CartesianRasterBand, PolarRasterBand, RasterBand
 
 # Type aliases
 CartesianGeometry: TypeAlias = CartesianLocation | CartesianMap | CartesianPolygon | CartesianPolyLine

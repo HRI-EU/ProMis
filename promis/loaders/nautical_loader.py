@@ -26,7 +26,7 @@ from functools import partial
 from hashlib import sha1
 from multiprocessing import Pool
 from pathlib import Path
-from warnings import catch_warnings, simplefilter, warn
+from warnings import catch_warnings, simplefilter
 
 # Third Party
 from numpy import array

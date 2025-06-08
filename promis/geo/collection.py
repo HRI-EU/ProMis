@@ -303,7 +303,7 @@ class Collection(ABC):
                 entropy = self.get_entropy(value_index=value_index)
 
                 distances_norm = (distances - distances.min()) / (distances.max() - distances.min())
-                entropies_norm = (entropy - entropy.min()) / (entropy.max() - entropy.min())
+                entropies_norm = (entropy - entropy.min()) / (entropy.max() - entropy.min() + 1e-12)
 
                 score = distances_norm * (1 + scaler * entropies_norm[indices.flatten()])
             elif acquisition_method == "gaussian_process":
