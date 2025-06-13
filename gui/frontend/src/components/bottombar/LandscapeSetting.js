@@ -133,7 +133,7 @@ export default function LandscapeSetting({origin,
                                                     resolutions, supportResolutions)
                 }
                 onChange={(e) => {
-                    const newValue = parseInt(e.target.value);
+                    const newValue = e.target.value;
                     const newDimensions = [newValue, dimensions[1]];
                     landscapeSetting.dimensions = newDimensions;
                     onEdit(landscapeSetting);
@@ -164,7 +164,7 @@ export default function LandscapeSetting({origin,
                                                     resolutions, supportResolutions)
                 }
                 onChange={(e) => {
-                    const newValue = parseInt(e.target.value);
+                    const newValue = e.target.value;
                     const newDimensions = [dimensions[0], newValue];
                     landscapeSetting.dimensions = newDimensions;
                     onEdit(landscapeSetting);
@@ -201,7 +201,7 @@ export default function LandscapeSetting({origin,
                 <TextField type="number" size="small" variant="outlined" label="Sampled Maps"
                 value={sampleSize}
                 onChange={(e) => {
-                    landscapeSetting.sampleSize = parseInt(e.target.value);
+                    landscapeSetting.sampleSize = e.target.value;
                     onEdit(landscapeSetting);
                 }}
                 sx={{
@@ -235,7 +235,7 @@ export default function LandscapeSetting({origin,
                                                     resolutions, supportResolutions)
                 }
                 onChange={(e) => {
-                    const newValue = parseInt(e.target.value);
+                    const newValue = e.target.value;
                     const newResolutions = [newValue, resolutions[1]];
                     landscapeSetting.resolutions = newResolutions;
                     onEdit(landscapeSetting);
@@ -262,7 +262,7 @@ export default function LandscapeSetting({origin,
                                                     resolutions, supportResolutions)
                 }
                 onChange={(e) => {
-                    const newValue = parseInt(e.target.value);
+                    const newValue = e.target.value;
                     const newResolutions = [resolutions[0], newValue];
                     landscapeSetting.resolutions = newResolutions;
                     onEdit(landscapeSetting);
@@ -293,7 +293,7 @@ export default function LandscapeSetting({origin,
                                                     resolutions, supportResolutions)
                 }
                 onChange={(e) => {
-                    const newValue = parseInt(e.target.value);
+                    const newValue = e.target.value;
                     const newSupportResolutions = [newValue, supportResolutions[1]];
                     landscapeSetting.supportResolutions = newSupportResolutions;
                     onEdit(landscapeSetting);
@@ -320,7 +320,7 @@ export default function LandscapeSetting({origin,
                                                     resolutions, supportResolutions)
                 }
                 onChange={(e) => {
-                    const newValue = parseInt(e.target.value);
+                    const newValue = e.target.value;
                     const newSupportResolutions = [supportResolutions[0], newValue];
                     landscapeSetting.supportResolutions = newSupportResolutions;
                     onEdit(landscapeSetting);
@@ -369,10 +369,10 @@ export default function LandscapeSetting({origin,
 
 LandscapeSetting.propTypes = {
     origin: PropTypes.string.isRequired,
-    dimensions: PropTypes.arrayOf(PropTypes.number).isRequired,
-    resolutions: PropTypes.arrayOf(PropTypes.number).isRequired,
-    supportResolutions: PropTypes.arrayOf(PropTypes.number).isRequired,
-    sampleSize: PropTypes.number.isRequired,
+    dimensions: PropTypes.arrayOf(PropTypes.string).isRequired,
+    resolutions: PropTypes.arrayOf(PropTypes.string).isRequired,
+    supportResolutions: PropTypes.arrayOf(PropTypes.string).isRequired,
+    sampleSize: PropTypes.string.isRequired,
     interpolation: PropTypes.string.isRequired,
     highlightOriginElement: PropTypes.bool,
     onEdit: PropTypes.func.isRequired

@@ -16,7 +16,7 @@ import { getConfig, checkExternalUpdate } from "../utils/Utility.js";
 //UI
 import SidebarRight from "./SidebarRight.js";
 import SidebarLeft from "./SidebarLeft.js";
-import BottomBar from "./BottomBar.js";
+import BottomBar from "./bottombar/BottomBar.js";
 import DynamicLayerInteractive from "./DynamicLayerInteractive.js";
 
 //import WeatherInfoBox from "./WeatherInfoBox.js";

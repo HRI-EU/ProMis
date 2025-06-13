@@ -1010,6 +1010,7 @@ class MapManager {
      if (origin === "") {
       return;
     }
+
     // remove the old bounding box layer
     this.unhighlightBoundaryAlter();
 
@@ -1019,6 +1020,19 @@ class MapManager {
     const resolutionHeight = resolutions[1];
     const supportResolutionWidth = supportResolutions[0];
     const supportResolutionHeight = supportResolutions[1];
+
+    // do nothing if any of the dimensions or resolutions is not a number or less than or equal to zero
+    if (
+      isNaN(dimensionWidth) || dimensionWidth <= 0 ||
+      isNaN(dimensionHeight) || dimensionHeight <= 0 ||
+      isNaN(resolutionWidth) || resolutionWidth <= 0 ||
+      isNaN(resolutionHeight) || resolutionHeight <= 0 ||
+      isNaN(supportResolutionWidth) || supportResolutionWidth <= 0 ||
+      isNaN(supportResolutionHeight) || supportResolutionHeight <= 0
+    ) {
+      return;
+    }
+
     // calculate the bounding box
     const originLatlng = C().mapMan.latlonFromMarkerName(origin);
     const bbox = this._getBBox(originLatlng, dimensionWidth, dimensionHeight);
