@@ -1001,70 +1001,10 @@ class MapManager {
     return L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
   }
 
-  _createGrid(originLatlng, width, height, resolutionWidth, resolutionHeight,
-              color = "#0000ff", borderWeight = 1, fillOpacity = 0.2) {
-    // calculate the coordinates of the bounding box
-    const bbox = this._getBBox(originLatlng, width, height);
-    // calculate the width and height of each grid cell
-    const cellWidth = (bbox.getEast() - bbox.getWest()) / resolutionWidth;
-    const cellHeight = (bbox.getNorth() - bbox.getSouth()) / resolutionHeight;
-    // create the grid
-    for (let i = 0; i < resolutionWidth; i++) {
-      for (let j = 0; j < resolutionHeight; j++) {
-        const cell = L.rectangle(
-          [
-            [bbox.getSouth() + j * cellHeight, bbox.getWest() + i * cellWidth],
-            [bbox.getSouth() + (j + 1) * cellHeight, bbox.getWest() + (i + 1) * cellWidth],
-          ],
-          { color: color, weight: borderWeight, fillOpacity: fillOpacity },
-        );
-        this.bBoxFeatureGroup.addLayer(cell);
-      }
-    }
-  }
-
-  // highlight the boundary of the selected area
-  highlightBoundary(origin,
-                    dimensionWidth, 
-                    dimensionHeight, 
-                    resolutionWidth, 
-                    resolutionHeight,
-                    supportResolutionWidth,
-                    supportResolutionHeight,
-                  ) {
-    // do nothing if origin is not selected or any of the dimension or resolution is not set
-    if (origin === "") {
-      return;
-    }
-    console.log("highlightBoundary");
-
-    // remove the old bounding box layer
-    this.unhighlightBoundary();
-    // create feature group to store the bounding box layer
-    this.bBoxFeatureGroup = L.featureGroup().addTo(this.map);
-    // calculate the bounding box
-    const originLatlng = C().mapMan.latlonFromMarkerName(origin);
-    const bbox = this._getBBox(originLatlng, dimensionWidth, dimensionHeight);
-    // create the bounding box layer
-    const bBoxLayer = L.rectangle(bbox, { color: "white", weight: 1 });
-    this.bBoxFeatureGroup.addLayer(bBoxLayer);
-
-    // create the grid
-    
-    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight, "#d9a766", 1);
-    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, supportResolutionWidth, supportResolutionHeight, "#31e30e", 2, 0);
-    // zoom to the bounding box
-    //this.map.fitBounds(bbox);
-  }
-
-
   highlightBoundaryAlter(origin,
-    dimensionWidth, 
-    dimensionHeight, 
-    resolutionWidth, 
-    resolutionHeight,
-    supportResolutionWidth,
-    supportResolutionHeight,
+    dimensions, 
+    resolutions, 
+    supportResolutions
   ) {
      // do nothing if origin is not selected or any of the dimension or resolution is not set
      if (origin === "") {
@@ -1073,6 +1013,12 @@ class MapManager {
     // remove the old bounding box layer
     this.unhighlightBoundaryAlter();
 
+    const dimensionWidth = dimensions[0];
+    const dimensionHeight = dimensions[1];
+    const resolutionWidth = resolutions[0];
+    const resolutionHeight = resolutions[1];
+    const supportResolutionWidth = supportResolutions[0];
+    const supportResolutionHeight = supportResolutions[1];
     // calculate the bounding box
     const originLatlng = C().mapMan.latlonFromMarkerName(origin);
     const bbox = this._getBBox(originLatlng, dimensionWidth, dimensionHeight);
@@ -1110,14 +1056,6 @@ class MapManager {
     this.svgOverlay = L.svgOverlay(svgElement, bbox).addTo(this.map);
 
     this.svgElement = svgElement;
-  }
-
-  // remove the bounding box feature group if it exists
-  unhighlightBoundary() {
-    if (this.bBoxFeatureGroup) {
-      console.log("unhighlightBoundary");
-      this.map.removeLayer(this.bBoxFeatureGroup);
-    }
   }
 
   unhighlightBoundaryAlter() {

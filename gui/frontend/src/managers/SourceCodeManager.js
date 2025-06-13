@@ -20,14 +20,13 @@ class SourceCodeManager {
 
 
   getRequestBody({
+    origin,
     sourceCode,
-    dimensionWidth
-    , dimensionHeight
-    , resolutionWidth
-    , resolutionHeight
-    , supportResolutionWidth
-    , supportResolutionHeight
-    , sampleSize
+    dimensions,
+    resolutions,
+    supportResolutions,
+    sampleSize,
+    interpolation
   }) {
     // sort the location types by location type
     const sortedTypes = [...this.locationTypes].sort((a, b) => (a.locationType > b.locationType) ? 1 : -1);
@@ -44,50 +43,42 @@ class SourceCodeManager {
       locationTypes[locationType.locationType] = locationType.filter;
     }
 
-    const originLatLong = C().mapMan.latlonFromMarkerName(this.origin);
+    const originLatLong = C().mapMan.latlonFromMarkerName(origin);
     const body = {
       source: sourceCode,
       origin: [originLatLong.lat, originLatLong.lng],
-      dimensions: [dimensionWidth, dimensionHeight],
-      resolutions: [resolutionWidth, resolutionHeight],
+      dimensions: dimensions,
+      resolutions: resolutions,
       location_types: locationTypes,
-      support_resolutions: [supportResolutionWidth, supportResolutionHeight],
+      support_resolutions: supportResolutions,
       sample_size: sampleSize,
-      interpolation: this.interpolation
+      interpolation: interpolation
     };
     return body;
   }
 
   async intermediateCalls({
+    origin,
     sourceCode,
-    dimensionWidth
-    , dimensionHeight
-    , resolutionWidth
-    , resolutionHeight
-    , supportResolutionWidth
-    , supportResolutionHeight
-    , sampleSize
+    dimensions,
+    resolutions,
+    supportResolutions,
+    sampleSize,
+    interpolation
   }, endpoint, hashValue=-1) {
     // close alert if open
     if (!this.closed){
       this.closed = true;
     }
 
-    // check if origin is set
-    if (this.origin === ""){
-      console.log("No origin set!!!");
-      return;
-    }
-
     const bodyParams = {
+      origin,
       sourceCode,
-      dimensionWidth
-      , dimensionHeight
-      , resolutionWidth
-      , resolutionHeight
-      , supportResolutionWidth
-      , supportResolutionHeight
-      , sampleSize
+      dimensions,
+      resolutions,
+      supportResolutions,
+      sampleSize,
+      interpolation
     };
     const body = this.getRequestBody(bodyParams);
     //Run the source code

@@ -1,9 +1,9 @@
 import * as React from 'react';
 
-import { C } from '../managers/Core';
+import { C } from '../../managers/Core';
 
-import { randomId } from '../utils/Utility.js';
-import Color from '../models/Color.js';
+import { randomId } from '../../utils/Utility.js';
+import Color from '../../models/Color.js';
 
 
 import Box from '@mui/material/Box';

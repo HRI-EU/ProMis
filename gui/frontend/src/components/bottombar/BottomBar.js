@@ -1,9 +1,10 @@
 import * as React from "react";
 import "./BottomBar.css";
 import "highlight.js/styles/atom-one-dark.css";
-import { C } from "../managers/Core";
+import { C } from "../../managers/Core";
 import LocationTypeSetting from "./LocationTypeSetting";
 import SourceCodeInterface from "./SourceCodeInterface";
+import LandscapeSetting from "./LandscapeSetting";
 
 //MUI elements
 import Box from "@mui/material/Box";
@@ -15,9 +16,9 @@ import Grid from "@mui/material/Grid2";
 import Alert from "@mui/material/Alert";
 import IconButton from '@mui/material/IconButton';
 import Collapse from "@mui/material/Collapse";
-import { FormControl, InputLabel, MenuItem, ThemeProvider } from "@mui/material";
+import { ThemeProvider } from "@mui/material";
 import { createTheme } from "@mui/material/styles";
-import TextField from "@mui/material/TextField";
+
 
 //Icon imports
 import TerminalIcon from "@mui/icons-material/TerminalRounded";
@@ -33,7 +34,7 @@ import PolylineIcon from '@mui/icons-material/Polyline';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import CalendarViewMonthIcon from '@mui/icons-material/CalendarViewMonth';
 import CalendarViewMonthTwoToneIcon from '@mui/icons-material/CalendarViewMonthTwoTone';
-import { Select } from "@mui/material";
+
 
 const darkTheme = createTheme({
   palette: {
@@ -86,16 +87,17 @@ export default class BottomBar extends React.Component {
       bottom: false,
       right: false,
       update: 0,
-      dimensionWidth: 1024,
-      dimensionHeight: 1024,
-      resolutionWidth: 100,
-      resolutionHeight: 100,
+      landscapeSetting: {
+        origin: "",
+        dimensions: [1024, 1024],
+        resolutions: [100, 100],
+        supportResolutions: [25, 25],
+        sampleSize: 25,
+        interpolation: "linear"
+      },
       runningParamsToggled: false,
       locationTypeToggled: false,
       sourceCodeToggled: true,
-      supportResolutionWidth: 25,
-      supportResolutionHeight: 25,
-      sampleSize: 25,
       runningState: 0,
       sourceCode: defaultSourceCode
     };
@@ -109,6 +111,17 @@ export default class BottomBar extends React.Component {
   // function to update the UI
   updateUI = () => {
     this.setState({ update: this.state.update + 1 });
+    // check origin
+    const markers = C().mapMan.listOriginMarkers();
+    const markersName = markers.map((marker) => marker.feature.properties["name"]);
+    if (markersName.indexOf(this.state.landscapeSetting.origin) === -1) {
+      this.setState({
+        landscapeSetting: {
+          ...this.state.landscapeSetting,
+          origin: ""
+        }
+      })
+    }
     //console.log("updateUI()! " + this.state.update);
   };
 
@@ -146,7 +159,7 @@ export default class BottomBar extends React.Component {
       return;
     }
     // check if origin is set
-    if (C().sourceMan.origin === "") {
+    if (this.state.landscapeSetting.origin === "") {
       this.highlightOriginElement = true;
       // toggle running params to show origin
       this.setState({ runningParamsToggled: true, locationTypeToggled: false, sourceCodeToggled: false });
@@ -163,14 +176,13 @@ export default class BottomBar extends React.Component {
 
     // prepare the run parameters
     let runParam = {
+      origin: this.state.landscapeSetting.origin,
       sourceCode: this.state.sourceCode,
-      dimensionWidth: this.state.dimensionWidth,
-      dimensionHeight: this.state.dimensionHeight,
-      resolutionWidth: this.state.resolutionWidth,
-      resolutionHeight: this.state.resolutionHeight,
-      supportResolutionWidth: this.state.supportResolutionWidth,
-      supportResolutionHeight: this.state.supportResolutionHeight,
-      sampleSize: this.state.sampleSize,
+      dimensions: this.state.landscapeSetting.dimensions,
+      resolutions: this.state.landscapeSetting.resolutions,
+      supportResolutions: this.state.landscapeSetting.supportResolutions,
+      sampleSize: this.state.landscapeSetting.sampleSize,
+      interpolation: this.state.landscapeSetting.interpolation
     };
     
     // call the backend to run the source code
@@ -232,24 +244,7 @@ export default class BottomBar extends React.Component {
     this.setState({ sourceCodeToggled: !this.state.sourceCodeToggled });
   }
 
-  createSelectItems = () => {
-    let items = [];
-    const markers = C().mapMan.listOriginMarkers();
-    for (let i = 0; i < markers.length; i++) {
-      items.push(
-        <MenuItem key={i + 1} value={markers[i].feature.properties["name"]}>
-          {markers[i].feature.properties["name"]}
-        </MenuItem>
-      );
-    }
-    return items;
-  }
-  createInterpolationItems = () => {
-    let items = ["linear", "nearest", "hybrid", "gaussian_process"];
-    return items.map((item, index) => {
-      return <MenuItem key={index} value={item}>{item}</MenuItem>
-    });
-  };
+  
 
   getRunningIcons = (state) => {
     if (state > 3 || state < 0) {
@@ -271,297 +266,19 @@ export default class BottomBar extends React.Component {
     return labels[state];
   }
 
-  handleOriginChange = (event) => {
-    C().sourceMan.updateOrigin(event.target.value);
-    // get marker with this origin name
-    const latLon = C().mapMan.latlonFromMarkerName(event.target.value);
-    // recenter map
-    C().mapMan.recenterMap(latLon);
-  }
-
-  handleInterpolationChange = (event) => {
-    C().sourceMan.updateInterpolation(event.target.value);
+  landscapeEdit = (landscapeSetting) => {
+    this.setState({landscapeSetting: {
+      ...landscapeSetting
+    }});
   }
 
   runningParams = () => (
     <ThemeProvider theme={darkTheme}>
-    <Grid
-      container
-      spacing={2}
-      direction="column"
-      alignItems="start"
-      justifyContent="center"
-      m={1}
-      style={{ marginLeft: "38px", width: "90%" }}
-    >
-      <Grid
-        container
-        item
-        size={12}
-        direction="row"
-        justifyContent="start"
-        alignItems="center"
-        spacing={2}
-      >
-        
-        <Grid
-          container
-          item
-          size={4}
-        >
-          <FormControl sx={{minWidth: 125}} size="small" error={this.highlightOriginElement}>
-            <InputLabel
-              style={{ color: "#ffffff" }}
-            >Origin</InputLabel>
-            <Select
-              label="Origin"
-              variant="outlined"
-              value={C().sourceMan.origin}
-              onChange={this.handleOriginChange}
-            >
-              {this.createSelectItems()}
-            </Select>
-          </FormControl>
-        </Grid>
-        
-        <Grid
-          container
-          item
-          direction="row"
-          justifyContent="start"
-          alignItems="center"
-          spacing={0}
-          size={4}
-        >
-          <Grid
-            item
-          >
-          <TextField type="number" size="small" label="Width" variant="outlined" 
-            value={this.state.dimensionWidth}
-            onFocus={() => {
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight,
-                                          this.state.resolutionWidth, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onChange={(e) => {
-              this.setState({ dimensionWidth: e.target.value })
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, e.target.value, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: this.inputSize
-            }}
-          />
-          </Grid>
-          <div
-            style={{
-              marginLeft: "2px",
-              color: "#ffffff",
-            }}
-          >x</div>
-          <Grid
-            item
-          >
-          <TextField type="number" size="small" label="Height" variant="outlined"
-            value={this.state.dimensionHeight}
-            onFocus={() => {
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onChange={(e) => {
-              this.setState({ dimensionHeight: e.target.value })
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, e.target.value
-                                          , this.state.resolutionWidth, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: this.inputSize
-            }}
-          />
-          </Grid>
-          
-          <Grid
-            item
-          >
-            <div
-              style={{
-                color: "#ffffff",
-              }}
-            >m</div>
-          </Grid>
-          
-        </Grid>
-        
-        
-        <Grid
-          item
-          size={4}
-          container
-        >
-          <TextField type="number" size="small" variant="outlined" label="Sampled Maps"
-            value={this.state.sampleSize}
-            onChange={(e) => this.setState({ sampleSize: e.target.value })}
-            sx={{
-              width: 125
-            }}
-          />
-        </Grid>
-        
-      </Grid>
-      <Grid
-        container
-        item
-        size={12}
-        direction="row"
-        justifyContent="start"
-        justifyItems="start"
-        alignItems="center"
-        spacing={2}
-      >
-        
-        <Grid
-          item
-          alignItems={"center"}
-          size={4}
-          sx={{ display: "flex" }}
-        >
-          <TextField type="number" size="small" variant="outlined" label="Inference"
-            value={this.state.resolutionWidth}
-            onFocus={() => {
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onChange={(e) => {
-              this.setState({ resolutionWidth: e.target.value })
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , e.target.value, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: this.inputSize
-            }}
-          />
-          <div
-            style={{
-              marginLeft: "2px",
-              color: "#ffffff",
-            }}
-          >x</div>
-          <TextField type="number" size="small" variant="outlined" label="Grid"
-            value={this.state.resolutionHeight}
-            onFocus={() => {
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onChange={(e) => {
-              this.setState({ resolutionHeight: e.target.value })
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, e.target.value,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: this.inputSize
-            }}
-          />
-          
-        </Grid>
-        
-        
-        <Grid
-          item
-          alignItems="center"
-          size={4}
-          sx={{ display: "flex" }}
-        >
-          <TextField type="number" size="small" variant="outlined" label="Interpolation"
-            value={this.state.supportResolutionWidth}
-            onFocus={() => {
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight,
-                                          this.state.resolutionWidth, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onChange={(e) => {
-              this.setState({ supportResolutionWidth: e.target.value })
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight,
-                                          e.target.value, this.state.supportResolutionHeight);
-            }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: this.inputSize
-            }}
-          />
-          <div
-            style={{
-              marginLeft: "2px",
-              color: "#ffffff",
-            }}
-          >x</div>
-          <TextField type="number" size="small" variant="outlined" label="Grid"
-            value={this.state.supportResolutionHeight}
-            onFocus={() => {
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight,
-                                          this.state.resolutionWidth, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, this.state.supportResolutionHeight);
-            }}
-            onChange={(e) => {
-              this.setState({ supportResolutionHeight: e.target.value })
-              C().mapMan.highlightBoundaryAlter(C().sourceMan.origin, this.state.dimensionWidth, this.state.dimensionHeight
-                                          , this.state.resolutionWidth, this.state.resolutionHeight,
-                                          this.state.supportResolutionWidth, e.target.value);
-            }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: this.inputSize
-            }}
-          />
-          
-        </Grid>
-    
-        
-        
-        <Grid
-          item
-          size={4}
-          container
-        >
-          <FormControl sx={{minWidth: 125}} size="small">
-            <InputLabel
-              style={{ color: "rgba(255, 255, 255, 0.7)" }}
-            >Interpolation</InputLabel>
-            <Select
-              label="Interpolation"
-              variant="outlined"
-              value={C().sourceMan.interpolation}
-              onChange={this.handleInterpolationChange}
-            >
-              {this.createInterpolationItems()}
-            </Select>
-          </FormControl>
-        </Grid>
-        
-      </Grid>
-    </Grid>
+      <LandscapeSetting 
+        {...this.state.landscapeSetting}
+        highlightOriginElement={this.highlightOriginElement}
+        onEdit={this.landscapeEdit}
+      />
     </ThemeProvider>
   )
 
@@ -582,7 +299,7 @@ export default class BottomBar extends React.Component {
         scrollbarWidth: "none",
         msOverflowStyle: "none",
       }}
-    >
+    > 
       <Grid
         container
         spacing={0}
@@ -595,7 +312,7 @@ export default class BottomBar extends React.Component {
         <Grid
           size={12}
         >
-          <Button
+          <Button // collapse button
             aria-label="add"
             onClick={this.toggleDrawer("bottom", false)}
             style={{
@@ -611,7 +328,7 @@ export default class BottomBar extends React.Component {
           </Button>
         </Grid>
 
-        <Grid
+        <Grid // contains menu buttons for source, landscape settings, location type and run interface
           container
           spacing={0}
           direction="row"
@@ -636,12 +353,12 @@ export default class BottomBar extends React.Component {
             <Grid
               size={1}
             >
-              <IconButton
+              <IconButton // source editor expand button
                 onClick={() => {
                   this.toggleSourceCode();
                 }}
                 style={{ color: "#eeeeee", fontSize: 12}}
-                aria-label="Open location type menu"
+                aria-label="Open source editor menu"
               >
                 {this.state.sourceCodeToggled ? (
                   <TerminalTwoToneIcon />
@@ -654,12 +371,12 @@ export default class BottomBar extends React.Component {
             <Grid
               size={1}
             >
-              <IconButton
+              <IconButton // landscape setting expand button
                 onClick={() => {
                   this.toggleRunningParams();
                 }}
                 style={{ color: "#eeeeee", fontSize: 12}}
-                aria-label="Open running param menu"
+                aria-label="Open landscape setting menu"
               >
                 {this.state.runningParamsToggled ? (
                   <CalendarViewMonthTwoToneIcon  />
@@ -670,7 +387,7 @@ export default class BottomBar extends React.Component {
             </Grid>
 
             <Grid size={1}> 
-              <IconButton
+              <IconButton // location type menu expand button
                 onClick={() => {
                   this.toggleLocationType();
                 }}
@@ -687,7 +404,7 @@ export default class BottomBar extends React.Component {
           </Grid>
           
           
-          <Grid
+          <Grid // contains run button
             container
             spacing={0}
             direction="row"
@@ -751,9 +468,13 @@ export default class BottomBar extends React.Component {
           </Grid>
         </Grid>
         
-        {this.state.runningParamsToggled ? this.runningParams() : null}
+        {
+          // logic to display landscape settings
+          this.state.runningParamsToggled ? this.runningParams() : null
+        }
         
         {
+          // logic to display location type settings
           this.state.locationTypeToggled ?
             <Grid
               container
@@ -777,14 +498,16 @@ export default class BottomBar extends React.Component {
             </Grid> : null
         }
 
-        {this.state.sourceCodeToggled ?
+        {
+          // logic to display source editor menu
+          this.state.sourceCodeToggled ?
         
-        <SourceCodeInterface 
-          sourceCode={this.state.sourceCode}
-          onEdit={(value) => this.setState({sourceCode: value})}
-          highlightSourceElement={this.highlightSourceElement}
-        />
-        : null
+          <SourceCodeInterface 
+            sourceCode={this.state.sourceCode}
+            onEdit={(value) => this.setState({sourceCode: value})}
+            highlightSourceElement={this.highlightSourceElement}
+          />
+          : null
         }
 
         
