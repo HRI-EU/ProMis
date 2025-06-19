@@ -80003,12 +80003,14 @@
       "radius": 5.0
     }
   ],
+  "width": 1024,
+  "height": 1024,
   "visible": true,
   "settings_menu_expanded": false,
   "color_menu_expanded": false,
   "hue": 180,
-  "opacity": 0.6,
-  "render_mode": "VORONOI",
+  "opacity": 60,
+  "renderMode": "VORONOI",
   "radius": 5.0,
   "value_range": [
     0.1,

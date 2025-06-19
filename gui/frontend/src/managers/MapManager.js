@@ -15,6 +15,8 @@ export class RenderMode {
   static HeatmapRect = "HEATMAP_RECT";
   static HeatmapCircle = "HEATMAP_CIRCLE";
   static Voronoi = "VORONOI";
+  static SVGImage = "SVG_IMAGE";
+  static PNGImage = "PNG_IMAGE";
 }
 
 class MapManager {
@@ -448,6 +450,13 @@ class MapManager {
           console.log("renderLayers currentLayer...");
           const layerGroup = new L.LayerGroup().addTo(this.map);
           let voronoiPolygonDict = null;
+          let svgInner = "";
+          if (currentLayer.renderMode === RenderMode.PNGImage) {
+            var pngCanvas = document.createElement("canvas");
+            pngCanvas.width = currentLayer.width;
+            pngCanvas.height = currentLayer.height;
+            var pngCtx = pngCanvas.getContext("2d");
+          }
           if (currentLayer.renderMode === RenderMode.Voronoi) {
             voronoiPolygonDict = this.renderLayerToVoronoi(
               currentLayer,
@@ -461,7 +470,7 @@ class MapManager {
               ...currentLayer.markers.map((marker) => marker.probability),
             );
 
-          const markers = currentLayer.markers.map((marker) => {
+          const markers = currentLayer.markers.map((marker, markerIndex) => {
             const positive = marker.probability >= 0;
             let sat = Math.abs(Math.round(marker.probability * satFactor));
             var hsl = ColorHelper.calcHslFromParams(
@@ -470,12 +479,12 @@ class MapManager {
               positive,
             );
 
-            /*var hsla = ColorHelper.calcHslaFromParams(
+            var hsla = ColorHelper.calcHslaFromParams(
               currentLayer.hue,
               sat,
-              currentLayer.opacity,
+              currentLayer.opacity * 0.01,
               positive,
-            );*/
+            );
 
             if (
               marker.probability >= currentLayer.valueRange[0] - 0.000000001 &&
@@ -488,7 +497,7 @@ class MapManager {
                   var rectOptions = {
                     fillColor: hsl,
                     weight: 1,
-                    fillOpacity: currentLayer.opacity,
+                    fillOpacity: currentLayer.opacity * 0.01,
                     stroke: false,
                     pathOptions: {
                       color: hsl,
@@ -510,7 +519,7 @@ class MapManager {
                   var circleOptions = {
                     fillColor: hsl,
                     radius: currentLayer.radius,
-                    fillOpacity: currentLayer.opacity,
+                    fillOpacity: currentLayer.opacity * 0.01,
                     stroke: false,
                     pathOptions: {
                       color: hsl,
@@ -534,7 +543,7 @@ class MapManager {
                     // Creating polygonOptions
                     var polygonOptions = {
                       fillColor: hsl,
-                      fillOpacity: currentLayer.opacity,
+                      fillOpacity: currentLayer.opacity * 0.01,
                       weight: 1.5,
                       stroke: false,
                       //color: hsla, //Outline color
@@ -546,39 +555,107 @@ class MapManager {
                     console.error("Voronoi polygon not found for key: ", key);
                     return null; // or handle the missing polygon in some way
                   }
+                  break;
+                  case RenderMode.SVGImage:
+                    svgInner += `<rect x="${markerIndex % currentLayer.width}" y="${currentLayer.height - 1 - Math.floor(markerIndex / currentLayer.width)}" width="1" height="1" fill="${hsla}" />`;
+                    break;
+                  case RenderMode.PNGImage:
+                    //TODO: implement PNG image rendering
+                    pngCtx.fillStyle = hsla;
+                    pngCtx.fillRect(
+                      markerIndex % currentLayer.width,
+                      currentLayer.height - 1 - Math.floor(markerIndex / currentLayer.width),
+                      1,
+                      1,
+                    );
               }
-              layerGroup.addLayer(createdMarker);
-              this.addPopup(
-                createdMarker,
-                marker.probability,
-                marker.position[0],
-                marker.position[1],
-              );
-              // Add feature properties to marker
-              var feature = (createdMarker.feature =
-                createdMarker.feature || {});
-              feature.type = "Feature";
-              feature.properties = feature.properties || {};
-              feature.properties["value"] = marker.probability;
-              feature.properties["layer"] = currentLayer.name;
-              // calculate hex from hsl
-              const hex = ColorHelper.hslToHex(
-                currentLayer.hue,
-                Math.round(marker.probability * satFactor),
-                50,
-              );
-              feature.properties["fill"] = hex;
-              feature.properties["fill-opacity"] = currentLayer.opacity;
-              // add radius property if render mode is circle
-              if (currentLayer.renderMode === RenderMode.HeatmapCircle) {
-                feature.properties["radius"] = currentLayer.radius;
-              }
+              if (currentLayer.renderMode !== RenderMode.SVGImage && currentLayer.renderMode !== RenderMode.PNGImage) {
+                layerGroup.addLayer(createdMarker);
+                this.addPopup(
+                  createdMarker,
+                  marker.probability,
+                  marker.position[0],
+                  marker.position[1],
+                );
+                // Add feature properties to marker
+                var feature = (createdMarker.feature =
+                  createdMarker.feature || {});
+                feature.type = "Feature";
+                feature.properties = feature.properties || {};
+                feature.properties["value"] = marker.probability;
+                feature.properties["layer"] = currentLayer.name;
+                // calculate hex from hsl
+                const hex = ColorHelper.hslToHex(
+                  currentLayer.hue,
+                  Math.round(marker.probability * satFactor),
+                  50,
+                );
+                feature.properties["fill"] = hex;
+                feature.properties["fill-opacity"] = currentLayer.opacity * 0.01;
+                // add radius property if render mode is circle
+                if (currentLayer.renderMode === RenderMode.HeatmapCircle) {
+                  feature.properties["radius"] = currentLayer.radius;
+                }
 
-              return createdMarker;
+                return createdMarker;
+              }
             }
           });
-          currentLayer.leafletOverlays = markers;
-          currentLayer.markerLayer = layerGroup;
+          
+          if (currentLayer.renderMode === RenderMode.SVGImage) {
+            // create a new SVG overlay
+            let svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svgElement.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+            svgElement.setAttribute("viewBox", `0 0 ${currentLayer.width} ${currentLayer.height}`);
+            svgElement.setAttribute("width", currentLayer.width);
+            svgElement.setAttribute("height", currentLayer.height);
+            svgElement.innerHTML = svgInner;
+            const dlon = (currentLayer.markers[1].position[1] - currentLayer.markers[0].position[1]) / 2.0;
+            const dlat = (currentLayer.markers[currentLayer.width].position[0] - currentLayer.markers[0].position[0]) / 2.0;
+            const southWest = L.latLng(
+              currentLayer.markers[0].position[0] - dlat,
+              currentLayer.markers[0].position[1] - dlon,
+            );
+            const markerLength = currentLayer.markers.length;
+            const northEast = L.latLng(
+              currentLayer.markers[markerLength - 1].position[0] + dlat,
+              currentLayer.markers[markerLength - 1].position[1] + dlon,
+            );
+            const bbox = L.latLngBounds(
+              southWest,
+              northEast,
+            );
+            let svgO = L.svgOverlay(svgElement, bbox, { interactive: false }).addTo(this.map);
+            currentLayer.markerLayer = svgO;
+          }
+          else if (currentLayer.renderMode === RenderMode.PNGImage) {
+            // create a new image overlay
+            const imageUrl = pngCanvas.toDataURL("image/png");
+            const dlon = (currentLayer.markers[1].position[1] - currentLayer.markers[0].position[1]) / 2.0;
+            const dlat = (currentLayer.markers[currentLayer.width].position[0] - currentLayer.markers[0].position[0]) / 2.0;
+            const southWest = L.latLng(
+              currentLayer.markers[0].position[0] - dlat,
+              currentLayer.markers[0].position[1] - dlon,
+            );
+            const markerLength = currentLayer.markers.length;
+            const northEast = L.latLng(
+              currentLayer.markers[markerLength - 1].position[0] + dlat,
+              currentLayer.markers[markerLength - 1].position[1] + dlon,
+            );
+            const bbox = L.latLngBounds(
+              southWest,
+              northEast,
+            );
+            const imageOverlay = L.imageOverlay(imageUrl, bbox, {
+              interactive: false,
+            }).addTo(this.map);
+            currentLayer.leafletOverlays = pngCanvas;
+            currentLayer.markerLayer = imageOverlay;
+          }
+          else {
+            currentLayer.leafletOverlays = markers;
+            currentLayer.markerLayer = layerGroup;
+          }
         }
       });
   }
@@ -657,13 +734,20 @@ class MapManager {
    * @param {*} layer
    */
   updateLayerColor(layer) {
+    // just refresh the layer if it is not a heatmap from leaflet native (render from image)
+    if (layer.renderMode === RenderMode.PNGImage || layer.renderMode === RenderMode.SVGImage) {
+      this.refreshMap();
+      return;
+    }
+
+
     // calculate the satFactor based on the probability range
     let satFactor = 100 / layer.markersValMinMax[1];
     layer.markers.forEach((marker, index) => {
       // ignore markers outside the value range
       if (
-        marker.probability < layer.valueRange[0] ||
-        marker.probability > layer.valueRange[1]
+        marker.probability < layer.valueRange[0] - 0.000000001 ||
+        marker.probability > layer.valueRange[1] + 0.000000001
       ) {
         return;
       }
@@ -678,6 +762,7 @@ class MapManager {
       layer.leafletOverlays[index].setStyle({
         fillColor: hsl,
         color: hsl,
+        fillOpacity: layer.opacity * 0.01,
       });
     });
   }
@@ -991,6 +1076,7 @@ class MapManager {
   }
 
   _getBBox(originLatlng, width, height) {
+    console.log("originLatlng: ", originLatlng);
     const origin = turf.point([originLatlng.lng, originLatlng.lat]);
     // calculate coordinates of the rectangle bounding box based on the origin and the width and height of box
     const north = turf.destination(origin, height / 2000, 0, { units: "kilometers" });

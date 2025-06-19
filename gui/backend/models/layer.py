@@ -10,11 +10,13 @@ class Layer(BaseModel):
     id: int
     name: str
     markers: list[Point]
+    width: int
+    height: int
     visible: bool
     settings_menu_expanded: bool
     color_menu_expanded: bool
     hue: int
-    opacity: float
+    opacity: int
     render_mode: str = "HEATMAP_RECT"
     radius: float
     value_range: tuple[float, float]
