@@ -89,10 +89,10 @@ export default class BottomBar extends React.Component {
       update: 0,
       landscapeSetting: {
         origin: "",
-        dimensions: [1024, 1024],
-        resolutions: [100, 100],
-        supportResolutions: [25, 25],
-        sampleSize: 25,
+        dimensions: ["1024", "1024"],
+        resolutions: ["100", "100"],
+        supportResolutions: ["25", "25"],
+        sampleSize: "25",
         interpolation: "linear"
       },
       runningParamsToggled: false,
