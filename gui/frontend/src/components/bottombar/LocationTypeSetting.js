@@ -120,6 +120,7 @@ export default function LocationTypeSetting({ initialRows }) {
     const chosenRow = rows.find((row) => row.id === id);
     const locationType = chosenRow.locationType;
     const color = chosenRow.color;
+    const uncertainty = chosenRow.uncertainty;
     let type = "all";
     if (locationType === "ORIGIN") {
       type = "marker";
@@ -128,7 +129,7 @@ export default function LocationTypeSetting({ initialRows }) {
       type = "vertiport";
     }
     // call the map manager to set the location type and color
-    C().mapMan.setLocationTypeOnClick(locationType, color, type);
+    C().mapMan.setLocationTypeOnClick(locationType, color, uncertainty, type);
   }
 
   const handleUnchooseClick = () => () => {

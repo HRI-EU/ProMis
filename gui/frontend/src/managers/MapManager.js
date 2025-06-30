@@ -1,4 +1,5 @@
 import L from "leaflet";
+import { DomEvent } from "leaflet";
 import "leaflet.heat";
 import * as turf from "@turf/turf";
 
@@ -35,6 +36,8 @@ class MapManager {
     this.bBoxFeatureGroup = null;
     this.svgElement = null;
     this.svgOverlay = null;
+    this.circleHighlight = null;
+    this.dblclickedEntity = null;
   }
 
   getDynamicLayer(layer) {
@@ -57,6 +60,7 @@ class MapManager {
       shape: layer.feature.properties["shape"],
       location_type: layer.feature.properties["locationType"],
       color: layer.feature.properties["color"],
+      std_dev: layer.feature.properties["uncertainty"]
     }
   }
 
@@ -81,6 +85,7 @@ class MapManager {
       latlngs: layer.getLatLngs().map((latlng) => [latlng.lat, latlng.lng]),
       location_type: layer.feature.properties["locationType"],
       color: layer.feature.properties["color"],
+      std_dev: layer.feature.properties["uncertainty"]
     }
   }
 
@@ -108,6 +113,7 @@ class MapManager {
       holes: holes,
       location_type: layer.feature.properties["locationType"],
       color: layer.feature.properties["color"],
+      std_dev: layer.feature.properties["uncertainty"]
     }
   }
 
@@ -351,6 +357,8 @@ class MapManager {
       console.log("marker edited now");
     });
 
+    layer.on("dblclick", MapManager._ondblClickLayer);
+
     // update bottombar
     C().updateBottomBar();
 
@@ -368,6 +376,7 @@ class MapManager {
       updateDynamicLayerEntry(C().mapMan.getPolyline(layer));
     });
     layer.setStyle({ color: color });
+    layer.on("dblclick", MapManager._ondblClickLayer);
     // update the configuration data on the backend
     updateDynamicLayerEntry(C().mapMan.getPolyline(layer));
   }
@@ -381,11 +390,12 @@ class MapManager {
       updateDynamicLayerEntry(C().mapMan.getPolygon(layer));
     });
     layer.setStyle({ color: color });
+    layer.on("dblclick", MapManager._ondblClickLayer);
     // update the configuration data on the backend
     updateDynamicLayerEntry(C().mapMan.getPolygon(layer));
   }
 
-  static _initLayerProperties(layer, name, shape, locationType = "UNKNOWN", color = "black", id = null) {
+  static _initLayerProperties(layer, name, shape, locationType = "UNKNOWN", color = "black", id = null, uncertainty = null) {
     layer.feature = layer.feature || {};
     layer.feature.type = "Feature";
     layer.feature.properties = layer.feature.properties || {};
@@ -397,7 +407,63 @@ class MapManager {
     layer.feature.properties["shape"] = shape;
     layer.feature.properties["name"] = name;
     layer.feature.properties["locationType"] = locationType;
+    
+    if (uncertainty !== null) {
+      layer.feature.properties["uncertainty"] = uncertainty;
+    } else {
+      const newUncertainty = C().sourceMan.getUncertaintyFromLocationType(locationType);
+      layer.feature.properties["uncertainty"] = newUncertainty;
+    }
+    
     layer.feature.properties["color"] = color;
+  }
+
+  static _ondblClickLayer(event) {
+    /*
+      synthesize data from layer.
+      data structure:
+      {
+        type: "defaultMarker", "droneMarker", "landingSiteMarker", "Line", "Polygon",
+        id: "unique_id", // unique identifier for the entity
+        name: "name", // name of the marker
+        coordinates: [latitude, longitude], // for markers
+        coordinates: [[lat1, lon1], [lat2, lon2]], // for polylines/polygons
+        locationType: "type_name", // for markers, polylines, polygons
+        uncertainty: 0.0, // for markers, polylines, polygons
+        // other properties can be added as needed
+      }
+    */
+    DomEvent.stopPropagation(event);
+    const layer = event.sourceTarget;
+    C().mapMan.dblclickedEntity = layer;
+    const properties = layer.feature.properties;
+    const icon = properties["shape"];
+    const id = properties["id"];
+    let name = properties["name"];
+    if (icon === "Line" || icon === "Polygon") {
+      name = icon;
+    }
+    let coordinates = [];
+    if (icon === "defaultMarker" || icon === "droneMarker" || icon === "landingSiteMarker") {
+      coordinates = [layer.getLatLng().lat, layer.getLatLng().lng];
+    } else if (icon === "Line") {
+      coordinates = layer.getLatLngs().map((latlng) => [latlng.lat, latlng.lng]);
+    } else if (icon === "Polygon") {
+      coordinates = layer.getLatLngs()[0].map((latlng) => [latlng.lat, latlng.lng]);
+    }
+    
+    const locationType = properties["locationType"];
+    const uncertainty = properties["uncertainty"];
+    const data = {
+      icon,
+      id,
+      name,
+      coordinates,
+      locationType,
+      uncertainty
+    };
+    // call the onClickFunction with the data
+    C().updateMapComponent(data);
   }
 
   /**
@@ -838,13 +904,15 @@ class MapManager {
       const markerColor = marker.color;
       const markerLocationType = marker.location_type;
       const markerLayer = new L.marker(markerPosition, { icon: MapManager.icons[markerShape](markerColor) });
+      const markerUncertainty = marker.std_dev;
       markerLayer.on("pm:edit", function() {
         // update the configuration data on the backend
         updateDynamicLayerEntry(C().mapMan.getMarker(markerLayer));
         console.log("marker edited");
       });
-      MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor, markerId);
+      MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor, markerId, markerUncertainty);
       this.dynamicFeatureGroup.addLayer(markerLayer);
+      markerLayer.on("dblclick", MapManager._ondblClickLayer);
 
       // update number of markers to avoid name conflicts
       // ignore if marker name is not in the format "Marker x" with x is a number
@@ -902,13 +970,15 @@ class MapManager {
         // update the configuration data on the backend
         updateDynamicLayerEntry(C().mapMan.getPolyline(polylineLayer));
       });
-      MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id);
+      MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id, polyline.std_dev);
       // add color style to the line
       if (polyline.color) {
         polylineLayer.setStyle({
           color: polyline.color,
         });
       }
+
+      polylineLayer.on("dblclick", MapManager._ondblClickLayer);
 
       this.dynamicFeatureGroup.addLayer(polylineLayer);
     });
@@ -932,7 +1002,7 @@ class MapManager {
         // update the configuration data on the backend
         updateDynamicLayerEntry(C().mapMan.getPolygon(polygonLayer));
       });
-      MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color, polygon.id);
+      MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color, polygon.id, polygon.std_dev);
       // add color style to the polygon
       if (polygon.color) {
         polygonLayer.setStyle({
@@ -941,6 +1011,8 @@ class MapManager {
         });
       }
 
+      polygonLayer.on("dblclick", MapManager._ondblClickLayer);
+
       this.dynamicFeatureGroup.addLayer(polygonLayer);
     });
     //console.log("polygon added!!")
@@ -948,7 +1020,7 @@ class MapManager {
 
   // initialize the location type click event listeners
   // type: all, marker, polyline, polygon, vertiport
-  setLocationTypeOnClick(locationType, color, type="all") {
+  setLocationTypeOnClick(locationType, color, uncertainty, type="all") {
     if (!this.dynamicFeatureGroup) {
       return;
     }
@@ -963,6 +1035,7 @@ class MapManager {
         // update the properties of the layer
         layer.feature.properties["locationType"] = locationType;
         layer.feature.properties["color"] = color;
+        layer.feature.properties["uncertainty"] = uncertainty;
 
         // update the color of the layer for line and polygon
         if (layer.feature.properties["shape"] === "Line" || layer.feature.properties["shape"] === "Polygon") {
@@ -1026,7 +1099,6 @@ class MapManager {
           let markerShape = layer.feature.properties["shape"];
           layer.setIcon(MapManager.icons[markerShape](color));
         }
-
 
         layer.feature.properties["color"] = color;
       }
@@ -1175,6 +1247,28 @@ class MapManager {
       this.dynamicFeatureGroup.bringToFront();
     } else {
       this.dynamicFeatureGroup.bringToBack();
+    }
+  }
+
+  setMapCircleHighlight(coordinate) {
+    this.removeCircleHighlight();
+    if (this.map !== null)
+      this.circleHighlight = L.circleMarker(coordinate, {radius: 2, color:"red"}).addTo(this.map);
+  }
+
+  removeCircleHighlight(){
+    if (this.circleHighlight !== null) {
+      this.map.removeLayer(this.circleHighlight);
+    }
+  }
+
+  uncertaintyChange(uncertainty){
+    if (this.dblclickedEntity !== null){
+      const oldUncertainty = this.dblclickedEntity.feature.properties.uncertainty;
+      if (oldUncertainty !== uncertainty){
+        this.dblclickedEntity.feature.properties.uncertainty = uncertainty;
+        updateDynamicLayerEntry(this.getDynamicLayer(this.dblclickedEntity));
+      }
     }
   }
 

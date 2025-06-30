@@ -283,7 +283,9 @@ export async function updateConfigLocationTypes(locationTypes){
   // iterate over locationTypes and change locationType field to location_type
   locationTypesCpy.forEach((locationType) => {
     locationType.location_type = locationType.locationType;
+    locationType.std_dev = location.uncertainty;
     delete locationType.locationType;
+    delete locationType.uncertainty;
   });
   try {
     const response = await fetch(url, {

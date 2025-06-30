@@ -6,4 +6,5 @@ class Polygon(BaseModel):
     latlngs: list[tuple[float, float]]
     holes: list[list[tuple[float, float]]] = [[]]
     location_type: str = ""
-    color: str = "#000000"
+    color: str = "#000000",
+    std_dev: float = 0

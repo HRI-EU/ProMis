@@ -99,7 +99,8 @@ def _get_dynamic_layer() -> DynamicLayer:
                         shape="defaultMarker",
                         name="Default origin",
                         location_type="ORIGIN",
-                        color="gray")
+                        color="gray",
+                        std_dev=0)
         dynamic_layer.markers.append(default_origin)
         with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
             f.write(dynamic_layer.model_dump_json(indent=2))
@@ -222,11 +223,31 @@ def calculate_star_map(req: RunRequest, hash_val: int):
     #except FileNotFoundError:
     # create polar map
 
+    # apply uncertainty to all osm fetched map feature
+    loc_type_table = _get_location_type_table()
+    loc_to_uncertainty = dict()
+    for entry in loc_type_table:
+        if entry.std_dev != 0:
+            loc_to_uncertainty[entry.location_type] = (entry.std_dev**2) * eye(2)
+    
+    carte_map = polar_map.to_cartesian()
+    carte_map.apply_covariance(loc_to_uncertainty)
+
+    polar_map = carte_map.to_polar()
+
     # create all markers, lines and polygons to uam
     for marker in markers:
         if marker.location_type == "":
             continue
-        polar_marker = PolarLocation(marker.latlng[1], marker.latlng[0], location_type=marker.location_type)
+
+        polar_marker = PolarLocation(marker.latlng[1], 
+                                        marker.latlng[0], 
+                                        location_type=marker.location_type)
+        if marker.std_dev != 0:
+            cartesian_marker = polar_marker.to_cartesian(origin)
+            cartesian_marker.covariance = (marker.std_dev**2) * eye(2)
+            polar_marker = cartesian_marker.to_polar(origin)
+            
         polar_map.features.append(polar_marker)
 
     for polyline in polylines:
@@ -235,7 +256,14 @@ def calculate_star_map(req: RunRequest, hash_val: int):
         locations = []
         for location in polyline.latlngs:
             locations.append(PolarLocation(location[1], location[0]))
+        
         polyline_feature = PolarPolyLine(locations, location_type=polyline.location_type)
+
+        if polyline.std_dev != 0:
+            cartesian_polyline = polyline_feature.to_cartesian(origin)
+            cartesian_polyline.covariance = (polyline.std_dev**2) * eye(2)
+            polyline_feature = cartesian_polyline.to_polar(origin)
+            
         polar_map.features.append(polyline_feature)
 
     for polygon in polygons:
@@ -246,19 +274,17 @@ def calculate_star_map(req: RunRequest, hash_val: int):
             locations.append(PolarLocation(location[1], location[0]))
 
         polygon_feature = PolarPolygon(locations, location_type=polygon.location_type)
+
+        if polygon.std_dev != 0:
+            cartesian_polygon = polygon_feature.to_cartesian(origin)
+            cartesian_polygon.covariance = (polygon.std_dev**2) * eye(2)
+            polygon_feature = cartesian_polygon.to_polar(origin)
+            
         polar_map.features.append(polygon_feature)
+    
 
     uam = polar_map.to_cartesian()
-
-    # apply covariance
-    loc_type_table = _get_location_type_table()
-    loc_to_uncertainty = dict()
-    for entry in loc_type_table:
-        if entry.uncertainty != 0:
-            loc_to_uncertainty[entry.location_type] = entry.uncertainty * eye(2)
-
-    uam.apply_covariance(loc_to_uncertainty)
-
+    
     # Setting up the probabilistic spatial relations from the UAM
     star_map = StaRMap(uam)
 

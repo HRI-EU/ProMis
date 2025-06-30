@@ -11,9 +11,22 @@ class SourceCodeManager {
     this.interpolation = "linear";
   }
 
+  getUncertaintyFromLocationType(locationType) {
+    console.log(this.locationTypes);
+    const matchedRow =  this.locationTypes.find((row) => {
+      return row.locationType === locationType
+    });
+    if (matchedRow !== undefined) {
+      return matchedRow.uncertainty;
+    }
+    else {
+      return 0;
+    }
+  }
+
   getDefaultLocationTypesRows() {
+    const defaultLocationType = ["UNKNOWN", "ORIGIN", "VERTIPORT"];
     return this.locationTypes.filter((row) => {
-      const defaultLocationType = ["UNKNOWN", "ORIGIN", "VERTIPORT"];
       return defaultLocationType.includes(row.locationType);
     })
   }

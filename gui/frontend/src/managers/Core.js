@@ -33,6 +33,11 @@ class Core {
     return new Core();
   }
 
+  addMapComponentCallback(callback) {
+    //Set the callback for the map component
+    this.mapComponentCallback = callback;
+  }
+
   //Set the reference to the updateCallback of SidebarRight
   addRefSidebarRight(updateCallback) {
     this.refSidebarRight = updateCallback;
@@ -70,6 +75,13 @@ class Core {
   updateBottomBar() {
     if (this.refBottomBar != null) {
       this.refBottomBar();
+    }
+  }
+
+  //Call to trigger the map component update
+  updateMapComponent(entity) {
+    if (this.mapComponentCallback != null) {
+      this.mapComponentCallback(entity);
     }
   }
 }

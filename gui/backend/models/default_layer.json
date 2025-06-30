@@ -80003,8 +80003,8 @@
       "radius": 5.0
     }
   ],
-  "width": 1024,
-  "height": 1024,
+  "width": 100,
+  "height": 100,
   "visible": true,
   "settings_menu_expanded": false,
   "color_menu_expanded": false,

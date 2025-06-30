@@ -7,4 +7,5 @@ class Marker(BaseModel):
     shape: str
     name: str
     location_type: str = ""
-    color: str = "#000000"
+    color: str = "#000000",
+    std_dev: float = 0

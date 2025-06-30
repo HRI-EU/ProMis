@@ -11,7 +11,8 @@ import { Container } from "react-bootstrap";
 
 import { C } from "../managers/Core.js";
 import "./MapComponent.css";
-import { getConfig, checkExternalUpdate } from "../utils/Utility.js";
+import { getConfig } from "../utils/Utility.js";
+import { checkExternalUpdate } from "../utils/Utility.js";
 
 //UI
 import SidebarRight from "./SidebarRight.js";
@@ -25,6 +26,32 @@ function MapComponent() {
   var map = null;
 
   const defaultCenter = [49.877, 8.653];
+
+
+  /*
+    represent a dynamic layer entity info
+    data structure:
+    {
+      type: "defaultMarker", "droneMarker", "landingSiteMarker", "Line", "Polygon",
+      id: "unique_id", // unique identifier for the entity
+      name: "name", // name of the marker
+      coordinates: [latitude, longitude], // for markers
+      coordinates: [[lat1, lon1], [lat2, lon2]], // for polylines/polygons
+      locationType: "type_name", // for markers, polylines, polygons
+      uncertainty: 0.0, // for markers, polylines, polygons
+      // other properties can be added as needed
+    }
+  */
+  const [infoBoxState, setInfoBoxState] = React.useState({
+    id: "0",
+    icon: "defaultMarker",
+    name: "Marker 0",
+    coordinates: [0, 0],
+    locationType: "UNKNOWN",
+    uncertainty: 10,
+    toggle: false,
+    hidden: true
+  });
 
   let didInit = false;
 
@@ -48,6 +75,8 @@ function MapComponent() {
     }).addTo(map);
 
     MapHook();
+
+    C().addMapComponentCallback(changeState);
 
     // add interval to check for external updates
     setInterval(externalUpdate, 5000);
@@ -79,6 +108,17 @@ function MapComponent() {
       const cloneLocationTable = structuredClone(C().sourceMan.locationTypes)
       cloneLocationTable.push(...location_type_table);
       C().sourceMan.locationTypes = cloneLocationTable;
+    });
+  }
+
+  function changeState(entity) {
+    // This function is called by the MapManager to trigger a state change
+    // Ensure toggle is toggled and hidden is set to false
+    setInfoBoxState((prevEntity) => {
+      return {...entity, 
+        toggle: !prevEntity.toggle,
+        hidden: false
+      }
     });
   }
 
@@ -115,14 +155,6 @@ function MapComponent() {
 
         C().layerMan.importAllLayers(layer_config);
       }
-      if (dynamic_layer !== null) {
-        const markers = dynamic_layer.markers;
-        const polylines = dynamic_layer.polylines;
-        const polygons = dynamic_layer.polygons;
-        C().mapMan.importMarkers(markers);
-        C().mapMan.importPolylines(polylines);
-        C().mapMan.importPolygons(polygons);
-      }
       if (location_type_table !== null) {
         if (location_type_table === undefined || location_type_table.length === 0) {
           return null;
@@ -130,10 +162,20 @@ function MapComponent() {
         // iterate over locationTypes and change location_type field to locationType
         location_type_table.forEach((locationType) => {
           locationType.locationType = locationType.location_type;
+          locationType.uncertainty = locationType.std_dev;
           delete locationType.location_type;
+          delete locationType.std_dev;
         });
 
         C().sourceMan.locationTypes = location_type_table;
+      }
+      if (dynamic_layer !== null) {
+        const markers = dynamic_layer.markers;
+        const polylines = dynamic_layer.polylines;
+        const polygons = dynamic_layer.polygons;
+        C().mapMan.importMarkers(markers);
+        C().mapMan.importPolylines(polylines);
+        C().mapMan.importPolygons(polygons);
       }
     });
     
@@ -159,7 +201,9 @@ function MapComponent() {
       <SidebarRight />
       {/* <WeatherInfoBox /> */}
       
-      <DynamicLayerInteractive />
+      <DynamicLayerInteractive 
+        {...infoBoxState}
+      />
 
     </Container>
   );
