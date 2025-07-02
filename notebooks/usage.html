@@ -182,7 +182,7 @@
 </section>
 <section id="Statistical-Relational-Maps">
 <h2>Statistical Relational Maps<a class="headerlink" href="#Statistical-Relational-Maps" title="Link to this heading"></a></h2>
-<p>Equipped with out UAM from the last steps, it is time to prepare a StaR Map of the environment. Before fitting the actual StaR Map parameters, we should now start considering our actual mission requirements and state some rules that will govern our agent’s actions. If we don’t make these consideration now, we could still compute a StaR Map, but this way we can automize the choice of which spatial relations ought to be computed.</p>
+<p>Equipped with the UAM from the last steps, it is time to prepare a StaR Map of the environment. Before fitting the actual StaR Map parameters, we should now start considering our actual mission requirements and state some rules that will govern our agent’s actions. If we don’t make these consideration now, we could still compute a StaR Map, but this way we can automize the choice of which spatial relations ought to be computed.</p>
 <p>Here, we will define our knowledge in Hybrid ProbLog where rules are written as clauses parameterized either by a probability density function (e.g., as in the <code class="docutils literal notranslate"><span class="pre">initial_charge</span></code> clause) or a probability (e.g., as in the <code class="docutils literal notranslate"><span class="pre">vlos</span></code> clause). One reads a comma <code class="docutils literal notranslate"><span class="pre">,</span></code> as a conjunction (AND), and a semicolon as a disjunction (OR). We refer to an agent’s state (here, its east/north location in a Cartesian coordinate system) with the variable <code class="docutils literal notranslate"><span class="pre">X</span></code>.</p>
 <p>For example, our toy example assumes visual line of sight (VLOS) is likely given (P = 0.8) if we have foggy weather and the distance to the operator is less than 50 meters, or if the weather is clear and the distance is within 100 meters.</p>
 <div class="nbinput nblast docutils container">
@@ -253,7 +253,7 @@
 </pre></div>
 </div>
 </div>
-<p>Let’s inspect the parameters of the some StaR Map relations by visualizing the estimated values. We do so by accessing the parameters (a <code class="docutils literal notranslate"><span class="pre">promis.geo.Collection</span></code> holding mean and variances for each sampled point), and interpolating to a more finge-granular grid over the mission area.</p>
+<p>Let’s inspect the parameters of the StaR Map relations by visualizing the estimated values. We do so by accessing the parameters (a <code class="docutils literal notranslate"><span class="pre">promis.geo.Collection</span></code> holding mean and variances for each sampled point), and interpolating to a more fine-granular grid over the mission area.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -312,7 +312,7 @@
 <img alt="../_images/notebooks_usage_16_0.png" src="../_images/notebooks_usage_16_0.png" />
 </div>
 </div>
-<p>While this already allows us some reasoning with ProMis on what the agent may or may not be allowed to do, we should improve our relations spatial resoltion before continuing. We can do so by applying StaR Maps adaptive sampling functionality, which will sample each relation based on an acquisition function. Currently, local entropy and Gaussian Process uncertainty together with a distance based score are provided.</p>
+<p>While this already allows us some reasoning with ProMis on what the agent may or may not be allowed to do, we should improve the spatial resolution of our relations before continuing. We can do so by applying StaR Maps adaptive sampling functionality, which will sample each relation based on an acquisition function. Currently, local entropy and Gaussian Process uncertainty together with a distance based score are provided.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
