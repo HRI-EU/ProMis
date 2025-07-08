@@ -21,7 +21,7 @@ from promis.geo import (
 def create_donut_pml():
     logic = """
             near_spot(X) :- distance(X, spot) > 1, distance(X, spot) < 5.
-            landscape(X) :-  near_spot(X).
+            landscape(X) :- near_spot(X).
             """
     origin = PolarLocation(latitude=0, longitude=0)
     uam_polar = PolarMap(origin=origin)
