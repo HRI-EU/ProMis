@@ -34,7 +34,7 @@ def create_donut_pml():
     uam.features.append(CartesianLocation(-4.0, 6.0, location_type="spot"))
 
     evaluation_points = CartesianRasterBand(
-        origin, (evaluation_resolution[0], evaluation_resolution[1]), area_size[0], area_size[1]
+        origin, evaluation_resolution, area_size[0], area_size[1]
     )
 
     uam.apply_covariance(covariance)
