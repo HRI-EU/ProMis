@@ -23,7 +23,6 @@ from promis.models import Gaussian
 
 
 class ExtendedRts(ExtendedKalman):
-
     """The Extended RTS smoother for non-linear state estimation.
 
     The Extended RTS smoother is a single target state estimator for non-linear

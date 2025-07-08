@@ -17,7 +17,6 @@ from problog.tasks.dcproblog.solver import InferenceSolver
 
 
 class Solver:
-
     """A solver for HPLP based ProMis.
 
     Args:

@@ -141,7 +141,7 @@ class ProMis:
         batch_size: int = 10,
         scaler: float = 10.0,
         interpolation_method: str = "linear",
-        acquisition_method: str = "entropy"
+        acquisition_method: str = "entropy",
     ):
         """Automatically add support points at locations where the uncertainty is high.
 

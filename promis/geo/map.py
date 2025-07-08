@@ -205,7 +205,7 @@ class PolarMap(Map):
 
         return CartesianMap(self.origin, cartesian_features)
 
-    def send_to_gui(self, url: str ="http://localhost:8000/add_geojson_map", timeout: int = 10):
+    def send_to_gui(self, url: str = "http://localhost:8000/add_geojson_map", timeout: int = 10):
         """Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.
 
         Args:
@@ -221,11 +221,12 @@ class PolarMap(Map):
         data = "["
         for feature in self.features:
             data += feature.to_geo_json()
-            data += ','
+            data += ","
         data = data[:-1]
-        data += ']'
+        data += "]"
         r = post(url=url, data=data, timeout=timeout)
         r.raise_for_status()
+
 
 class CartesianMap(Map):
     """A map containing geospatial objects based on local coordinates with a global reference point.

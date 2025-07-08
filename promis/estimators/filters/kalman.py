@@ -23,7 +23,6 @@ from promis.models import Gaussian
 
 
 class Kalman:
-
     """The Kalman filter for linear state estimation.
 
     The Kalman filter is a single target tracker for linear state space models, i.e. models that

@@ -28,7 +28,7 @@ class OsmLoader(SpatialLoader):
         origin: PolarLocation,
         dimensions: tuple[float, float],
         feature_description: dict | None,
-        timeout: float = 5.0
+        timeout: float = 5.0,
     ):
         # Initialize Overpass API
         self.overpass_api = Overpass()

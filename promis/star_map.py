@@ -184,7 +184,7 @@ class StaRMap:
         what: dict[str, Iterable[str | None]] | None = None,
         scaler: float = 10.0,
         value_index: int = 0,
-        acquisition_method: str = "entropy"
+        acquisition_method: str = "entropy",
     ):
         """Automatically add support points at locations where the uncertainty is high.
 
@@ -224,7 +224,7 @@ class StaRMap:
                     number_of_improvement_points=number_of_improvement_points,
                     scaler=scaler,
                     value_index=value_index,
-                    acquisition_method=acquisition_method
+                    acquisition_method=acquisition_method,
                 )
 
     def _make_r_trees(self, location_type: str, number_of_random_maps: int):
@@ -242,7 +242,7 @@ class StaRMap:
         relation: str,
         location_type: str,
         r_trees: list,
-        random_maps: list[CartesianMap]
+        random_maps: list[CartesianMap],
     ) -> NDArray:
         # Get the class of the spatial relation
         relation_class = self.relation_name_to_class(relation)
@@ -304,5 +304,5 @@ class StaRMap:
                 # Update collection of sample points
                 self.relations[relation][location_type].parameters.append(
                     coordinates,
-                    self._compute_parameters(coordinates, relation, location_type, r_trees, random_maps)
+                    self._compute_parameters(coordinates, relation, location_type, r_trees, random_maps),
                 )

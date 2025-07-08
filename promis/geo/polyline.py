@@ -118,7 +118,6 @@ class PolyLine(Geospatial):
 
 
 class PolarPolyLine(PolyLine):
-
     """A polyline (line string) based on WGS84 coordinates.
 
     Note:
@@ -211,7 +210,6 @@ class PolarPolyLine(PolyLine):
 
 
 class CartesianPolyLine(PolyLine):
-
     """A Cartesian polyline (line string) in local coordinates.
 
     Args:
@@ -316,7 +314,7 @@ class CartesianPolyLine(PolyLine):
     def distance(self, other: Any) -> float:
         return self.geometry.distance(other.geometry)
 
-    def send_to_gui(self, url = "http://localhost:8000/add_geojson", timeout = 1):
+    def send_to_gui(self, url="http://localhost:8000/add_geojson", timeout=1):
         raise NotImplementedError("Cartesian PolyLine does not have geospatial feature to send to gui!")
 
     def __repr__(self) -> str:
