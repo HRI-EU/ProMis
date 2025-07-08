@@ -19,7 +19,6 @@ from requests import post
 
 
 class Geospatial(ABC):
-
     """The common abstract base class for both polar and cartesian geospatial objects.
 
     See :meth:`~Geospatial.to_geo_json` on how this class can be used for visualizing geometries.
@@ -124,7 +123,7 @@ class Geospatial(ABC):
             ),
         )
 
-    def send_to_gui(self, url: str ="http://localhost:8000/add_geojson", timeout: int = 1):
+    def send_to_gui(self, url: str = "http://localhost:8000/add_geojson", timeout: int = 1):
         """Send an HTTP POST-request to the GUI backend.
 
         Args:

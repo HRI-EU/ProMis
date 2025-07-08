@@ -23,7 +23,6 @@ from promis.models import Gaussian
 
 
 class UnscentedRts(UnscentedKalman):
-
     """The unscented Kalman filter for non-linear state estimation.
 
     This filter behaves similarly to the standard Rts smoother, but utilizes the so-called

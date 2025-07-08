@@ -24,7 +24,6 @@ from promis.models import Gaussian
 
 
 class UnscentedKalman:
-
     """The unscented Kalman filter for non-linear state estimation.
 
     This filter behaves similarly to the standard Kalman filter, but utilizes the so-called

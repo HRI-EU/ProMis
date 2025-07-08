@@ -241,10 +241,8 @@ class ScalarRelation(Relation):
         else:
             relation = f"{self.problog_name}(x_{index}, {self.location_type})"
 
-        mean = self.parameters.data['v0'][index]
-        std = sqrt(clip(self.parameters.data['v1'][index], self.enforced_min_variance, None))
-        distribution = (
-            f"normal({mean}, {std})"
-        )
+        mean = self.parameters.data["v0"][index]
+        std = sqrt(clip(self.parameters.data["v1"][index], self.enforced_min_variance, None))
+        distribution = f"normal({mean}, {std})"
 
         return f"{relation} ~ {distribution}.\n"

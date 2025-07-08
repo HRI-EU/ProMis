@@ -17,7 +17,6 @@ from scipy.stats import multivariate_normal
 
 
 class Gaussian:
-
     """A weighted multivariate gaussian distribution.
 
     Examples:

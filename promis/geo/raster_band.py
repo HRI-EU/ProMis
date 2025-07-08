@@ -97,7 +97,7 @@ class RasterBand(ABC):
         start: tuple[float, float],
         goal: tuple[float, float],
         cost_model: Callable[[float], float],
-        value_filter: Callable[[float], float]
+        value_filter: Callable[[float], float],
     ) -> NDArray:
         """Search the shortest path through this RasterBand using A*.
 
@@ -122,7 +122,7 @@ class RasterBand(ABC):
             tuple(self.get_nearest_coordinate(start)),
             tuple(self.get_nearest_coordinate(goal)),
             heuristic=heuristic,
-            weight='weight'
+            weight="weight",
         )
 
         return array(path)

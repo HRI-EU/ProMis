@@ -23,7 +23,6 @@ from promis.models import Gaussian
 
 
 class Rts(Kalman):
-
     """The RTS smoother for linear state estimation.
 
     The RTS smoother is a state estimator for linear state space models, i.e. models that

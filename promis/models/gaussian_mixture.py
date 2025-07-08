@@ -20,7 +20,6 @@ from promis.models.gaussian import Gaussian
 
 
 class GaussianMixture:
-
     """The Gaussian Mixture Model (GMM) for representing multi-modal probability distribution.
 
     Args:

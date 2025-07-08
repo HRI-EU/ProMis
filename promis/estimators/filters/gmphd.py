@@ -22,7 +22,6 @@ from promis.models import Gaussian, GaussianMixture
 
 
 class GaussianMixturePhd:
-
     """The gaussian mixture PHD filter for linear multi-target tracking.
 
     The gaussian mixture PHD filter is a multi target tracker for linear state space models.

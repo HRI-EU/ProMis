@@ -68,7 +68,6 @@ WGS84_PYPROJ_GEOD = Geod("+ellps=WGS84 +units=m")
 
 
 class Direction(float, Enum):
-
     """A simple collection of named "compass" bearings in degrees for self-documenting code."""
 
     NORTH = 0.0

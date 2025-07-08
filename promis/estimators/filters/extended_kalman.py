@@ -23,7 +23,6 @@ from promis.models import Gaussian
 
 
 class ExtendedKalman:
-
     """The extended Kalman filter for non-linear state estimation.
 
     This filter behaves similarly to the standard Kalman filter, but utilizes nonlinear

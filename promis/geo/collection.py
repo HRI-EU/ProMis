@@ -76,7 +76,7 @@ class Collection(ABC):
         height: float,
         number_of_samples: int,
         number_of_values: int = 1,
-        include_corners: bool = False
+        include_corners: bool = False,
     ) -> "Collection":
         samples = LatinHypercube(d=2).random(n=number_of_samples)
         samples = scale(samples, [-width / 2, -height / 2], [width / 2, height / 2])
@@ -559,7 +559,6 @@ class PolarCollection(Collection):
 
 
 class HybridInterpolator:
-
     def __init__(self, coordinates, values):
         self.linear = LinearNDInterpolator(coordinates, values)
         self.nearest = NearestNDInterpolator(coordinates, values)

@@ -22,7 +22,6 @@ from promis.models import Gaussian, GaussianMixture
 
 
 class ExtendedGaussianMixturePhd(GaussianMixturePhd):
-
     """The extended gaussian mixture PHD filter for non-linear multi-target tracking.
 
     The extended gaussian mixture PHD is a multi target tracker for non-linear state space models.
