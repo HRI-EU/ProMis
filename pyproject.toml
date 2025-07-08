@@ -13,6 +13,14 @@ target-version = "py310"
 # GitLab CI code quality report
 output-format = "grouped" 
 
+[tool.ruff.format]
+
+# Quote style for strings: "single" or "double"
+quote-style = "double"
+
+# Automatically format docstrings
+docstring-code-format = false
+
 [tool.ruff.lint.pep8-naming]
 ignore-names = [
     "i",
