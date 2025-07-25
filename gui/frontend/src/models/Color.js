@@ -7,6 +7,17 @@ export default class Color extends Enum {
 		this.hexString = hexString;
 	}
 	
+	static randomHex(){
+		const letter = "0123456789ABCDEF";
+
+		let color = "#";
+
+		for (var i = 0; i < 6; i++){
+			color = color + letter[Math.floor(Math.random() * 16)];
+		}
+		return color;
+	}
+
 	static custom(colorHexString) {
 		return Color.forHexString(colorHexString);
 	}

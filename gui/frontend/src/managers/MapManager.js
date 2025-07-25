@@ -7,7 +7,7 @@ import ColorHelper from "../utils/ColorHelper.js";
 import { updateDynamicLayerEntry, deleteDynamicLayerEntry, updateConfigDynamicLayers, randomId } from "../utils/Utility.js";
 
 import { C } from "./Core.js";
-import { getDefaultMarker, getDroneIcon, getLandingPadIcon } from "../utils/getIcons.js";
+import { getDefaultMarker, getDroneIcon, getLandingPadIcon, LayerType } from "../utils/getIcons.js";
 
 import { Voronoi } from "../libs/rhill-voronoi-core.min.js";
 
@@ -60,7 +60,8 @@ class MapManager {
       shape: layer.feature.properties["shape"],
       location_type: layer.feature.properties["locationType"],
       color: layer.feature.properties["color"],
-      std_dev: layer.feature.properties["uncertainty"]
+      std_dev: layer.feature.properties["uncertainty"],
+      origin: layer.feature.properties["origin"]
     }
   }
 
@@ -85,7 +86,8 @@ class MapManager {
       latlngs: layer.getLatLngs().map((latlng) => [latlng.lat, latlng.lng]),
       location_type: layer.feature.properties["locationType"],
       color: layer.feature.properties["color"],
-      std_dev: layer.feature.properties["uncertainty"]
+      std_dev: layer.feature.properties["uncertainty"],
+      origin: layer.feature.properties["origin"]
     }
   }
 
@@ -113,7 +115,8 @@ class MapManager {
       holes: holes,
       location_type: layer.feature.properties["locationType"],
       color: layer.feature.properties["color"],
-      std_dev: layer.feature.properties["uncertainty"]
+      std_dev: layer.feature.properties["uncertainty"],
+      origin: layer.feature.properties["origin"]
     }
   }
 
@@ -395,7 +398,7 @@ class MapManager {
     updateDynamicLayerEntry(C().mapMan.getPolygon(layer));
   }
 
-  static _initLayerProperties(layer, name, shape, locationType = "UNKNOWN", color = "black", id = null, uncertainty = null) {
+  static _initLayerProperties(layer, name, shape, locationType = "UNKNOWN", color = "black", id = null, uncertainty = null, origin=LayerType.INTERNAL) {
     layer.feature = layer.feature || {};
     layer.feature.type = "Feature";
     layer.feature.properties = layer.feature.properties || {};
@@ -416,6 +419,7 @@ class MapManager {
     }
     
     layer.feature.properties["color"] = color;
+    layer.feature.properties["origin"] = origin;
   }
 
   static _ondblClickLayer(event) {
@@ -436,6 +440,12 @@ class MapManager {
     DomEvent.stopPropagation(event);
     const layer = event.sourceTarget;
     C().mapMan.dblclickedEntity = layer;
+    const data = MapManager._getInfoBoxDataFromLayer(layer)
+    // call the onClickFunction with the data
+    C().updateMapComponent(data);
+  }
+
+  static _getInfoBoxDataFromLayer(layer) {
     const properties = layer.feature.properties;
     const icon = properties["shape"];
     const id = properties["id"];
@@ -454,16 +464,17 @@ class MapManager {
     
     const locationType = properties["locationType"];
     const uncertainty = properties["uncertainty"];
+    const disabled = properties["origin"] === LayerType.EXTERNAL;
     const data = {
       icon,
       id,
       name,
       coordinates,
       locationType,
-      uncertainty
+      uncertainty,
+      disabled
     };
-    // call the onClickFunction with the data
-    C().updateMapComponent(data);
+    return data;
   }
 
   /**
@@ -903,14 +914,16 @@ class MapManager {
       const markerShape = marker.shape;
       const markerColor = marker.color;
       const markerLocationType = marker.location_type;
-      const markerLayer = new L.marker(markerPosition, { icon: MapManager.icons[markerShape](markerColor) });
+      const markerOrigin = marker.origin;
+      const markerLayer = new L.marker(markerPosition, { icon: MapManager.icons[markerShape](markerColor, markerOrigin), 
+                                                         pmIgnore: markerOrigin === LayerType.EXTERNAL ? true : false });
       const markerUncertainty = marker.std_dev;
       markerLayer.on("pm:edit", function() {
         // update the configuration data on the backend
         updateDynamicLayerEntry(C().mapMan.getMarker(markerLayer));
         console.log("marker edited");
       });
-      MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor, markerId, markerUncertainty);
+      MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor, markerId, markerUncertainty, markerOrigin);
       this.dynamicFeatureGroup.addLayer(markerLayer);
       markerLayer.on("dblclick", MapManager._ondblClickLayer);
 
@@ -965,16 +978,16 @@ class MapManager {
     }
     // add polylines
     polylines.forEach((polyline) => {
-      const polylineLayer = new L.polyline(polyline.latlngs);
+      const polylineLayer = new L.polyline(polyline.latlngs, {pmIgnore: polyline.origin === LayerType.EXTERNAL ? true : false});
       polylineLayer.on("pm:edit", function() {
         // update the configuration data on the backend
         updateDynamicLayerEntry(C().mapMan.getPolyline(polylineLayer));
       });
-      MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id, polyline.std_dev);
-      // add color style to the line
+      MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id, polyline.std_dev, polyline.origin);
       if (polyline.color) {
         polylineLayer.setStyle({
           color: polyline.color,
+          weight: polyline.origin === LayerType.INTERNAL ? 3 : 5 
         });
       }
 
@@ -997,17 +1010,18 @@ class MapManager {
       if (polygon.holes) {
         polygonLatlngs = polygonLatlngs.concat(polygon.holes);
       }
-      const polygonLayer = new L.polygon(polygonLatlngs);
+      const polygonLayer = new L.polygon(polygonLatlngs, {pmIgnore: polygon.origin === LayerType.EXTERNAL ? true : false});
       polygonLayer.on("pm:edit", function() {
         // update the configuration data on the backend
         updateDynamicLayerEntry(C().mapMan.getPolygon(polygonLayer));
       });
-      MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color, polygon.id, polygon.std_dev);
+      MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color, polygon.id, polygon.std_dev, polygon.origin);
       // add color style to the polygon
       if (polygon.color) {
         polygonLayer.setStyle({
           fillColor: polygon.color,
           color: polygon.color,
+          weight: polygon.origin === LayerType.INTERNAL ? 3 : 5 
         });
       }
 
@@ -1128,6 +1142,26 @@ class MapManager {
       // update the location type of the marker if it has the old location type
       if (layer.feature.properties["locationType"] === oldLocationType) {
         layer.feature.properties["locationType"] = newLocationType;
+      }
+    });
+    // update the configuration data on the backend
+    updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
+  }
+
+  // update the location type of the markers
+  // used by the LocationTypeSetting component when the location type is changed
+  updateUncertainty(locationType, uncertainty) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      // update the location type of the marker if it has the old location type
+      if (layer.feature.properties["locationType"] === locationType) {
+        layer.feature.properties["uncertainty"] = uncertainty;
+        if (layer === this.dblclickedEntity) {
+          const data = MapManager._getInfoBoxDataFromLayer(layer);
+          C().updateMapComponent(data, 1);
+        }
       }
     });
     // update the configuration data on the backend
@@ -1267,6 +1301,34 @@ class MapManager {
       const oldUncertainty = this.dblclickedEntity.feature.properties.uncertainty;
       if (oldUncertainty !== uncertainty){
         this.dblclickedEntity.feature.properties.uncertainty = uncertainty;
+        updateDynamicLayerEntry(this.getDynamicLayer(this.dblclickedEntity));
+      }
+    }
+  }
+
+  locationTypeChange(locationType){
+    if (this.dblclickedEntity !== null) {
+      const oldLocationType = this.dblclickedEntity.feature.properties.locationType;
+      if (oldLocationType !== locationType){
+        this.dblclickedEntity.feature.properties.locationType = locationType;
+
+        // update color
+        const color = C().sourceMan.getColorFromLocationType(locationType);
+        this.dblclickedEntity.feature.properties.color = color;
+        // update the color of the layer for line and polygon
+        if (this.dblclickedEntity.feature.properties["shape"] === "Line" || this.dblclickedEntity.feature.properties["shape"] === "Polygon") {
+          this.dblclickedEntity.setStyle({
+            fillColor: color,
+            color: color,
+          });
+        }
+        else {
+          // update the icon of the markers
+          let markerShape = this.dblclickedEntity.feature.properties["shape"];
+          this.dblclickedEntity.setIcon(MapManager.icons[markerShape](color));
+        }
+
+
         updateDynamicLayerEntry(this.getDynamicLayer(this.dblclickedEntity));
       }
     }

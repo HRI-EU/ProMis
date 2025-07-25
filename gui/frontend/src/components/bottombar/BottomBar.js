@@ -2,14 +2,13 @@ import * as React from "react";
 import "./BottomBar.css";
 import "highlight.js/styles/atom-one-dark.css";
 import { C } from "../../managers/Core";
-import LocationTypeSetting from "./LocationTypeSetting";
 import SourceCodeInterface from "./SourceCodeInterface";
 import LandscapeSetting from "./LandscapeSetting";
 
 //MUI elements
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
-import Button from "@mui/material/Button";
+//import Button from "@mui/material/Button";
 import LoadingButton from '@mui/lab/LoadingButton';
 import Fab from "@mui/material/Fab";
 import Grid from "@mui/material/Grid2";
@@ -34,6 +33,7 @@ import PolylineIcon from '@mui/icons-material/Polyline';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import CalendarViewMonthIcon from '@mui/icons-material/CalendarViewMonth';
 import CalendarViewMonthTwoToneIcon from '@mui/icons-material/CalendarViewMonthTwoTone';
+import LocationTypeSettingTabs from "./LocationTypeSettingTabs";
 
 
 const darkTheme = createTheme({
@@ -96,8 +96,8 @@ export default class BottomBar extends React.Component {
         interpolation: "linear"
       },
       runningParamsToggled: false,
-      locationTypeToggled: false,
       sourceCodeToggled: true,
+      locationTabsToggled: false,
       runningState: 0,
       sourceCode: defaultSourceCode
     };
@@ -137,10 +137,10 @@ export default class BottomBar extends React.Component {
     // reset the toggled states when the bottom bar is closed so that choosing action is reset
     if (!open) {
       // set all toggled states to false
-      this.setState({ runningParamsToggled: false, locationTypeToggled: false, sourceCodeToggled: false });
+      this.setState({ runningParamsToggled: false, locationTabsToggled: false, sourceCodeToggled: false });
     }else {
       // set source code to be toggled by default
-      this.setState({ runningParamsToggled: false, locationTypeToggled: false, sourceCodeToggled: true });
+      this.setState({ runningParamsToggled: false, locationTabsToggled: false, sourceCodeToggled: true });
     }
   };
 
@@ -149,7 +149,7 @@ export default class BottomBar extends React.Component {
     // check if source code is available
     if (this.state.sourceCode === "") {
       // toggle source code and hide running params and location type
-      this.setState({ sourceCodeToggled: true, runningParamsToggled: false, locationTypeToggled: false });
+      this.setState({ sourceCodeToggled: true, runningParamsToggled: false, locationTabsToggled: false });
       this.highlightSourceElement = true;
       this.updateUI();
       setTimeout(() => {
@@ -162,7 +162,7 @@ export default class BottomBar extends React.Component {
     if (this.state.landscapeSetting.origin === "") {
       this.highlightOriginElement = true;
       // toggle running params to show origin
-      this.setState({ runningParamsToggled: true, locationTypeToggled: false, sourceCodeToggled: false });
+      this.setState({ runningParamsToggled: true, locationTabsToggled: false, sourceCodeToggled: false });
 
       this.updateUI();
       setTimeout(() => {
@@ -207,8 +207,8 @@ export default class BottomBar extends React.Component {
 
   toggleRunningParams = () => {
     // if the location type setting is toggled, close it
-    if (this.state.locationTypeToggled) {
-      this.setState({ locationTypeToggled: false });
+    if (this.state.locationTabsToggled) {
+      this.setState({ locationTabsToggled: false });
     }
     // if the source code is toggled, close it
     if (this.state.sourceCodeToggled) {
@@ -218,7 +218,20 @@ export default class BottomBar extends React.Component {
     this.setState({ runningParamsToggled: !this.state.runningParamsToggled });
   }
 
-  toggleLocationType = () => {
+  toggleSourceCode = () => {
+    // if the location type setting is toggled, close it
+    if (this.state.locationTabsToggled) {
+      this.setState({ locationTabsToggled: false });
+    }
+    // if the running parameters is toggled, close it
+    if (this.state.runningParamsToggled) {
+      this.setState({ runningParamsToggled: false });
+    }
+    // toggle the source code
+    this.setState({ sourceCodeToggled: !this.state.sourceCodeToggled });
+  }
+
+  toggleLocationTabs = () => {
     // if the running parameters is toggled, close it
     if (this.state.runningParamsToggled) {
       this.setState({ runningParamsToggled: false });
@@ -227,21 +240,8 @@ export default class BottomBar extends React.Component {
     if (this.state.sourceCodeToggled) {
       this.setState({ sourceCodeToggled: false });
     }
-    // toggle the location type setting
-    this.setState({ locationTypeToggled: !this.state.locationTypeToggled });
-  }
-
-  toggleSourceCode = () => {
-    // if the location type setting is toggled, close it
-    if (this.state.locationTypeToggled) {
-      this.setState({ locationTypeToggled: false });
-    }
-    // if the running parameters is toggled, close it
-    if (this.state.runningParamsToggled) {
-      this.setState({ runningParamsToggled: false });
-    }
-    // toggle the source code
-    this.setState({ sourceCodeToggled: !this.state.sourceCodeToggled });
+    
+    this.setState({ locationTabsToggled: !this.state.locationTabsToggled });
   }
 
   
@@ -309,24 +309,6 @@ export default class BottomBar extends React.Component {
         m={0}
         sx={{ display: "flex" }}
       >
-        <Grid
-          size={12}
-        >
-          <Button // collapse button
-            aria-label="add"
-            onClick={this.toggleDrawer("bottom", false)}
-            style={{
-              color: "#ffffff",
-              backgroundColor: "#0D0F21",
-              border: "1px solid #7e86bd22",
-              width: "100px",
-              borderRadius: "24px",
-              marginTop: "6px",
-            }}
-          >
-            <ExpandMoreRounded />
-          </Button>
-        </Grid>
 
         <Grid // contains menu buttons for source, landscape settings, location type and run interface
           container
@@ -336,8 +318,9 @@ export default class BottomBar extends React.Component {
           justifyContent="start"
           m={0}
           style={{ 
-            marginLeft: "32px",
-            marginRight: "32px",
+            paddingTop: "10px",
+            paddingLeft: "32px",
+            PaddingRight: "32px",
           }}
           size={12}
         >
@@ -348,10 +331,10 @@ export default class BottomBar extends React.Component {
             alignItems="center"
             justifyContent="start"
             m={0}
-            size={6}
+            size={4}
           >
             <Grid
-              size={1}
+              size={2}
             >
               <IconButton // source editor expand button
                 onClick={() => {
@@ -369,7 +352,7 @@ export default class BottomBar extends React.Component {
             </Grid>
             
             <Grid
-              size={1}
+              size={2}
             >
               <IconButton // landscape setting expand button
                 onClick={() => {
@@ -386,23 +369,23 @@ export default class BottomBar extends React.Component {
               </IconButton>
             </Grid>
 
-            <Grid size={1}> 
+            <Grid size={2}> 
               <IconButton // location type menu expand button
                 onClick={() => {
-                  this.toggleLocationType();
+                  this.toggleLocationTabs();
                 }}
                 style={{ color: "#eeeeee", fontSize: 12 }}
                 aria-label="Open location type menu"
               >
-                {this.state.locationTypeToggled ? (
+                {this.state.locationTabsToggled ? (
                   <ListAltOutlinedIcon />
                 ) : (
                   <FormatListBulletedIcon />
                 )}
               </IconButton>
             </Grid>
+
           </Grid>
-          
           
           <Grid // contains run button
             container
@@ -410,8 +393,9 @@ export default class BottomBar extends React.Component {
             direction="row"
             alignItems="center"
             justifyContent="flex-end"
-            size={5}
+            size={8}
             style={{ 
+              paddingRight: "32px"
              }}
           >
             <Collapse in={!C().sourceMan.closed}
@@ -473,30 +457,6 @@ export default class BottomBar extends React.Component {
           this.state.runningParamsToggled ? this.runningParams() : null
         }
         
-        {
-          // logic to display location type settings
-          this.state.locationTypeToggled ?
-            <Grid
-              container
-              spacing={0}
-              direction="row"
-              alignItems="center"
-              justifyContent="start"
-              m={0}
-              sx={{ 
-                width: "100%",
-                display: "flex",
-                paddingLeft: "32px",
-                paddingRight: "32px",
-               }}
-            >
-              <ThemeProvider theme={darkTheme}>
-                <LocationTypeSetting 
-                  initialRows={C().sourceMan.locationTypes}
-                />
-              </ThemeProvider>
-            </Grid> : null
-        }
 
         {
           // logic to display source editor menu
@@ -510,8 +470,36 @@ export default class BottomBar extends React.Component {
           : null
         }
 
+        {
+          // logic to display source editor menu
+          this.state.locationTabsToggled ?
+          <ThemeProvider
+            theme={darkTheme}
+          >
+            <LocationTypeSettingTabs />
+          </ThemeProvider>
+          : null
+        }
+
         
       </Grid>
+
+      <IconButton // collapse button
+        aria-label="add"
+        onClick={this.toggleDrawer("bottom", false)}
+        style={{
+          color: "#ffffff",
+          backgroundColor: "#0D0F21",
+          border: "1px solid #7e86bd22",
+          width: "100px",
+          borderRadius: "24px",
+          position: "absolute",
+          top: "3px",
+          left: "45%"
+        }}
+      >
+        <ExpandMoreRounded />
+      </IconButton>
     </Box>
   );
 
@@ -553,7 +541,7 @@ export default class BottomBar extends React.Component {
               square: false,
               style: {
                 backgroundColor: "transparent",
-                width: "60%",
+                width: "50%",
                 borderRadius: "24px 24px 0px 0px",
                 marginLeft: "auto",
                 marginRight: "auto",

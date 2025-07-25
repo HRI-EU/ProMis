@@ -100,7 +100,8 @@ def _get_dynamic_layer() -> DynamicLayer:
                         name="Default origin",
                         location_type="ORIGIN",
                         color="gray",
-                        std_dev=0)
+                        std_dev=0,
+                        origin="internal")
         dynamic_layer.markers.append(default_origin)
         with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
             f.write(dynamic_layer.model_dump_json(indent=2))
@@ -405,6 +406,15 @@ def update_location_type_entry(location_type_entry: LocationTypeEntry):
     with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
         f.write(location_type_table.model_dump_json(indent=2))
 
+@app.post('/delete_location_type_id/{id}')
+def delete_location_type_with_id(id: int):
+    location_type_table = _get_location_type_table()
+
+    new_location_type_table = LocationTypeTable([entry for entry in location_type_table if entry.id != id])
+
+    with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
+        f.write(new_location_type_table.model_dump_json(indent=2))
+
 @app.get("/app_config")
 def get_config() -> tuple[LayerConfig, DynamicLayer, LocationTypeTable]:
     config = _get_config()
@@ -446,14 +456,18 @@ def add_geo_object(new_obj: Feature):
                             name=new_obj.properties["name"] if "name" in new_obj.properties
                                   else '3rd Party',
                             location_type=location_type,
-                            color=color)
+                            color=color,
+                            std_dev=0.0,
+                            origin="external")
             update_dynamic_layer_entry(marker)
             app.temp_dyn_obj_and_loc_type["markers"].append(marker)
         case "LineString":
             line = Line(id=str(new_obj.id),
                         latlngs=[[loc[1], loc[0]] for loc in coords],
                         location_type=location_type,
-                        color=color)
+                        color=color,
+                        std_dev=0.0,
+                        origin="external")
             update_dynamic_layer_entry(line)
             app.temp_dyn_obj_and_loc_type["polylines"].append(line)
         case "Polygon":
@@ -469,7 +483,9 @@ def add_geo_object(new_obj: Feature):
                               latlngs=latlngs,
                               holes=holes,
                               location_type=location_type,
-                              color=color)
+                              color=color,
+                              std_dev=0.0,
+                              origin="external")
             update_dynamic_layer_entry(polygon)
             app.temp_dyn_obj_and_loc_type["polygons"].append(polygon)
 

@@ -1,5 +1,26 @@
 [
   {
+    "id": 2075396262,
+    "location_type": "UNKNOWN",
+    "filter": "",
+    "color": "black",
+    "std_dev": 0
+  },
+  {
+    "id": 1328715238,
+    "location_type": "ORIGIN",
+    "filter": "",
+    "color": "gray",
+    "std_dev": 0
+  },
+  {
+    "id": 3525042322,
+    "location_type": "VERTIPORT",
+    "filter": "",
+    "color": "blue",
+    "std_dev": 0
+  },
+  {
     "id": 3838605292,
     "location_type": "primary",
     "filter": "['highway' = 'primary']",
@@ -53,27 +74,6 @@
     "location_type": "rail",
     "filter": "['railway' = 'rail']",
     "color": "brown",
-    "std_dev": 0
-  },
-  {
-    "id": 2075396262,
-    "location_type": "UNKNOWN",
-    "filter": "",
-    "color": "black",
-    "std_dev": 0
-  },
-  {
-    "id": 1328715238,
-    "location_type": "ORIGIN",
-    "filter": "",
-    "color": "gray",
-    "std_dev": 0
-  },
-  {
-    "id": 3525042322,
-    "location_type": "VERTIPORT",
-    "filter": "",
-    "color": "blue",
     "std_dev": 0
   }
 ]

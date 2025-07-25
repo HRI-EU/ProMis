@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 
 import TextField from '@mui/material/TextField';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Grid2, IconButton, Paper, SvgIcon } from "@mui/material";
+import { Box, Grid2, IconButton, MenuItem, Paper, Select, SvgIcon, FormControl, InputLabel } from "@mui/material";
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import PolylineIcon from '@mui/icons-material/Polyline';
@@ -20,10 +20,12 @@ const darkTheme = createTheme({
   },
 });
 
-export default function DynamicLayerInteractive({id, icon, name, coordinates, locationType, uncertainty, toggle, hidden}) {
+export default function DynamicLayerInteractive({id, icon, name, coordinates, locationType, uncertainty, toggle, hidden, disabled}) {
     const [dynamicOnTop, setDynamicOnTop] = React.useState(false);
     const [uncertaintyInput, setUncertaintyInput] = React.useState(uncertainty);
     const [currentCoordinateIndex, setCurrentCoordinateIndex] = React.useState(0);
+    const [locationTypeInput, setLocationTypeInput] = React.useState(locationType);
+    const [isUniqueUncertainty, setIsUniqueUncertainty] = React.useState(false);
     const [visible, setVisible] = React.useState(false);
 
     React.useEffect(() => {
@@ -38,6 +40,13 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
     React.useEffect(() => {
       const delayInputTimeoutId = setTimeout(() => {
         C().mapMan.uncertaintyChange(uncertaintyInput);
+        // check if uncertainty is different from default uncertainty of location type
+        const defaultUncertainty = C().sourceMan.getUncertaintyFromLocationType(locationTypeInput);
+        if (uncertaintyInput !== defaultUncertainty) {
+          setIsUniqueUncertainty(true);
+        } else {
+          setIsUniqueUncertainty(false);
+        }
       }, 500)
       return () => clearTimeout(delayInputTimeoutId);
     }, [uncertaintyInput]);
@@ -67,6 +76,14 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
         }
       }
     }, [visible]);
+
+    React.useEffect(() => {
+      setUncertaintyInput(uncertainty);
+    }, [uncertainty])
+
+    React.useEffect(() => {
+      setLocationTypeInput(locationType);
+    }, [locationType])
     
     function isTypeMarker(){
       return icon === "defaultMarker" || icon === "droneMarker" || icon === "landingSiteMarker"
@@ -104,15 +121,35 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
       setCurrentCoordinateIndex((prev) => (prev + 1) % coordinates.length);
     }
 
+    function onLocationTypeChange(event) {
+      const newLocationType = event.target.value;
+      setLocationTypeInput(newLocationType);
+      C().mapMan.locationTypeChange(newLocationType);
+      setUncertaintyInput(C().sourceMan.getUncertaintyFromLocationType(newLocationType));
+    }
+
+    function createSelectItems() {
+      let items = [];
+      const locationTypeList = C().sourceMan.getListLocationType();
+      for (var i = 0; i < locationTypeList.length; i++) {
+        items.push(<MenuItem key={`select-item-key-${i}`}
+          value={locationTypeList[i]}
+        >
+          {locationTypeList[i]}
+        </MenuItem>)
+      }
+      return items;
+    }
+
     // create a grid with icon depending on the type of entity
     const entityGrid =
       <Grid2 container spacing={2} padding={2}>
-        <Grid2 item size={3}>
+        <Grid2 size={3}>
           <SvgIcon>
             {getIconJSX(icon)}
           </SvgIcon>
         </Grid2>
-        <Grid2 item size={9}>
+        <Grid2 size={9}>
           <div
             style={{
               color: "white",
@@ -125,8 +162,8 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
           </div>
         </Grid2>
         {/*horizontal line*/}
-        <Grid2 item size={12} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.73)" }}></Grid2>
-        <Grid2 item size={3}>
+        <Grid2 size={12} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.73)" }}></Grid2>
+        <Grid2 size={3}>
           <div
             style={{
               color: "white",
@@ -136,7 +173,7 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
             {`Id:`}
           </div>
         </Grid2>
-        <Grid2 item size={9}>
+        <Grid2 size={9}>
           <div
             style={{
               color: "white",
@@ -146,7 +183,7 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
             {id}
           </div>
         </Grid2>
-        <Grid2 item size={5}>
+        <Grid2 size={5}>
           <div
             style={{
               color: "white",
@@ -156,7 +193,7 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
             {`Coordinates:`}
           </div>
         </Grid2>
-        <Grid2 item size={7}>
+        <Grid2 size={7}>
           <div
             style={{
               display: "flex",
@@ -187,46 +224,55 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
             </IconButton>}
           </div>
         </Grid2>
-        <Grid2 item size={6}>
-          <div
-            style={{
-              color: "white",
-              textAlign: "left",
-              width: "max-content",
+        <Grid2
+        >
+          <Box
+            sx={{
+              minWidth: 120
             }}
           >
-            {`Location Type:`}
-          </div>
+            <FormControl
+              size="small"
+              sx={{
+                width: "100%"
+              }}
+            >
+              <InputLabel
+                  style={{ color: "rgba(255, 255, 255, 0.7)"  }}
+              >Location Type</InputLabel>
+              <Select
+                label="Location Type"
+                value={locationTypeInput}
+                onChange={onLocationTypeChange}
+                size="small"
+                disabled={disabled}
+              >
+                {createSelectItems()}
+              </Select>
+            </FormControl>
+          </Box>
         </Grid2>
-        <Grid2 item size={6}>
-          <div
-            style={{
-              color: "white",
-              textAlign: "right",
-            }}
+        <Grid2 
+        >
+          <Box sx={{
+            maxWidth:130
+          }}
           >
-            {locationType}
-          </div>
-        </Grid2>
-        <Grid2 item size={7}>
-          <div
-            style={{
-              color: "white",
-              textAlign: "left",
-            }}
-          >
-            {`Uncertainty:`}
-          </div>
-        </Grid2>
-        <Grid2 item size={5}>
-          <TextField
-            type="number"
-            value={uncertaintyInput}
-            onChange={(e) => setUncertaintyInput(parseFloat(e.target.value))}
-            size="small"
-            label="σ (m)"
-            sx={{ width: "100%" }}
-          />
+            <TextField
+              type="number"
+              value={uncertaintyInput}
+              onChange={(e) => setUncertaintyInput(parseFloat(e.target.value))}
+              size="small"
+              label="Uncertainty: σ (m)"
+              fullWidth
+              disabled={disabled}
+              sx={{
+                input:{
+                  color: isUniqueUncertainty ? "white" : "gray"
+                }
+              }}
+            />
+          </Box>
         </Grid2>
       </Grid2>;
 
@@ -266,14 +312,15 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
           !hidden && visible ? 
             <ThemeProvider theme={darkTheme}>
               <Paper
-                elevation={3}
-                style={{
+                elevation={0}
+                sx={{
                   position: "absolute",
                   top: "10px",
                   left: "60px",
                   zIndex: 1001,
-                  maxWidth: "275px",
+                  maxWidth: "310px",
                   maxHeight: "400px", 
+                  backgroundColor: "#0D0F21"
                 }}
               >
                 {entityGrid}
@@ -306,5 +353,6 @@ DynamicLayerInteractive.propTypes = {
   locationType: PropTypes.string.isRequired,
   uncertainty: PropTypes.number.isRequired,
   toggle: PropTypes.bool.isRequired,
-  hidden: PropTypes.bool
+  hidden: PropTypes.bool,
+  disabled: PropTypes.bool
 };

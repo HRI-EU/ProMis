@@ -79,9 +79,9 @@ class Core {
   }
 
   //Call to trigger the map component update
-  updateMapComponent(entity) {
+  updateMapComponent(entity, type=0) {
     if (this.mapComponentCallback != null) {
-      this.mapComponentCallback(entity);
+      this.mapComponentCallback(entity, type);
     }
   }
 }

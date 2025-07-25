@@ -304,6 +304,51 @@ export async function updateConfigLocationTypes(locationTypes){
   }
 }
 
+export async function updateConfigLocationTypeEntry(locationType){
+  const url = "http://localhost:8000/update_location_type_entry";
+  //console.log(locationTypes);
+  const locationTypeCpy = structuredClone(locationType);
+  // iterate over locationTypes and change locationType field to location_type
+  locationTypeCpy.location_type = locationTypeCpy.locationType;
+  locationTypeCpy.std_dev = locationTypeCpy.uncertainty;
+  delete locationTypeCpy.locationType;
+  delete locationTypeCpy.uncertainty;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(locationTypeCpy, null, 2),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update configuration data");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+export async function deleteConfigLocationTypeEntry(id){
+  const url = `http://localhost:8000/delete_location_type_id/${id}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update configuration data");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
 
 export async function checkExternalUpdate() {
   const url = "http://localhost:8000/external_update";

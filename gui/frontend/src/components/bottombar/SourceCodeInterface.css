@@ -31,6 +31,12 @@
   animation-duration: 1s;
 }
 
+@keyframes changeBlackToRed {
+  0%   {border-color: #282C34;}
+  50%  {border-color: red;}
+  100% {border-color: #282C34;}
+}
+
 #editing {
   overflow: auto;
   white-space: pre; /* Allows textarea to scroll horizontally */
@@ -47,7 +53,7 @@ input[type=number] {
 }
 
 pre {
-  max-height: 200px;
+  max-height: 100px;
   overflow: auto;
 }
 

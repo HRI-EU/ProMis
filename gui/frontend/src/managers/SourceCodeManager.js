@@ -1,13 +1,37 @@
 import { C } from "./Core.js";
-import { updateConfigLocationTypes } from "../utils/Utility.js";
+import { updateConfigLocationTypes, randomId, updateConfigLocationTypeEntry, deleteConfigLocationTypeEntry } from "../utils/Utility.js";
+import Color from "../models/Color.js";
 
+const defaultLocationTypes = [
+  {
+    "id": 2075396262,
+    "locationType": "UNKNOWN",
+    "filter": "",
+    "color": "#0000FF",
+    "uncertainty": 10
+  },
+  {
+    "id": 1328715238,
+    "locationType": "ORIGIN",
+    "filter": "",
+    "color": "#0000FF",
+    "uncertainty": 10
+  },
+  {
+    "id": 3525042322,
+    "locationType": "VERTIPORT",
+    "filter": "",
+    "color": "#0000FF",
+    "uncertainty": 10
+  }
+]
 
 class SourceCodeManager {
   constructor() {
     this.success = true;
     this.closed = true;
     this.origin = "";
-    this.locationTypes = [];
+    this.locationTypes = defaultLocationTypes;
     this.interpolation = "linear";
   }
 
@@ -22,6 +46,20 @@ class SourceCodeManager {
     else {
       return 0;
     }
+  }
+
+  getColorFromLocationType(locationType) {
+    const matchedRow =  this.locationTypes.find((row) => {
+      return row.locationType === locationType
+    });
+    if (matchedRow !== undefined) {
+      return matchedRow.color;
+    }
+    return new Error("No Color found from this location type");
+  }
+
+  getListLocationType() {
+    return this.locationTypes.map((entry) => entry.locationType);
   }
 
   getDefaultLocationTypesRows() {
@@ -153,6 +191,30 @@ class SourceCodeManager {
     this.locationTypes = locationTypes;
     updateConfigLocationTypes(locationTypes);
     // TODOS: update polygons and polylines and marker appropriately
+  }
+
+  deleteLocationTypeIndex(index) {
+    deleteConfigLocationTypeEntry(this.locationTypes[index].id);
+    C().mapMan.deleteLocationType(this.locationTypes[index].locationType);
+    this.locationTypes.splice(index, 1);
+  }
+
+  addTempLocationType() {
+    this.locationTypes.push({
+      id: randomId(),
+      locationType: "temp",
+      filter: "",
+      color: Color.randomHex(),
+      uncertainty: 10
+    })
+  }
+
+  editLocationType(locationType, index) {
+    this.locationTypes[index].locationType = locationType.locationType;
+    this.locationTypes[index].filter = locationType.filter;
+    this.locationTypes[index].color = locationType.color;
+    this.locationTypes[index].uncertainty = locationType.uncertainty;
+    updateConfigLocationTypeEntry(this.locationTypes[index]);
   }
 }
 

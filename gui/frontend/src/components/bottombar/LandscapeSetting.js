@@ -38,10 +38,6 @@ export default function LandscapeSetting({origin,
         interpolation: interpolation
     }
 
-    React.useEffect(() => {
-        console.log(landscapeSetting)
-    }, []);
-
     const inputSize = 100;
 
     function createOriginSelectItems() {
@@ -86,7 +82,6 @@ export default function LandscapeSetting({origin,
         >
             <Grid
                 container
-                item
                 size={12}
                 direction="row"
                 justifyContent="start"
@@ -96,7 +91,6 @@ export default function LandscapeSetting({origin,
             
             <Grid
                 container
-                item
                 size={4}
             >
                 <FormControl sx={{minWidth: 125}} size="small" error={highlightOriginElement}>
@@ -116,15 +110,13 @@ export default function LandscapeSetting({origin,
             
             <Grid
                 container
-                item
                 direction="row"
                 justifyContent="start"
                 alignItems="center"
                 spacing={0}
-                size={4}
+                size={5}
             >
                 <Grid
-                item
                 >
                 <TextField type="number" size="small" label="Width" variant="outlined" 
                 value={dimensions[0]}
@@ -155,9 +147,8 @@ export default function LandscapeSetting({origin,
                 }}
                 >x</div>
                 <Grid
-                item
                 >
-                <TextField type="number" size="small" label="Height" variant="outlined"
+                <TextField type="number" size="small" label="Height (m)" variant="outlined"
                 value={dimensions[1]}
                 onFocus={() =>
                     C().mapMan.highlightBoundaryAlter(origin, dimensions,
@@ -180,22 +171,11 @@ export default function LandscapeSetting({origin,
                 />
                 </Grid>
                 
-                <Grid
-                item
-                >
-                <div
-                    style={{
-                    color: "#ffffff",
-                    }}
-                >m</div>
-                </Grid>
-                
             </Grid>
             
             
             <Grid
-                item
-                size={4}
+                size={3}
                 container
             >
                 <TextField type="number" size="small" variant="outlined" label="Sampled Maps"
@@ -213,7 +193,6 @@ export default function LandscapeSetting({origin,
             </Grid>
             <Grid
             container
-            item
             size={12}
             direction="row"
             justifyContent="start"
@@ -223,7 +202,6 @@ export default function LandscapeSetting({origin,
             >
             
             <Grid
-                item
                 alignItems={"center"}
                 size={4}
                 sx={{ display: "flex" }}
@@ -281,10 +259,12 @@ export default function LandscapeSetting({origin,
             
             
             <Grid
-                item
+                container
+                direction="row"
+                justifyContent="start"
                 alignItems="center"
-                size={4}
-                sx={{ display: "flex" }}
+                spacing={0}
+                size={5}
             >
                 <TextField type="number" size="small" variant="outlined" label="Interpolation"
                 value={supportResolutions[0]}
@@ -340,8 +320,7 @@ export default function LandscapeSetting({origin,
             
             
             <Grid
-                item
-                size={4}
+                size={3}
                 container
             >
                 <FormControl sx={{minWidth: 125}} size="small">

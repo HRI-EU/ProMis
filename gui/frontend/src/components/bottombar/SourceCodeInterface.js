@@ -96,9 +96,8 @@ export default function SourceCodeInterface({sourceCode, onEdit, highlightSource
             m={0}
             style={{ 
                 marginLeft: "32px" ,
-                marginTop: "10px",
+                marginTop: "2px",
             }}
-            sx={{ display: "flex" }}
             >
                 <Chip
                     icon={

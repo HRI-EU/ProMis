@@ -21,13 +21,6 @@
   align-items: center;
 }
 
-@keyframes changeBlackToRed {
-  0%   {border-color: #282C34;}
-  50%  {border-color: red;}
-  100% {border-color: #282C34;}
-}
-
-
 
 /*#editing {
   width: calc(100% - 20px);

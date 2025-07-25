@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-
+from typing import Literal
 
 class Marker(BaseModel):
     id: str
@@ -7,5 +7,6 @@ class Marker(BaseModel):
     shape: str
     name: str
     location_type: str = ""
-    color: str = "#000000",
-    std_dev: float = 0
+    color: str = "#000000"
+    std_dev: float = 0.0
+    origin: Literal["internal", "external"]

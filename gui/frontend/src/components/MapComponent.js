@@ -50,7 +50,8 @@ function MapComponent() {
     locationType: "UNKNOWN",
     uncertainty: 10,
     toggle: false,
-    hidden: true
+    hidden: true,
+    disabled: false
   });
 
   let didInit = false;
@@ -111,15 +112,25 @@ function MapComponent() {
     });
   }
 
-  function changeState(entity) {
-    // This function is called by the MapManager to trigger a state change
-    // Ensure toggle is toggled and hidden is set to false
-    setInfoBoxState((prevEntity) => {
-      return {...entity, 
-        toggle: !prevEntity.toggle,
-        hidden: false
-      }
-    });
+  // This function is called by the MapManager to trigger a state change of info box
+  // Ensure toggle is toggled (when type = 0), type is set when we want to change display entity without forcing info box to appear
+  // and hidden is set to false (to ensure info box alway appear especially when close info box and choosing the same entity)
+  function changeState(entity, type=0) {
+    if (type!==0) {
+      setInfoBoxState((prevEntity) => {
+        return {...entity, 
+          toggle: prevEntity.toggle,
+          hidden: false
+        }
+      });
+    } else {
+      setInfoBoxState((prevEntity) => {
+        return {...entity, 
+          toggle: !prevEntity.toggle,
+          hidden: false
+        }
+      });
+    }
   }
 
 

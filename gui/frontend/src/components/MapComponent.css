@@ -15,6 +15,12 @@
   border: 0cap;
 }
 
+.external {
+  border: solid;
+  border-width: 2px;
+  border-color: red;
+}
+
 .landing-site-icon {
   background-image: url(../assets/icons/landing-pad-marker.png);
 }
