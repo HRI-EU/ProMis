@@ -943,14 +943,15 @@ class MapManager {
     if (!this.dynamicFeatureGroup) {
       return;
     }
-    // remove all dynamic layers that have the same id as the layers in the list
-    layers.forEach((layer) => {
-      this.dynamicFeatureGroup.eachLayer((existingLayer) => {
-        if (existingLayer.feature.properties["id"] === layer.id) {
-          this.dynamicFeatureGroup.removeLayer(existingLayer);
-        }
-      });
-    });
+    const layersId = layers.map((layer) => layer.id);
+    let toBeRemove = [];
+    // remove all dynamic layers that have the same id as the layer in the list
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      if (layersId.includes(layer.feature.properties["id"])) {
+        toBeRemove.push(layer);
+      }
+    })
+    toBeRemove.forEach((layer) => this.dynamicFeatureGroup.removeLayer(layer));
   }
 
   // import all external layers from backend type=1: marker, type=2: polyline, type=3: polygon
