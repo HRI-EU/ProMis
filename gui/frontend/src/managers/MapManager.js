@@ -477,6 +477,14 @@ class MapManager {
     return data;
   }
 
+  // remove dynamic layer (use for deleting external entities with highlight entities)
+  _removeDynamicLayer(layer) {
+    if (layer.feature.highlightLayers !== undefined) {
+      layer.feature.highlightLayers.forEach((highlight) => this.map.removeLayer(highlight));
+    }
+    this.dynamicFeatureGroup.removeLayer(layer);
+  }
+
   /**
    * Zoom in by one step
    */
@@ -950,8 +958,8 @@ class MapManager {
       if (layersId.includes(layer.feature.properties["id"])) {
         toBeRemove.push(layer);
       }
-    })
-    toBeRemove.forEach((layer) => this.dynamicFeatureGroup.removeLayer(layer));
+    });
+    toBeRemove.forEach((layer) => this._removeDynamicLayer(layer));
   }
 
   // import all external layers from backend type=1: marker, type=2: polyline, type=3: polygon
@@ -960,9 +968,8 @@ class MapManager {
       return;
     }
 
-    this._cleanupDynamicLayer(dynamicLayers.markers);
-    this._cleanupDynamicLayer(dynamicLayers.polylines);
-    this._cleanupDynamicLayer(dynamicLayers.polygons);
+    const toBeProcessedLayers = dynamicLayers.markers.concat(dynamicLayers.polylines, dynamicLayers.polygons);
+    this._cleanupDynamicLayer(toBeProcessedLayers);
     
     // import markers, polylines and polygons
     this.importMarkers(dynamicLayers.markers);
@@ -985,6 +992,7 @@ class MapManager {
         updateDynamicLayerEntry(C().mapMan.getPolyline(polylineLayer));
       });
       MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id, polyline.std_dev, polyline.origin);
+      
       if (polyline.color) {
         polylineLayer.setStyle({
           color: polyline.color,
@@ -995,6 +1003,12 @@ class MapManager {
       polylineLayer.on("dblclick", MapManager._ondblClickLayer);
 
       this.dynamicFeatureGroup.addLayer(polylineLayer);
+      if (polyline.origin === LayerType.EXTERNAL) {
+        const highlightLayers = polyline.latlngs.map((latlng) => {
+          return L.circle(latlng, {radius: 2, color:"red"}).addTo(this.map);
+        })
+        polylineLayer.feature.highlightLayers = highlightLayers;
+      }
     });
   }
 
@@ -1006,10 +1020,13 @@ class MapManager {
     // add polygons
     polygons.forEach((polygon) => {
       let polygonLatlngs = [];
+      let polygonLatLngsFlat = [];
       polygonLatlngs.push(polygon.latlngs);
+      polygonLatLngsFlat.push(...polygon.latlngs);
       // add holes to the polygon
       if (polygon.holes) {
         polygonLatlngs = polygonLatlngs.concat(polygon.holes);
+        polygon.holes.forEach((hole) => polygonLatLngsFlat.push(...hole));
       }
       const polygonLayer = new L.polygon(polygonLatlngs, {pmIgnore: polygon.origin === LayerType.EXTERNAL ? true : false});
       polygonLayer.on("pm:edit", function() {
@@ -1029,6 +1046,12 @@ class MapManager {
       polygonLayer.on("dblclick", MapManager._ondblClickLayer);
 
       this.dynamicFeatureGroup.addLayer(polygonLayer);
+      if (polygon.origin === LayerType.EXTERNAL) {
+        const highlightLayers = polygonLatLngsFlat.map((latlng) => {
+          return L.circle(latlng, {radius: 2, color:"red"}).addTo(this.map);
+        })
+        polygonLayer.feature.highlightLayers = highlightLayers;
+      }
     });
     //console.log("polygon added!!")
   }
@@ -1173,11 +1196,13 @@ class MapManager {
     if (!this.dynamicFeatureGroup) {
       return;
     }
+    let toBeDeletedLayer = [];
     this.dynamicFeatureGroup.eachLayer((layer) => {
       if (layer.feature.properties["locationType"] === locationType) {
-        this.dynamicFeatureGroup.removeLayer(layer);
+        toBeDeletedLayer.push(layer);
       }
     });
+    toBeDeletedLayer.forEach((layer) => this._removeDynamicLayer(layer));
     // update the configuration data on the backend
     updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
   }
@@ -1288,7 +1313,7 @@ class MapManager {
   setMapCircleHighlight(coordinate) {
     this.removeCircleHighlight();
     if (this.map !== null)
-      this.circleHighlight = L.circleMarker(coordinate, {radius: 2, color:"red"}).addTo(this.map);
+      this.circleHighlight = L.circleMarker(coordinate, {radius: 2, color:"black"}).addTo(this.map);
   }
 
   removeCircleHighlight(){
