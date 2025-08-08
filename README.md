@@ -32,10 +32,24 @@ An [interactive version](https://github.com/HRI-EU/ProMis/blob/main/examples/usa
 Please consult and cite the following publications for an in-depth discussion of the methods implemented in this repository.
 - [Mission Design for Unmanned Aerial Vehicles using Hybrid Probabilistic Logic Programs](https://arxiv.org/abs/2406.03454).
   Simon Kohaut, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
-  In 26th IEEE International Intelligent Transportation Systems Conference (ITSC).
+  In Proceedings of the 26th IEEE International Intelligent Transportation Systems Conference (ITSC).
 - [Towards Probabilistic Clearance, Explanation and Optimization](https://arxiv.org/abs/2406.15088).
   Simon Kohaut, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
-  In Proceedings of the 2024 International Conference on Unmanned Aircraft Systems (ICUAS).
+  In Proceedings of the 2024 IEEE International Conference on Unmanned Aircraft Systems (ICUAS).
+  
+For specific use cases, please cite the following works as well.
+- Environment Representation: [StaR Maps: Unveiling Uncertainty in Geospatial Relations](https://arxiv.org/abs/2412.18356).
+  Benedict Flade, Simon Kohaut, Devendra Singh Dhami, Kristian Kersting.
+  In Proceedings of the 27th IEEE International Intelligent Transportation Systems Conference (ITSC).
+- Planning: [Hybrid Many-Objective Optimization in Probabilistic Mission Design for Compliant and Effective UAV Routing](https://dl.acm.org/doi/pdf/10.1145/3742440).
+  Simon Kohaut, Nikolas Hohmann, Sebastian Brulin, Benedict Flade, Julian Eggert, Markus Olhofer, Jürgen Adamy, Devendra Dhami, Kristian Kersting.
+  In the ACM Journal on Autonomous Transportation Systems (JATS).
+- Tracking: [The Constitutional Filter: Bayesian Estimation of Compliant Agents](https://arxiv.org/abs/2412.18347).
+  Simon Kohaut, Felix Divo, Benedict Flade, Devendra Singh Dhami, Julian Eggert, Kristian Kersting.
+  In Proceedings of the 2025 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS).
+- Control: [The Constitutional Controller: Doubt-calibrated Steering of Compliant Agents](https://arxiv.org/abs/2507.15478?).
+  Simon Kohaut, Felix Divo, Navid Hamid, Benedict Flade, Julian Eggert, Devendra Singh Dhami, Kristian Kersting.
+  Arxiv preprint.
 
 ## Documentation
 
@@ -52,3 +66,8 @@ sphinx-build -b html doc/source _build/html
 ```
 
 To view the documentation, open the file `ProMis/doc/build/html/index.html` using the browser of your choice.
+
+## License
+
+Copyright (c) 2023 Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors.
+See [LICENSE.md] for details.
