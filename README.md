@@ -70,4 +70,4 @@ To view the documentation, open the file `ProMis/doc/build/html/index.html` usin
 ## License
 
 Copyright (c) 2023 Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors.
-See [LICENSE.md] for details.
+See [LICENSE.md](https://github.com/HRI-EU/ProMis/blob/main/LICENSE.md) for details.
