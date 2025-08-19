@@ -151,10 +151,9 @@ class ConstitutionalController:
         samples = scaler * doubt_density.sample(number_of_samples, doubt_space)[0]
 
         doubtful_landscape = deepcopy(landscape)
-        doubtful_landscape.data["v0"] = [
+        doubtful_landscape.data['v0'] = [
             mean(interpolator(location_samples.detach().numpy()))
-            for location_samples in torch.from_numpy(doubtful_landscape.coordinates()[:, None, :])
-            + samples[None, :, :]
+            for location_samples in torch.from_numpy(doubtful_landscape.coordinates()[:, None, :]) + samples[None, :, :]
         ]
 
         return doubtful_landscape

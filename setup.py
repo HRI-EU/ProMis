@@ -63,6 +63,7 @@ setuptools.setup(
         "torch",
         "pyro-ppl",
         "pysdd",
+        "gpytorch",
         # plotting and visualization
         "fastapi[standard]",
         "graphviz",
@@ -76,6 +77,7 @@ setuptools.setup(
         # Building the documentation locally with sphinx
         "doc": [
             "sphinx",
+            "nbsphinx",
             "sphinx-markdown-builder",
             "sphinx_rtd_theme",
             "sphinxcontrib-programoutput",

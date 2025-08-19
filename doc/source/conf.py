@@ -18,7 +18,7 @@ from os.path import abspath
 from os.path import dirname
 from os.path import join
 
-sys.path.insert(0, abspath(join(dirname(__file__), "../../")))  # for scripts/
+sys.path.insert(0, abspath(join(dirname(__file__), "../..")))  # for examples/
 
 # ProMis
 import promis  # noqa: E402
@@ -52,6 +52,7 @@ language = "en"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "nbsphinx",
     "sphinx_markdown_builder",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
@@ -64,6 +65,10 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinxcontrib.programoutput",
 ]
+
+# Do not run notebooks as they include time-intensive computations
+nbsphinx_execute = "never"
+nbsphinx_pandoc = "python -m pandoc"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -105,8 +110,8 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = []  # '_static'
-# html_favicon = "../../resources/logo.svg"
-# html_logo = "../../resources/logo.svg"
+# html_favicon = "../../images/logo.png"  # TODO: Needs version of logo with drone only
+html_logo = "../../images/logo.png"
 html_sidebars = {"**": ["globaltoc.html", "relations.html", "sourcelink.html", "searchbox.html"]}
 
 # -- Options for LaTeX output ---------------------------------------------

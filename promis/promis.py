@@ -64,6 +64,12 @@ class ProMis:
 
         # Get all relevant relations from the StaRMap
         relations = self.star_map.get_all(logic)
+        for relation_type in relations.keys():
+            for location_type in relations[relation_type].keys():
+                relation = relations[relation_type][location_type]
+                relation.parameters = relation.parameters.into(
+                    evaluation_points, interpolation_method, in_place=False
+                )
 
         # For each point in the target CartesianCollection, we need to run a query
         number_of_queries = len(evaluation_points.data)
@@ -84,9 +90,6 @@ class ProMis:
                 for relation_type in relations.keys():
                     for location_type in relations[relation_type].keys():
                         relation = relations[relation_type][location_type]
-                        relation.parameters = relation.parameters.into(
-                            evaluation_points, interpolation_method, in_place=False
-                        )
                         program += relation.index_to_distributional_clause(batch_index)
 
                 program += queries[batch_index]

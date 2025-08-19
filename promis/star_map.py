@@ -249,10 +249,6 @@ class StaRMap:
 
         # If the map had no relevant features, fill with default values
         if r_trees is None:
-            warn(
-                f'no features for relation "{relation}" for location type "{location_type}"'
-            )
-
             return array([relation_class.empty_map_parameters()] * coordinates.shape[0])
 
         try:
