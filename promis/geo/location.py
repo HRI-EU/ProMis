@@ -1,7 +1,13 @@
 """This module implements abstractions for timestamped
 geospatial locations in WGS84 and local coordinates."""
 
-
+#
+# Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
+#
+# This file is part of ProMis and licensed under the BSD 3-Clause License.
+# You should have received a copy of the BSD 3-Clause License along with ProMis.
+# If not, see https://opensource.org/license/bsd-3-clause/.
+#
 
 # Standard Library
 from math import degrees, radians

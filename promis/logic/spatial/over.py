@@ -1,6 +1,12 @@
 """This module implements a distributional predicate of distances to sets of map features."""
 
-
+#
+# Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
+#
+# This file is part of ProMis and licensed under the BSD 3-Clause License.
+# You should have received a copy of the BSD 3-Clause License along with ProMis.
+# If not, see https://opensource.org/license/bsd-3-clause/.
+#
 
 # Geometry
 from shapely.strtree import STRtree
