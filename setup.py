@@ -20,7 +20,7 @@ setuptools.setup(
     name="promis",
     version=version,
     author=author,
-    author_email="ANONYMIZED",
+    author_email="simon.kohaut@cs.tu-darmstadt.de",
     description="A Python package to apply probabilistic logic programming to navigation tasks.",
     long_description=long_description,
     long_description_content_type="text/markdown",
