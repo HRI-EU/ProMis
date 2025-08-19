@@ -67,6 +67,8 @@ sphinx-build -b html doc/source _build/html
 
 To view the documentation, open the file `ProMis/doc/build/html/index.html` using the browser of your choice.
 
+This projects is setup to be checked with `ruff` and `pytest`.
+
 ## License
 
 Copyright (c) 2023 Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors.
