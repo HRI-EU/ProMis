@@ -135,9 +135,7 @@
 <span class="sd">        data: A list of Cartesian location and value pairs</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">number_of_values</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">number_of_values</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Attributes setup</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span> <span class="o">=</span> <span class="n">number_of_values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
@@ -156,7 +154,7 @@
         <span class="n">height</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">number_of_values</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">include_corners</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">include_corners</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Collection&quot;</span><span class="p">:</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">LatinHypercube</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">number_of_samples</span><span class="p">)</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">scale</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">])</span>
@@ -166,13 +164,15 @@
 
         <span class="k">if</span> <span class="n">include_corners</span><span class="p">:</span>
             <span class="n">collection</span><span class="o">.</span><span class="n">append_with_default</span><span class="p">(</span>
-                <span class="n">array</span><span class="p">([</span>
-                    <span class="p">[</span><span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span>
-                    <span class="p">[</span><span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span>
-                    <span class="p">[</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span>
-                    <span class="p">[</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]</span>
-                <span class="p">]),</span>
-                <span class="mf">0.0</span>
+                <span class="n">array</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="p">[</span><span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span>
+                        <span class="p">[</span><span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span>
+                        <span class="p">[</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span>
+                        <span class="p">[</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span>
+                    <span class="p">]</span>
+                <span class="p">),</span>
+                <span class="mf">0.0</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">collection</span></div>
@@ -245,6 +245,24 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">location_columns</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the value at a specific coordinate.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            x: The x coordinate</span>
+<span class="sd">            y: The y coordinate</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The value at the specified coordinate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">position</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="n">x</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">==</span> <span class="n">y</span><span class="p">)]</span>
+            <span class="o">.</span><span class="n">to_numpy</span><span class="p">()[:,</span> <span class="mi">2</span><span class="p">:]</span>  <span class="c1"># Get all columns except the first two</span>
+            <span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Makes sure we get a 1D array</span>
+        <span class="p">)</span>
+
 <div class="viewcode-block" id="Collection.to_csv">
 <a class="viewcode-back" href="../../../api.html#promis.geo.Collection.to_csv">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;w&quot;</span><span class="p">):</span>
@@ -308,10 +326,7 @@
 <span class="sd">            values: The default value to assign to all locations</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">atleast_2d</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span>
-            <span class="n">repeat</span><span class="p">(</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="n">repeat</span><span class="p">(</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Collection.get_basemap">
@@ -330,9 +345,7 @@
         <span class="kn">from</span><span class="w"> </span><span class="nn">promis.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">OsmLoader</span>
 
         <span class="c1"># Get OpenStreetMap and crop to relevant area</span>
-        <span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span> <span class="o">=</span> <span class="n">OsmLoader</span><span class="o">.</span><span class="n">compute_polar_bounding_box</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span>
-        <span class="p">)</span>
+        <span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span> <span class="o">=</span> <span class="n">OsmLoader</span><span class="o">.</span><span class="n">compute_polar_bounding_box</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">)</span>
         <span class="nb">map</span> <span class="o">=</span> <span class="n">smopy</span><span class="o">.</span><span class="n">Map</span><span class="p">((</span><span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span><span class="p">),</span> <span class="n">z</span><span class="o">=</span><span class="n">zoom</span><span class="p">)</span>
         <span class="n">left</span><span class="p">,</span> <span class="n">bottom</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">to_pixels</span><span class="p">(</span><span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">)</span>
         <span class="n">right</span><span class="p">,</span> <span class="n">top</span> <span class="o">=</span> <span class="nb">map</span><span class="o">.</span><span class="n">to_pixels</span><span class="p">(</span><span class="n">north</span><span class="p">,</span> <span class="n">east</span><span class="p">)</span>
@@ -450,10 +463,7 @@
 <div class="viewcode-block" id="Collection.get_entropy">
 <a class="viewcode-back" href="../../../api.html#promis.geo.Collection.get_entropy">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_entropy</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">number_of_neighbours</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
-        <span class="n">number_of_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-        <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">number_of_neighbours</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">number_of_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the local entropy in the collection.</span>
 
@@ -476,10 +486,7 @@
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">neighbors</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">indices</span><span class="p">):</span>
             <span class="n">neighbor_values</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">neighbors</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
             <span class="n">hist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span>
-                <span class="n">neighbor_values</span><span class="p">,</span>
-                <span class="n">bins</span><span class="o">=</span><span class="n">number_of_bins</span><span class="p">,</span>
-                <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">values</span><span class="p">)),</span>
-                <span class="n">density</span><span class="o">=</span><span class="kc">True</span>
+                <span class="n">neighbor_values</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">number_of_bins</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">values</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">values</span><span class="p">)),</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
             <span class="n">hist</span> <span class="o">+=</span> <span class="mf">1e-12</span>
             <span class="n">hist</span> <span class="o">/=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hist</span><span class="p">)</span>
@@ -490,9 +497,7 @@
 
 <div class="viewcode-block" id="Collection.scatter">
 <a class="viewcode-back" href="../../../api.html#promis.geo.Collection.scatter">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">scatter</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">plot_basemap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scatter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">plot_basemap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a scatterplot of this Collection.</span>
 
 <span class="sd">        Args:</span>
@@ -581,10 +586,7 @@
 <div class="viewcode-block" id="CartesianCollection.into">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection.into">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">into</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;Collection&quot;</span><span class="p">,</span>
-        <span class="n">interpolation_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
-        <span class="n">in_place</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;Collection&quot;</span><span class="p">,</span> <span class="n">interpolation_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">in_place</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Collection&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">in_place</span><span class="p">:</span>
             <span class="n">target</span> <span class="o">=</span> <span class="n">other</span>
@@ -610,7 +612,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            interpolation_method: The interpolation method to use, one</span>
-<span class="sd">                of {linear, nearest, hybrid, gaussian_process}</span>
+<span class="sd">                of {linear, nearest, hybrid, gaussian_process, clough-tocher}</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A callable interpolator function</span>
@@ -644,9 +646,7 @@
         <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
-        <span class="n">clusters</span> <span class="o">=</span> <span class="n">AgglomerativeClustering</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">distance_threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-            <span class="n">coordinates</span>
-        <span class="p">)</span>
+        <span class="n">clusters</span> <span class="o">=</span> <span class="n">AgglomerativeClustering</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">distance_threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
 
         <span class="n">pruning_index</span> <span class="o">=</span> <span class="n">sort</span><span class="p">(</span><span class="n">unique</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">labels_</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">pruned_coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">pruning_index</span><span class="p">]</span>
@@ -713,7 +713,6 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">HybridInterpolator</span><span class="p">:</span>
-
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linear</span> <span class="o">=</span> <span class="n">LinearNDInterpolator</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nearest</span> <span class="o">=</span> <span class="n">NearestNDInterpolator</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>

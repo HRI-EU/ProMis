@@ -242,6 +242,22 @@
 <span class="sd">            to their uncertainties and underlying sample methods</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="c1"># TODO: investigate why the parallelization is not working</span>
+        <span class="c1"># (it makes all features be the same in the sampled maps</span>
+        <span class="c1">#  because on Linux, processes are not individually re-seeded)</span>
+
+        <span class="c1"># with Pool(n_jobs) as pool:</span>
+        <span class="c1">#     sampled_feature_lists = list(</span>
+        <span class="c1">#         track(</span>
+        <span class="c1">#             pool.imap_unordered(</span>
+        <span class="c1">#                 Map._sample_features, repeat(self.features, number_of_samples), chunksize=1</span>
+        <span class="c1">#             ),</span>
+        <span class="c1">#             description=f&quot;Resampling Map {number_of_samples} times&quot;,</span>
+        <span class="c1">#             total=number_of_samples,</span>
+        <span class="c1">#             disable=not show_progress,</span>
+        <span class="c1">#         )</span>
+        <span class="c1">#     )</span>
+
         <span class="k">return</span> <span class="p">[</span>
             <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="n">Map</span><span class="o">.</span><span class="n">_sample_features</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_samples</span><span class="p">)</span>
         <span class="p">]</span></div>
@@ -256,8 +272,6 @@
 <span class="sd">            covariance: The covariance matrix to set for all featuers or a dictionary</span>
 <span class="sd">                mapping location_type to covariance matrix</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># TODO: investigae how the covariance of the final relation is computed</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">covariance</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
@@ -318,7 +332,7 @@
 
 <div class="viewcode-block" id="PolarMap.send_to_gui">
 <a class="viewcode-back" href="../../../api.html#promis.geo.PolarMap.send_to_gui">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">send_to_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span><span class="s2">&quot;http://localhost:8000/add_geojson_map&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_to_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:8000/add_geojson_map&quot;</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.</span>
 
 <span class="sd">        Args:</span>
@@ -334,12 +348,13 @@
         <span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span>
         <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">+=</span> <span class="n">feature</span><span class="o">.</span><span class="n">to_geo_json</span><span class="p">()</span>
-            <span class="n">data</span> <span class="o">+=</span> <span class="s1">&#39;,&#39;</span>
+            <span class="n">data</span> <span class="o">+=</span> <span class="s2">&quot;,&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">data</span> <span class="o">+=</span> <span class="s1">&#39;]&#39;</span>
+        <span class="n">data</span> <span class="o">+=</span> <span class="s2">&quot;]&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
         <span class="n">r</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span></div>
 </div>
+
 
 
 <div class="viewcode-block" id="CartesianMap">
