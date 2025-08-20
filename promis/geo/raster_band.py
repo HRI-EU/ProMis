@@ -75,8 +75,8 @@ class RasterBand(ABC):
 
         # TODO: Despite being defined in the base class, this method only works reliably for
         # CartesianRasterBand. For PolarRasterBand, it does not correctly compute distances.
-        # On a cartesian grid, the entire implementation is correct, but could be much faster.
-        # By avoiding the KDTree altogether and using the fact that the graph is a regular grid.
+        # On a cartesian grid, the entire implementation is correct, but could be much faster
+        # by avoiding the KDTree altogether and using the fact that the graph is a regular grid.
 
         # Create graph with nodes with cost from own data
         graph = Graph()
