@@ -15,8 +15,8 @@ ENV PIP_BREAK_SYSTEM_PACKAGES=1
 RUN pip install pyro-ppl graphviz
 RUN pip install --upgrade --force-reinstall --no-deps --no-binary :all: pysdd
 
-# Get clone of repository
+# Get clone of repository and install with a reasoning backend
 RUN git clone https://github.com/HRI-EU/ProMis.git
 WORKDIR /ProMis
-# Setting -e does not really work here
 RUN pip install '.[doc,dev,nautical]'
+RUN pip install git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
