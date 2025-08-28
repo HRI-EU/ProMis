@@ -55,6 +55,7 @@ function MapComponent() {
   });
 
   let didInit = false;
+  const delayUpdateTime = 5000 //ms
 
   useEffect(() => {
     if (didInit)
@@ -80,7 +81,7 @@ function MapComponent() {
     C().addMapComponentCallback(changeState);
 
     // add interval to check for external updates
-    setInterval(externalUpdate, 5000);
+    setInterval(externalUpdate, delayUpdateTime);
 
     // hide zoom control
     const zoomControl = document.querySelector(".leaflet-control-zoom");
