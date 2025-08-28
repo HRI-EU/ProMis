@@ -962,6 +962,28 @@ class MapManager {
     toBeRemove.forEach((layer) => this._removeDynamicLayer(layer));
   }
 
+  _filterUnique(entities) { 
+    let foundIds = [];
+    let toBeDeletedIndex = [];
+    for(var i = 0; i < entities.length; i++) {
+      const currentId = entities[i].id;
+      let found = false;
+      for (var j = 0; j < foundIds.length; j++) {
+        if (currentId === foundIds[j]) {
+          found = true;
+          toBeDeletedIndex.push(i);
+          break;
+        }
+      }
+      if (!found) {
+        foundIds.push(currentId);
+      }
+    }
+    return entities.filter((_, index) => {
+      return !toBeDeletedIndex.includes(index);
+    })
+  }
+
   // import all external layers from backend type=1: marker, type=2: polyline, type=3: polygon
   importExternal(dynamicLayers) {
     if (!this.dynamicFeatureGroup) {
@@ -972,9 +994,9 @@ class MapManager {
     this._cleanupDynamicLayer(toBeProcessedLayers);
     
     // import markers, polylines and polygons
-    this.importMarkers(dynamicLayers.markers);
-    this.importPolylines(dynamicLayers.polylines);
-    this.importPolygons(dynamicLayers.polygons);
+    this.importMarkers(this._filterUnique(dynamicLayers.markers));
+    this.importPolylines(this._filterUnique(dynamicLayers.polylines));
+    this.importPolygons(this._filterUnique(dynamicLayers.polygons));
 
   }
 

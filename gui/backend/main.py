@@ -9,7 +9,6 @@ from pydantic import ValidationError
 
 from promis import ProMis, StaRMap
 from promis.geo import (
-    CartesianCollection,
     CartesianRasterBand,
     PolarLocation,
     PolarMap,
@@ -502,7 +501,12 @@ def fetch_external_update():
         app.temp_dyn_obj_and_loc_type["polylines"] = []
         app.temp_dyn_obj_and_loc_type["polygons"] = []
         app.temp_dyn_obj_and_loc_type["loc_type_entries"] = []
+    
+    app.temp_dyn_obj_and_loc_type["markers"].reverse()
+    app.temp_dyn_obj_and_loc_type["polylines"].reverse()
+    app.temp_dyn_obj_and_loc_type["polygons"].reverse()
     result = app.temp_dyn_obj_and_loc_type.copy()
+
     # clean up
     app.temp_dyn_obj_and_loc_type["markers"] = []
     app.temp_dyn_obj_and_loc_type["polylines"] = []
