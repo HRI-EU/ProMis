@@ -13,21 +13,40 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 # ProMis
-from promis.geo import CartesianLocation, CartesianMap, PolarLocation, PolarMap
+from promis.geo import CartesianLocation, CartesianMap, PolarGeometry, PolarLocation, PolarMap
 
 
 class SpatialLoader(ABC):
-    """A base class for loaders of geospatial objects from differents sources and interfaces."""
+    """A base class for loaders of geospatial objects from different sources and interfaces.
+
+    Args:
+        origin: The polar coordinates of the map's center.
+        dimensions: The (width, height) of the map in meters.
+    """
 
     def __init__(self, origin: PolarLocation, dimensions: tuple[float, float]):
         self.origin = origin
         self.dimensions = dimensions
-        self.features = []
+        self.features: list[PolarGeometry] = []
 
     def to_polar_map(self) -> PolarMap:
+        """Creates a PolarMap from the loaded features.
+
+        Returns:
+            A PolarMap centered at the loader's origin containing all loaded features.
+        """
         return PolarMap(self.origin, self.features)
 
     def to_cartesian_map(self) -> CartesianMap:
+        """Creates a CartesianMap from the loaded features.
+
+        This is a convenience method that first creates a polar map and then converts it
+        to Cartesian coordinates.
+
+        Returns:
+            A CartesianMap containing all loaded features, with (0, 0) corresponding to the
+            loader's origin.
+        """
         return self.to_polar_map().to_cartesian()
 
     @abstractmethod
@@ -46,11 +65,12 @@ class SpatialLoader(ABC):
         """Computes the north, east, south and west limits of the area to be loaded.
 
         Args:
-            origin: A point that defines the center of the map
-            dimensions: The width and height of the map in meters
+            origin: A point that defines the center of the map.
+            dimensions: The width and height of the map in meters.
 
         Returns:
-            Southern latitude, western longitude, northern latitude and eastern longitude
+            A tuple containing (southern latitude, western longitude, northern latitude,
+            eastern longitude).
         """
 
         # Unpack dimensions

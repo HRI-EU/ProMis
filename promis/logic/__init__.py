@@ -1,4 +1,4 @@
-"""The ProMis logic package provides probabilistic logic program inference."""
+"""The ProMis logic package provides probabilistic logic program inference and spatial relations."""
 
 #
 # Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors
@@ -10,5 +10,6 @@
 
 # ProMis
 from promis.logic.solver import Solver
+from promis.logic.spatial import Depth, Distance, Over, Relation, ScalarRelation
 
-__all__ = ["Solver"]
+__all__ = ["Depth", "Distance", "Over", "Relation", "ScalarRelation", "Solver"]

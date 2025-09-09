@@ -10,11 +10,9 @@
 import re
 from warnings import warn
 
-# Plotting
+# Third Party
 import matplotlib.pyplot as plt
 from matplotlib.colors import CenteredNorm
-
-# Third Party
 from shapely import STRtree
 
 # ProMis
