@@ -27,25 +27,31 @@ DerivedRelation = TypeVar("DerivedRelation", bound="Relation")
 
 
 class Relation(ABC):
-    """A spatial relation between points in space and typed map features.
+    """An abstract base class for spatial relations.
+
+    A spatial relation models a probabilistic relationship between points in space and typed map
+    features. It is typically represented by a distribution (e.g., Gaussian) for each point,
+    defined by a set of parameters like mean and variance.
 
     Args:
-        parameters: A CartesianCollection relating points with parameters
-            of the relation's distribution, e.g., mean and variance
-        location_type: The type of location this relates to, e.g., buildings or roads
+        parameters: A collection of points, where each point is associated with parameters
+            that define the relation's distribution (e.g., mean and variance).
+        location_type: A string identifier for the type of map feature this relation pertains to,
+            such as "buildings" or "roads". Can be `None` if the relation is not specific to a
+            feature type.
     """
 
-    def __init__(self, parameters: CartesianCollection, location_type: str) -> None:
+    def __init__(self, parameters: CartesianCollection, location_type: str | None) -> None:
         # Setup attributes
         self.parameters = parameters
         self.location_type = location_type
 
     @staticmethod
-    def load(path: str) -> DerivedRelation:
+    def load(path: str | Path) -> DerivedRelation:
         """Load the relation from a .pkl file.
 
         Args:
-            path: The path to the file including its name and file extension
+            path: The path to the file, including its name and file extension.
 
         Returns:
             The loaded Relation instance
@@ -54,31 +60,34 @@ class Relation(ABC):
         with open(path, "rb") as file:
             return load(file)
 
-    def save(self, path: Path):
+    def save(self, path: str | Path) -> None:
         """Save the relation to a .pkl file.
 
         Args:
-            path: The path to the file including its name and file extension
+            path: The path to the file, including its name and file extension.
         """
 
         with open(path, "wb") as file:
             dump(self, file)
 
-    def save_as_plp(self, path: Path):
+    def save_as_plp(self, path: str | Path) -> None:
         """Save the relation as a text file containing distributional clauses.
 
         Args:
-            path: The path to the file including its name and file extension
+            path: The path to the file, including its name and file extension.
         """
 
         with open(path, "w") as plp_file:
-            plp_file.write(self.to_distributional_clauses().join(""))
+            plp_file.write("".join(self.to_distributional_clauses()))
 
     def to_distributional_clauses(self) -> list[str]:
         """Express the Relation as distributional clause.
 
+        A distributional clause is a string representation of a probabilistic fact,
+        suitable for use in a probabilistic logic program.
+
         Returns:
-            The distributional clauses representing according to this Relation
+            A list of distributional clauses, one for each point in the `parameters` collection.
         """
 
         return [
@@ -88,14 +97,21 @@ class Relation(ABC):
     @staticmethod
     @abstractmethod
     def empty_map_parameters() -> list[float]:
-        """Create the default parameters for an empty map."""
+        """Create the default parameters for a relation computed on an empty map.
+
+        These parameters are used as a fallback when no map features are present to compute
+        the relation from.
+        """
 
     @abstractmethod
     def index_to_distributional_clause(self, index: int) -> str:
         """Express a single index of this Relation as a distributional clause.
 
+        Args:
+            index: The index of the point within the `parameters` collection.
+
         Returns:
-            The distributional clause representing the respective entry of this Relation
+            A string representing the distributional clause for the specified entry.
         """
 
     @staticmethod
@@ -106,12 +122,12 @@ class Relation(ABC):
         """Compute the value of this Relation type for a specific location and map.
 
         Args:
-            location: The location to evaluate in Cartesian coordinates
-            r_tree: The map represented as r-tree
-            original_geometries: The geometries indexed by the STRtree
+            location: The location to evaluate in Cartesian coordinates.
+            r_tree: The map represented as an R-tree for efficient spatial queries.
+            original_geometries: The original geometries indexed by the STRtree.
 
         Returns:
-            The value of this Relation for the given location and map
+            A scalar value representing the computed relation (e.g., distance, depth).
         """
 
     @staticmethod
@@ -129,12 +145,13 @@ class Relation(ABC):
         """Compute the parameters of this Relation type for a specific location and set of maps.
 
         Args:
-            location: The location to evaluate in Cartesian coordinates
-            r_trees: The set of generated maps represented as r-tree
-            original_geometries: The geometries indexed by the STRtrees
+            location: The location to evaluate in Cartesian coordinates.
+            r_trees: A list of generated maps, each represented as an R-tree.
+            original_geometries: The original geometries indexed by the STRtrees.
 
         Returns:
-            The parameters of this Relation for the given location and maps
+            A numpy array containing the computed parameters (e.g., mean and variance) of the
+            relation's distribution for the given location.
         """
 
         relation_data = [
@@ -155,19 +172,16 @@ class Relation(ABC):
         """Compute relation for a Cartesian collection of points and a set of R-trees.
 
         Args:
-            support: The collection of Cartesian points to compute the relation for
-            r_trees: Random variations of the features of a map indexible by an STRtree each
-            location_type: The type of features this relates to
-            original_geometries: The geometries indexed by the STRtrees
+            support: The collection of Cartesian points to compute the relation for.
+            r_trees: Random variations of the features of a map, each indexible by an STRtree.
+            location_type: The type of features this relates to.
+            original_geometries: The original geometries indexed by the STRtrees.
 
         Returns:
-            The computed relation
+            A new instance of the Relation class, populated with the computed parameters.
         """
 
-        # TODO if `support` is a RasterBand, we could make parameters a RasterBand as well
-        # to maintain the efficient raster representation
-
-        # Compute Over over support points
+        # Compute relation over support points
         locations = support.to_cartesian_locations()
         statistical_moments = vstack(
             [
@@ -176,23 +190,39 @@ class Relation(ABC):
             ]
         )
 
-        # Setup parameter collection and return relation
-        parameters = CartesianCollection(
-            support.origin, number_of_values=statistical_moments.shape[1]
-        )
-        parameters.append(locations, statistical_moments)
+        if isinstance(support, CartesianRasterBand):
+            # Maintain the efficient raster representation
+            parameters = CartesianRasterBand(
+                support.origin,
+                support.resolution,
+                support.width,
+                support.height,
+                number_of_values=statistical_moments.shape[1],
+            )
+            for i in range(statistical_moments.shape[1]):
+                parameters.data[f"v{i}"] = statistical_moments[:, i]
+        else:
+            # Setup parameter collection
+            parameters = CartesianCollection(support.origin, number_of_values=statistical_moments.shape[1])
+            parameters.append(locations, statistical_moments)
 
         return cls(parameters, location_type)
 
 
 class ScalarRelation(Relation):
-    """The relation of a scalar with a Gaussian distribution.
+    """A relation representing a scalar value modeled by a Gaussian distribution.
+
+    This class provides a concrete implementation for relations where the value at each point
+    can be described by a mean and a variance. It also implements comparison operators (`<`, `>`)
+    to facilitate probabilistic queries based on the Commulative Distribution Function (CDF)
+    of the Gaussian distribution.
 
     Args:
-        parameters: A collection of points with each having values as [mean, variance]
-        location_type: The name of the locations this distance relates to
-        problog_name: The name of the relation in Problog
-        enforced_min_variance: The minimum variance enforced for the distribution by clipping
+        parameters: A collection of points, where each has values for `[mean, variance]`.
+        location_type: The name of the locations this distance relates to.
+        problog_name: The name to be used for this relation in Problog clauses.
+        enforced_min_variance: The minimum variance to enforce for the distribution. Values below
+            this will be clipped.
     """
 
     def __init__(
@@ -209,9 +239,21 @@ class ScalarRelation(Relation):
         self.enforced_min_variance = enforced_min_variance
 
     def __lt__(self, value: float) -> CartesianCollection:
+        """Compute the probability that the relation's value is less than a given value.
+
+        This is equivalent to calculating the CDF of the
+        Gaussian distribution at each point for the given value.
+
+        Args:
+            value: The value to compare against.
+
+        Returns:
+            A CartesianCollection where each point's value is the probability
+            `P(relation < value)`.
+        """
         means = self.parameters.data["v0"]
-        stds = self.parameters.data["v1"]
-        cdf = norm.cdf(value, loc=means, scale=sqrt(stds))
+        variances = self.parameters.data["v1"]
+        cdf = norm.cdf(value, loc=means, scale=sqrt(variances))
 
         if isinstance(self.parameters, CartesianRasterBand):
             # Maintain the efficient raster representation
@@ -229,6 +271,18 @@ class ScalarRelation(Relation):
         return probabilities
 
     def __gt__(self, value: float) -> CartesianCollection:
+        """Compute the probability that the relation's value is greater than a given value.
+
+        This is equivalent to calculating the survival function (1 - CDF) of the
+        Gaussian distribution at each point for the given value.
+
+        Args:
+            value: The value to compare against.
+
+        Returns:
+            A CartesianCollection where each point's value is the probability
+            `P(relation > value)`.
+        """
         # Uses the existing __lt__ method to compute the inverse
         probabilities = self < value
         probabilities.data["v0"] = 1.0 - probabilities.data["v0"]
@@ -236,13 +290,24 @@ class ScalarRelation(Relation):
         return probabilities
 
     def index_to_distributional_clause(self, index: int) -> str:
+        """Express a single index of this Relation as a distributional clause.
+
+        Formats the clause as `name(x_INDEX, location_type) ~ normal(MEAN, STD).`
+        or `name(x_INDEX) ~ normal(MEAN, STD).` if `location_type` is None.
+
+        Args:
+            index: The index of the point within the `parameters` collection.
+
+        Returns:
+            A string representing the distributional clause for the specified entry.
+        """
         if self.location_type is None:
             relation = f"{self.problog_name}(x_{index})"
         else:
             relation = f"{self.problog_name}(x_{index}, {self.location_type})"
 
         mean = self.parameters.data['v0'][index]
-        std = sqrt(clip(self.parameters.data['v1'][index], self.enforced_min_variance, None))
+        std = sqrt(self.parameters.data['v1'][index])
         distribution = f"normal({mean}, {std})"
 
         return f"{relation} ~ {distribution}.\n"
