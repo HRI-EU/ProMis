@@ -74,7 +74,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.loaders.osm_loader</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module contains a loader for spatial data from OpenStreetMaps (OSM).&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;A loader for fetching spatial data from OpenStreetMaps (OSM) via the Overpass API.&quot;&quot;&quot;</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -85,170 +85,165 @@
 <span class="c1">#</span>
 
 <span class="c1"># Standard Library</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep</span>
 
 <span class="c1"># Third Party</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">overpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Overpass</span><span class="p">,</span> <span class="n">Relation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">overpy.exception</span><span class="w"> </span><span class="kn">import</span> <span class="n">OverpassGatewayTimeout</span><span class="p">,</span> <span class="n">OverpassTooManyRequests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">overpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Overpass</span><span class="p">,</span> <span class="n">Relation</span><span class="p">,</span> <span class="n">exception</span>
 
 <span class="c1"># ProMis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">PolarPolygon</span><span class="p">,</span> <span class="n">PolarPolyLine</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.loaders.spatial_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpatialLoader</span>
 
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="OsmLoader">
 <a class="viewcode-back" href="../../../api.html#promis.loaders.OsmLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OsmLoader</span><span class="p">(</span><span class="n">SpatialLoader</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A loader for spatial data from OpenStreetMaps (OSM) via the overpy package.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A loader for spatial data from OpenStreetMaps (OSM) via the Overpass API.</span>
+
+<span class="sd">    This loader connects to the Overpass API to fetch map features like buildings, roads,</span>
+<span class="sd">    and other geographical entities based on specified filters.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        If a `feature_description` is provided during initialization, data loading via the</span>
+<span class="sd">        `load` method is triggered immediately. If it is not provided, you must call</span>
+<span class="sd">        `load()` manually with a feature description to populate the loader with data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        origin: The polar coordinates of the map&#39;s center.</span>
+<span class="sd">        dimensions: The (width, height) of the map in meters.</span>
+<span class="sd">        feature_description: A mapping from a location type (e.g., &quot;buildings&quot;) to an</span>
+<span class="sd">            Overpass API filter string (e.g., `&quot;[building]&quot;`). If provided, data is</span>
+<span class="sd">            loaded upon initialization. Defaults to None.</span>
+<span class="sd">        timeout: The number of seconds to wait before retrying a failed API query.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span>
         <span class="n">dimensions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
-        <span class="n">feature_description</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">feature_description</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span>
     <span class="p">):</span>
         <span class="c1"># Initialize Overpass API</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">overpass_api</span> <span class="o">=</span> <span class="n">Overpass</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">feature_description</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">feature_description</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">feature_description</span><span class="p">)</span>
 
 <div class="viewcode-block" id="OsmLoader.load">
 <a class="viewcode-back" href="../../../api.html#promis.loaders.OsmLoader.load">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_description</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_description</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This method queries the Overpass API for ways and relations matching the provided</span>
+<span class="sd">        filters. It handles retries for common network issues.</span>
+
+<span class="sd">        - **Ways** are converted to `PolarPolyLine` (if open) or `PolarPolygon` (if closed).</span>
+<span class="sd">        - **Relations** are converted to `PolarPolygon`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            feature_description: A mapping from a location type (e.g., &quot;buildings&quot;) to an</span>
+<span class="sd">                Overpass API filter string (e.g., `&quot;[building]&quot;`). If None, no features</span>
+<span class="sd">                are loaded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Compute bounding box once and format it for Overpass</span>
+        <span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_polar_bounding_box</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">)</span>
+        <span class="n">bounding_box</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">south</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">west</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">north</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">east</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span>
+
         <span class="k">for</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">osm_filter</span> <span class="ow">in</span> <span class="n">feature_description</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_load_routes</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_load_polygons</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_ways</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">bounding_box</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_relations</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">bounding_box</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_load_routes</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">filters</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarPolyLine</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads all selected ways from OSM as PolarPolyLine.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_perform_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;overpy.Result | None&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs an Overpass query with a retry mechanism.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            tag: The tag that way and relation will be qualitfied with, required to</span>
-<span class="sd">                contain the quotation marks for Overpass, e.g. &quot;leisure&quot;=&quot;park&quot; or &quot;building&quot;</span>
-<span class="sd">            bounding_box: The bounding box for Overpass</span>
-<span class="sd">            location_type: The type to assign to each loaded route</span>
+<span class="sd">            query: The Overpass QL query string.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            A list of all found map features as PolarPolyLines</span>
+<span class="sd">            The query result, or None if the query fails with an unexpected error.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># Compute bounding box and format it for Overpass</span>
-        <span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_polar_bounding_box</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">)</span>
-        <span class="n">bounding_box</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">south</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">west</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">north</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">east</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span>
 
         <span class="c1"># Load data via Overpass</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overpass_api</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                        [out:json];</span>
-<span class="s2">                        way</span><span class="si">{</span><span class="n">filters</span><span class="si">}{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;</span>
-<span class="s2">                        out geom</span><span class="si">{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;&gt;;out;</span>
-<span class="s2">                    &quot;&quot;&quot;</span>
-                <span class="p">)</span>
-
-                <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">+=</span> <span class="p">[</span>
-                    <span class="n">PolarPolyLine</span><span class="p">(</span>
-                        <span class="p">[</span>
-                            <span class="n">PolarLocation</span><span class="p">(</span>
-                                <span class="n">latitude</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">lat</span><span class="p">),</span> <span class="n">longitude</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">lon</span><span class="p">),</span> <span class="n">location_type</span><span class="o">=</span><span class="n">name</span>
-                            <span class="p">)</span>
-                            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">way</span><span class="o">.</span><span class="n">nodes</span>
-                        <span class="p">],</span>
-                        <span class="n">location_type</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="k">for</span> <span class="n">way</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">ways</span>
-                <span class="p">]</span>
-            <span class="k">except</span> <span class="p">(</span><span class="n">OverpassGatewayTimeout</span><span class="p">,</span> <span class="n">OverpassTooManyRequests</span><span class="p">):</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;OSM query failed, sleeping </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">s...&quot;</span><span class="p">)</span>
-                <span class="n">sleep</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">overpass_api</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">exception</span><span class="o">.</span><span class="n">OverpassGatewayTimeout</span><span class="p">,</span> <span class="n">exception</span><span class="o">.</span><span class="n">OverpassTooManyRequests</span><span class="p">):</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;OSM query failed, sleeping </span><span class="si">%f</span><span class="s2">s...&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">)</span>
+                <span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-                <span class="k">break</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">break</span>
+                <span class="c1"># This can happen for empty results with some overpy versions</span>
+                <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_load_polygons</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">filters</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarPolyLine</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads all selected ways from OSM as PolarPolyLine.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_ways</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">osm_filter</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">bounding_box</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads ways from OSM and converts them to polylines or polygons.</span>
+
+<span class="sd">        It distinguishes between open ways (which become `PolarPolyLine`s) and closed ways</span>
+<span class="sd">        (which become `PolarPolygon`s).</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            tag: The tag that way and relation will be qualitfied with, required to</span>
-<span class="sd">                contain the quotation marks for Overpass, e.g. &quot;leisure&quot;=&quot;park&quot; or &quot;building&quot;</span>
-<span class="sd">            bounding_box: The bounding box for Overpass</span>
-<span class="sd">            location_type: The type to assign to each loaded route</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A list of all found map features as PolarPolyLines</span>
+<span class="sd">            osm_filter: The Overpass API filter string to select ways.</span>
+<span class="sd">            location_type: The type to assign to the created geometries (e.g., &quot;building&quot;).</span>
+<span class="sd">            bounding_box: The pre-formatted bounding box string for the Overpass query.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># Compute bounding box and format it for Overpass</span>
-        <span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_polar_bounding_box</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">)</span>
-        <span class="n">bounding_box</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">south</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">west</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">north</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">east</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            [out:json];</span>
+<span class="s2">            way</span><span class="si">{</span><span class="n">osm_filter</span><span class="si">}{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">            out geom</span><span class="si">{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;&gt;;out;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># Load data via Overpass</span>
-        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">way_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overpass_api</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                        [out:json];</span>
-<span class="s2">                        way</span><span class="si">{</span><span class="n">filters</span><span class="si">}{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;</span>
-<span class="s2">                        out geom</span><span class="si">{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;&gt;;out;</span>
-<span class="s2">                    &quot;&quot;&quot;</span>
-                <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perform_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">+=</span> <span class="p">[</span>
-                    <span class="n">PolarPolygon</span><span class="p">(</span>
-                        <span class="p">[</span>
-                            <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">lat</span><span class="p">),</span> <span class="n">longitude</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">lon</span><span class="p">))</span>
-                            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">way</span><span class="o">.</span><span class="n">nodes</span>
-                        <span class="p">],</span>
-                        <span class="n">location_type</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="k">for</span> <span class="n">way</span> <span class="ow">in</span> <span class="n">way_result</span><span class="o">.</span><span class="n">ways</span>
-                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">way</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span>
-                <span class="p">]</span>
-            <span class="k">except</span> <span class="p">(</span><span class="n">OverpassGatewayTimeout</span><span class="p">,</span> <span class="n">OverpassTooManyRequests</span><span class="p">):</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;OSM query failed, sleeping </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">s...&quot;</span><span class="p">)</span>
-                <span class="n">sleep</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-                <span class="k">break</span>
+        <span class="k">for</span> <span class="n">way</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">ways</span><span class="p">:</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">lat</span><span class="p">),</span> <span class="n">longitude</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">lon</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">way</span><span class="o">.</span><span class="n">nodes</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># A way is considered closed if its first and last nodes are identical.</span>
+            <span class="k">if</span> <span class="n">way</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">way</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PolarPolygon</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="n">location_type</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">break</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PolarPolyLine</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="n">location_type</span><span class="p">))</span>
 
-        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_relations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">osm_filter</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">bounding_box</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads relations from OSM and converts them to polygons.</span>
+
+<span class="sd">        Each relation is converted to a `PolarPolygon` using `relation_to_polygon`.</span>
+<span class="sd">        Any relations that cannot be processed will be skipped with a warning.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            osm_filter: The Overpass API filter string to select relations.</span>
+<span class="sd">            location_type: The type to assign to the created geometries (e.g., &quot;harbor&quot;).</span>
+<span class="sd">            bounding_box: The pre-formatted bounding box string for the Overpass query.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            [out:json];</span>
+<span class="s2">            relation</span><span class="si">{</span><span class="n">osm_filter</span><span class="si">}{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;</span>
+<span class="s2">            out geom</span><span class="si">{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;&gt;;out;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_perform_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">relation</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">relations</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">relation_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overpass_api</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                        [out:json];</span>
-<span class="s2">                        relation</span><span class="si">{</span><span class="n">filters</span><span class="si">}{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;</span>
-<span class="s2">                        out geom</span><span class="si">{</span><span class="n">bounding_box</span><span class="si">}</span><span class="s2">;&gt;;out;</span>
-<span class="s2">                    &quot;&quot;&quot;</span>
-                <span class="p">)</span>
-
-                <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">+=</span> <span class="p">[</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_polygon</span><span class="p">(</span><span class="n">relation</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">relation</span> <span class="ow">in</span> <span class="n">relation_result</span><span class="o">.</span><span class="n">relations</span>
-                <span class="p">]</span>
-            <span class="k">except</span> <span class="p">(</span><span class="n">OverpassGatewayTimeout</span><span class="p">,</span> <span class="n">OverpassTooManyRequests</span><span class="p">):</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;OSM query failed, sleeping </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">s...&quot;</span><span class="p">)</span>
-                <span class="n">sleep</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-                <span class="k">break</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">break</span>
+                <span class="n">polygon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_polygon</span><span class="p">(</span><span class="n">relation</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="n">location_type</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Skipping relation </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">relation</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
 
 <div class="viewcode-block" id="OsmLoader.relation_to_polygon">
 <a class="viewcode-back" href="../../../api.html#promis.loaders.OsmLoader.relation_to_polygon">[docs]</a>
@@ -257,18 +252,22 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn an OSM relation into a PolarPolygon.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            relation: The relation to turn into a PolarPolygon</span>
-<span class="sd">            kwargs: Arguments that are given to PolarPolygon</span>
+<span class="sd">            relation: The relation to turn into a PolarPolygon.</span>
+<span class="sd">            **kwargs: Arguments that are given to PolarPolygon, e.g., `location_type`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            The PolarPolygon from the data in the relation</span>
+<span class="sd">            The PolarPolygon from the data in the relation.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the relation does not contain exactly one &#39;outer&#39; way.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Find the outer ring</span>
         <span class="c1"># TODO: This could be a MultiPolygon which is not yet supported here</span>
-        <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">relation</span><span class="o">.</span><span class="n">members</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="s2">&quot;outer&quot;</span><span class="p">:</span>
-                <span class="n">outer</span> <span class="o">=</span> <span class="n">member</span>
+        <span class="n">outer_members</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">relation</span><span class="o">.</span><span class="n">members</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="s2">&quot;outer&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">outer_members</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected 1 outer member, but found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">outer_members</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">outer</span> <span class="o">=</span> <span class="n">outer_members</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="c1"># Construct and return the PolarPolygon</span>
         <span class="k">return</span> <span class="n">PolarPolygon</span><span class="p">(</span>

@@ -1,0 +1,195 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>promis.logic.spatial.over &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            ProMis
+              <img src="../../../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">promis.logic.spatial.over</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for promis.logic.spatial.over</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module implements a probabilistic predicate for checking if a point is over a map feature.&quot;&quot;&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
+<span class="c1">#</span>
+<span class="c1"># This file is part of ProMis and licensed under the BSD 3-Clause License.</span>
+<span class="c1"># You should have received a copy of the BSD 3-Clause License along with ProMis.</span>
+<span class="c1"># If not, see https://opensource.org/license/bsd-3-clause/.</span>
+<span class="c1">#</span>
+
+<span class="c1"># Third Party</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely.strtree</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
+
+<span class="c1"># ProMis</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianMap</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.relation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Relation</span>
+
+
+<div class="viewcode-block" id="Over">
+<a class="viewcode-back" href="../../../../api.html#promis.logic.Over">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Over</span><span class="p">(</span><span class="n">Relation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A probabilistic relation that checks if a point is &quot;over&quot; (i.e., within) a map feature.</span>
+
+<span class="sd">    This relation is true if a given location is contained within any of the geometries of a</span>
+<span class="sd">    specific type on the map. The probability is derived from a set of sample maps.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Over.index_to_distributional_clause">
+<a class="viewcode-back" href="../../../../api.html#promis.logic.Over.index_to_distributional_clause">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">index_to_distributional_clause</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Express a single index of this Relation as a distributional clause.</span>
+
+<span class="sd">        The clause is formatted as `PROBABILITY::over(x_INDEX, location_type).`, where the</span>
+<span class="sd">        probability is the mean probability of the point being over a feature across the</span>
+<span class="sd">        sample maps.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            index: The index of the point within the `parameters` collection.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A string representing the distributional clause for the specified entry.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;v0&#39;</span><span class="p">][</span><span class="n">index</span><span class="p">]</span><span class="si">}</span><span class="s2">::over(x_</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="si">}</span><span class="s2">).</span><span class="se">\n</span><span class="s2">&quot;</span></div>
+
+
+<div class="viewcode-block" id="Over.compute_relation">
+<a class="viewcode-back" href="../../../../api.html#promis.logic.Over.compute_relation">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
+        <span class="n">location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if a location is within any of the geometries in the map.</span>
+
+<span class="sd">        This method queries the R-tree for all geometries that could contain the location and</span>
+<span class="sd">        then performs a precise check.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            location: The location to check.</span>
+<span class="sd">            r_tree: The R-tree of the map geometries for efficient querying.</span>
+<span class="sd">            original_geometries: The original map geometries (unused in this relation).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            1.0 if the location is within any geometry, 0.0 otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">geometry</span> <span class="o">=</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">geometries</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">r_tree</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">within</span><span class="p">(</span><span class="n">geometry</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Over.empty_map_parameters">
+<a class="viewcode-back" href="../../../../api.html#promis.logic.Over.empty_map_parameters">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">empty_map_parameters</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the parameters for an empty map, which is a probability of 0.0 with 0 variance.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Over.arity">
+<a class="viewcode-back" href="../../../../api.html#promis.logic.Over.arity">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">arity</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the arity of the &#39;over&#39; relation, which is 2 (location, feature_type).&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="mi">2</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

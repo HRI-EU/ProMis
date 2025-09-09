@@ -89,28 +89,47 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="c1"># ProMis</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">PolarMap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="n">PolarGeometry</span><span class="p">,</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">PolarMap</span>
 
 
 <div class="viewcode-block" id="SpatialLoader">
 <a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SpatialLoader</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A base class for loaders of geospatial objects from differents sources and interfaces.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A base class for loaders of geospatial objects from different sources and interfaces.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        origin: The polar coordinates of the map&#39;s center.</span>
+<span class="sd">        dimensions: The (width, height) of the map in meters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="n">dimensions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarGeometry</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
 <div class="viewcode-block" id="SpatialLoader.to_polar_map">
 <a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader.to_polar_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_polar_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarMap</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a PolarMap from the loaded features.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A PolarMap centered at the loader&#39;s origin containing all loaded features.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">PolarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SpatialLoader.to_cartesian_map">
 <a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader.to_cartesian_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CartesianMap</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a CartesianMap from the loaded features.</span>
+
+<span class="sd">        This is a convenience method that first creates a polar map and then converts it</span>
+<span class="sd">        to Cartesian coordinates.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A CartesianMap containing all loaded features, with (0, 0) corresponding to the</span>
+<span class="sd">            loader&#39;s origin.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_polar_map</span><span class="p">()</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">()</span></div>
 
 
@@ -135,11 +154,12 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the north, east, south and west limits of the area to be loaded.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            origin: A point that defines the center of the map</span>
-<span class="sd">            dimensions: The width and height of the map in meters</span>
+<span class="sd">            origin: A point that defines the center of the map.</span>
+<span class="sd">            dimensions: The width and height of the map in meters.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Southern latitude, western longitude, northern latitude and eastern longitude</span>
+<span class="sd">            A tuple containing (southern latitude, western longitude, northern latitude,</span>
+<span class="sd">            eastern longitude).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Unpack dimensions</span>
