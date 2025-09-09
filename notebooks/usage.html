@@ -186,7 +186,7 @@
 <p>Here, we will define our knowledge in Hybrid ProbLog where rules are written as clauses parameterized either by a probability density function (e.g., as in the <code class="docutils literal notranslate"><span class="pre">initial_charge</span></code> clause) or a probability (e.g., as in the <code class="docutils literal notranslate"><span class="pre">vlos</span></code> clause). One reads a comma <code class="docutils literal notranslate"><span class="pre">,</span></code> as a conjunction (AND), and a semicolon as a disjunction (OR). We refer to an agent’s state (here, its east/north location in a Cartesian coordinate system) with the variable <code class="docutils literal notranslate"><span class="pre">X</span></code>.</p>
 <p>For example, our toy example assumes visual line of sight (VLOS) is likely given (P = 0.8) if we have foggy weather and the distance to the operator is less than 50 meters, or if the weather is clear and the distance is within 100 meters.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Properties of the agent perceived through sensors or external sources</span>
@@ -255,7 +255,7 @@
 </div>
 <p>Let’s inspect the parameters of the StaR Map relations by visualizing the estimated values. We do so by accessing the parameters (a <code class="docutils literal notranslate"><span class="pre">promis.geo.Collection</span></code> holding mean and variances for each sampled point), and interpolating to a more fine-granular grid over the mission area.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualize the spatial relations with an OSM basemap in the background</span>
@@ -398,7 +398,7 @@
 </pre></div>
 </div>
 </div>
-<p>Let’s inspect the resulting landscapes!</p>
+<p>Let’s inspect the resulting landscapes! Blue regions indicate high probability of satisfying all constraints, and red areas should be strictly avoided.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>

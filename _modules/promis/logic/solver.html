@@ -85,31 +85,43 @@
 <span class="c1">#</span>
 
 <span class="c1"># Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="c1"># Third Party</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">problog.program</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrologString</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">problog.tasks.dcproblog.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">DCParser</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">problog.tasks.dcproblog.solver</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceSolver</span>
 
+<span class="c1">#: The default configuration for the DCProbLog solver.</span>
+<span class="n">DEFAULT_SOLVER_CONFIGURATION</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;abe_name&quot;</span><span class="p">:</span> <span class="s2">&quot;pyro&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;n_samples&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="s2">&quot;ttype&quot;</span><span class="p">:</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
 
 <div class="viewcode-block" id="Solver">
 <a class="viewcode-back" href="../../../api.html#promis.logic.Solver">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Solver</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A solver for Hybrid Probabilistic Logic Programs (HPLP) in ProMis.</span>
 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A solver for HPLP based ProMis.</span>
+<span class="sd">    This class wraps the DCProbLog inference engine, providing a simplified interface for</span>
+<span class="sd">    running queries on a probabilistic logic program.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        program: The logic program written in ProbLog with distributional clauses</span>
+<span class="sd">        program: The logic program, written as a string in ProbLog syntax with</span>
+<span class="sd">            distributional clauses.</span>
+<span class="sd">        configuration: A dictionary of configuration options for the DCProbLog solver.</span>
+<span class="sd">            If None, default settings are used. See `DEFAULT_SOLVER_CONFIGURATION`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">program</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">program</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">configuration</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="c1"># Setup DCProblog objects</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">configuration</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;abe_name&quot;</span><span class="p">:</span> <span class="s2">&quot;pyro&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;n_samples&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
-            <span class="s2">&quot;ttype&quot;</span><span class="p">:</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
-        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configuration</span> <span class="o">=</span> <span class="n">DEFAULT_SOLVER_CONFIGURATION</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">configuration</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">configuration</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">solver</span> <span class="o">=</span> <span class="n">InferenceSolver</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">configuration</span><span class="p">)</span>
 
         <span class="c1"># Setup attributes</span>
@@ -117,21 +129,30 @@
 
 <div class="viewcode-block" id="Solver.inference">
 <a class="viewcode-back" href="../../../api.html#promis.logic.Solver.inference">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run probabilistic inference on the given program.</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            configuration: A dictionary of configuration options to override the solver&#39;s</span>
+<span class="sd">                default settings for this specific inference run.</span>
+
 <span class="sd">        Returns:</span>
-<span class="sd">            A list of probabilities for all queries in the program</span>
+<span class="sd">            A list of probabilities, one for each query in the program.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="c1"># Use instance configuration and override with any provided configuration for this run</span>
+        <span class="n">inference_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">configuration</span><span class="p">:</span>
+            <span class="n">inference_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">configuration</span><span class="p">)</span>
+
         <span class="c1"># Setup solver with the program and run inference</span>
-        <span class="n">inference</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">probability</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">configuration</span><span class="p">)</span>
+        <span class="n">inference_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">probability</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">program</span><span class="p">,</span> <span class="o">**</span><span class="n">inference_config</span><span class="p">)</span>
 
         <span class="c1"># Unpack queried probabilities</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="c1"># Sometimes, the result is a tensor, so we need to extract the value</span>
             <span class="nb">float</span><span class="p">(</span><span class="n">probability</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">probability</span> <span class="ow">in</span> <span class="n">inference</span><span class="p">[</span><span class="s2">&quot;q&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">probability</span> <span class="ow">in</span> <span class="n">inference_result</span><span class="p">[</span><span class="s2">&quot;q&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
         <span class="p">]</span></div>
 </div>
 
