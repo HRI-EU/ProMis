@@ -387,23 +387,12 @@ to evluation points</p></li>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.star_map.</span></span><span class="sig-name descname"><span class="pre">StaRMap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uam</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianMap" title="promis.geo.map.CartesianMap"><span class="pre">CartesianMap</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A Statistical Relational Map.</p>
-<p>Among others, this holds two types of points: the target points and the support points.
-Initially the value of the relations are determined at the support points.
-To determine the value at the target points, the relations are approximated using the
-support points, e.g., through linear interpolation.
-When solving a ProMis problem, the solution is computed at the target points.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Adding support points as CartesianRasterBands can be more efficient than adding an arbitraty
-CartesianCollection.</p>
-</div>
+<p>This map holds all information about spatial relations between an agent’s state space and features on a map.
+It can be used to compute parameters for these relations on a set of support points,
+and provides an interface to query these parameters for arbitrary locations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>uam</strong> – The uncertainty annotated map as generator in Cartesian space</p></li>
-<li><p><strong>method</strong> – The method to approximate parameters from a set of support points;
-one of {“linear”, “nearest”, “gaussian_process”}</p></li>
-</ul>
+<dd class="field-odd"><p><strong>uam</strong> – The uncertainty annotated map in Cartesian space.</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -418,9 +407,9 @@ for computing relation parameters</p></li>
 <li><p><strong>number_of_random_maps</strong> – How often to sample from map data in order to
 compute statistics of spatial relations</p></li>
 <li><p><strong>number_of_iterations</strong> – How many iterations of improvements to run</p></li>
-<li><p><strong>number_of_improvement_points</strong> – How many points to add to improve the map at each iteration</p></li>
+<li><p><strong>number_of_improvement_points</strong> – How many points to add to improve the map at each iteration.</p></li>
 <li><p><strong>what</strong> – The spatial relations to compute, as a mapping of relation names to location types</p></li>
-<li><p><strong>scaler</strong> – How much to weigh the employed scoreing method over the distance score</p></li>
+<li><p><strong>scaler</strong> – How much to weigh the employed scoring method over the distance score</p></li>
 <li><p><strong>value_index</strong> – Which value column of the relation’s parameters to use for improvement</p></li>
 <li><p><strong>acquisition_method</strong> – Which improvement method to use, one of {entropy, gaussian_process}</p></li>
 </ul>
@@ -435,23 +424,29 @@ compute statistics of spatial relations</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>relation</strong> – The relation to return</p></li>
-<li><p><strong>location_type</strong> – The location type to relate to</p></li>
+<li><p><strong>relation</strong> – The relation to return.</p></li>
+<li><p><strong>location_type</strong> – The location type to relate to.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The relation for the given location type</p>
+<dd class="field-even"><p>A deepcopy of the relation object for the given relation and location type.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.get_all">
-<span class="sig-name descname"><span class="pre">get_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#promis.logic.Relation" title="promis.logic.spatial.relation.Relation"><span class="pre">Relation</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.get_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.get_all" title="Link to this definition"></a></dt>
-<dd><p>Get all the relations for each location type.</p>
+<span class="sig-name descname"><span class="pre">get_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#promis.logic.Relation" title="promis.logic.spatial.relation.Relation"><span class="pre">Relation</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.get_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.get_all" title="Link to this definition"></a></dt>
+<dd><p>Get all or a subset of relations for each location type.</p>
+<p>If a logic program is provided, only the relations mentioned in it are returned.
+Otherwise, all computed relations are returned.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A list of all relations</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>logic</strong> – An optional logic program to filter the relations.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A nested dictionary of all requested relations, mapping relation type to
+location type to the <cite>Relation</cite> object.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -463,9 +458,9 @@ compute statistics of spatial relations</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>evaluation_points</strong> – The points to initialize the StaR Map on</p></li>
-<li><p><strong>number_of_random_maps</strong> – The number of samples to be used per support point</p></li>
-<li><p><strong>logic</strong> – The set of constraints deciding which relations are computed</p></li>
+<li><p><strong>evaluation_points</strong> – The points to initialize the StaR Map on.</p></li>
+<li><p><strong>number_of_random_maps</strong> – The number of samples to be used per support point.</p></li>
+<li><p><strong>logic</strong> – The set of constraints deciding which relations are computed.</p></li>
 </ul>
 </dd>
 </dl>
@@ -473,45 +468,75 @@ compute statistics of spatial relations</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.load">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.star_map.StaRMap" title="promis.star_map.StaRMap"><span class="pre">StaRMap</span></a></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.load" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.star_map.StaRMap" title="promis.star_map.StaRMap"><span class="pre">StaRMap</span></a></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.load" title="Link to this definition"></a></dt>
+<dd><p>Load a StaRMap from a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – The path to the file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The loaded StaRMap object.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.location_types">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">location_types</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.13)"><span class="pre">set</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#promis.star_map.StaRMap.location_types" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Get all unique location types present in the map.</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.relation_and_location_types">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">relation_and_location_types</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.13)"><span class="pre">set</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#promis.star_map.StaRMap.relation_and_location_types" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Get all relation and location type combinations in the map.</p>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.relation_arities">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">relation_arities</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#promis.star_map.StaRMap.relation_arities" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Get the arity for each relation type.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.relation_name_to_class">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">relation_name_to_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">relation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.logic.Relation" title="promis.logic.spatial.relation.Relation"><span class="pre">Relation</span></a></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.relation_name_to_class"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.relation_name_to_class" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Get the class for a given relation name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>relation</strong> – The name of the relation.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The class corresponding to the relation name.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#NotImplementedError" title="(in Python v3.13)"><strong>NotImplementedError</strong></a> – If the relation name is unknown.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.relation_types">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">relation_types</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.13)"><span class="pre">set</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#promis.star_map.StaRMap.relation_types" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Get the names of all relation types in the map.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.sample">
 <span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evaluation_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianCollection" title="promis.geo.collection.CartesianCollection"><span class="pre">CartesianCollection</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_random_maps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">what</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable" title="(in Python v3.13)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.sample" title="Link to this definition"></a></dt>
-<dd><p>Compute distributional clauses.</p>
+<dd><p>Compute and store spatial relation parameters.</p>
+<p>For a given set of evaluation points, this method computes the parameters of
+spatial relations by sampling the underlying uncertainty-annotated map.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>evaluation_points</strong> – The collection of points for which the spatial relations will be computed</p></li>
+<li><p><strong>evaluation_points</strong> – The collection of points for which the spatial relations
+will be computed.</p></li>
 <li><p><strong>number_of_random_maps</strong> – How often to sample from map data in order to
-compute statistics of spatial relations</p></li>
-<li><p><strong>what</strong> – The spatial relations to compute, as a mapping of relation names to location types</p></li>
+compute statistics of spatial relations.</p></li>
+<li><p><strong>what</strong> – The spatial relations to compute, as a mapping of relation names to
+location types. If None, all relations with already present location
+types are computed.</p></li>
 </ul>
 </dd>
 </dl>
@@ -519,8 +544,14 @@ compute statistics of spatial relations</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.save" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.save" title="Link to this definition"></a></dt>
+<dd><p>Save the StaRMap to a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – The path to the file.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -903,7 +934,7 @@ into a polar one</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.geo.CartesianPolygon.make_centered_box">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">make_centered_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianLocation" title="promis.geo.location.CartesianLocation"><span class="pre">CartesianLocation</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CartesianLocation(east=0.0,</span> <span class="pre">north=0.0,</span> <span class="pre">identifier=4270777101669163790)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.CartesianPolygon" title="promis.geo.polygon.CartesianPolygon"><span class="pre">CartesianPolygon</span></a></span></span><a class="reference internal" href="_modules/promis/geo/polygon.html#CartesianPolygon.make_centered_box"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolygon.make_centered_box" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">make_centered_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianLocation" title="promis.geo.location.CartesianLocation"><span class="pre">CartesianLocation</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CartesianLocation(east=0.0,</span> <span class="pre">north=0.0,</span> <span class="pre">identifier=2382130182820868996)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.CartesianPolygon" title="promis.geo.polygon.CartesianPolygon"><span class="pre">CartesianPolygon</span></a></span></span><a class="reference internal" href="_modules/promis/geo/polygon.html#CartesianPolygon.make_centered_box"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolygon.make_centered_box" title="Link to this definition"></a></dt>
 <dd><p>Generates a box centered around a given offset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
