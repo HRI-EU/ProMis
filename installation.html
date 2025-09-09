@@ -47,9 +47,9 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#from-pypi">From Pypi</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#local-installation">Local Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standard-installation">Standard Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#developer-installation">Developer Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#docker">Docker</a></li>
 </ul>
 </li>
@@ -84,42 +84,83 @@
              
   <section id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
-<section id="requirements">
-<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
-<p>To use ProMis, the following requirements are needed depending on the features you want to use.</p>
-<ul class="simple">
-<li><p><a class="reference external" href="https://www.python.org/downloads/">Python &gt;= 3.10</a> is required to run ProMis itself.</p></li>
-<li><p><a class="reference external" href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm">Node.js</a> is needed to use ProMis’ graphical user interface.</p></li>
-<li><p><a class="reference external" href="https://gdal.org/en/stable/download.html">GDAL</a> is necessary to work with nautical chart data.</p></li>
+<p>This guide covers the installation of ProMis and its dependencies.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<p>Before installing ProMis, you need to set up your environment.</p>
+<p><strong>Python</strong></p>
+<p>ProMis requires Python 3.10 or newer. You can download it from <a class="reference external" href="https://www.python.org/downloads/">python.org</a>.</p>
+<p><strong>Probabilistic Logic Backend</strong></p>
+<p>ProMis relies on a modified version of the <a class="reference external" href="https://dtai.cs.kuleuven.be/problog/">ProbLog</a> inference engine that supports distributional clauses.
+This is not available on PyPI and must be installed directly from a specific Git repository.
+The installation commands below include this step.</p>
+<p><strong>Optional Dependencies</strong></p>
+<ul>
+<li><p><strong>GUI:</strong> To use the graphical user interface, you will need <a class="reference external" href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm">Node.js</a>.</p></li>
+<li><p><strong>Nautical Charts:</strong> To work with nautical chart data (e.g., from S-57 files), <a class="reference external" href="https://gdal.org/en/stable/download.html">GDAL</a> is required. GDAL can be tricky to install, but here are some tips for common platforms:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ubuntu / Debian</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>python3-gdal<span class="w"> </span>libgdal-dev
+
+<span class="c1"># macOS (using Homebrew)</span>
+brew<span class="w"> </span>install<span class="w"> </span>gdal
+</pre></div>
+</div>
+<p>For other systems, please refer to the <a class="reference external" href="https://gdal.org/en/stable/download.html">official GDAL documentation</a>.</p>
+</li>
 </ul>
 </section>
-<section id="from-pypi">
-<h2>From Pypi<a class="headerlink" href="#from-pypi" title="Link to this heading"></a></h2>
-<p>ProMis can be easily installed using the following commands.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># Installing ProMis and a probabilistic reasoning backend</span>
+<section id="standard-installation">
+<h2>Standard Installation<a class="headerlink" href="#standard-installation" title="Link to this heading"></a></h2>
+<p>This is the recommended method for most users. It installs the latest stable version of ProMis from PyPI and the required ProbLog backend from GitHub.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># 1. Install ProMis from PyPI</span>
 <span class="linenos">2</span>pip<span class="w"> </span>install<span class="w"> </span>promis
-<span class="linenos">3</span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
+<span class="linenos">3</span>
+<span class="linenos">4</span><span class="c1"># 2. Install the required ProbLog version</span>
+<span class="linenos">5</span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
+</pre></div>
+</div>
+<p>If you plan to work with nautical charts, install the necessary extras.
+Make sure you have installed GDAL first (see Prerequisites).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;promis[nautical]&quot;</span>
 </pre></div>
 </div>
 </section>
-<section id="local-installation">
-<h2>Local Installation<a class="headerlink" href="#local-installation" title="Link to this heading"></a></h2>
-<p>In case you would like to contribute to the project, the following sets up ProMis for development.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:HRI-EU/ProMis.git
-<span class="linenos">2</span><span class="nb">cd</span><span class="w"> </span>ProMis
-<span class="linenos">3</span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,doc]&quot;</span>
-<span class="linenos">4</span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
+<section id="developer-installation">
+<h2>Developer Installation<a class="headerlink" href="#developer-installation" title="Link to this heading"></a></h2>
+<p>If you want to contribute to ProMis, you should clone the repository and install it in editable mode.
+This allows you to modify the code and see your changes immediately.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># 1. Clone the repository</span>
+<span class="linenos">2</span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:HRI-EU/ProMis.git
+<span class="linenos">3</span><span class="nb">cd</span><span class="w"> </span>ProMis
+<span class="linenos">4</span>
+<span class="linenos">5</span><span class="c1"># 2. Install in editable mode with development and documentation dependencies</span>
+<span class="linenos">6</span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,doc]&quot;</span>
+<span class="linenos">7</span>
+<span class="linenos">8</span><span class="c1"># 3. Install the required ProbLog version</span>
+<span class="linenos">9</span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
 </pre></div>
 </div>
-<p>For nautical applications using marine chart data, you can install the additional dependencies with <cite>pip install . “[nautical]”</cite>.</p>
+<p>To also include dependencies for nautical applications, add the <code class="docutils literal notranslate"><span class="pre">nautical</span></code> extra:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,doc,nautical]&quot;</span>
+</pre></div>
+</div>
 </section>
 <section id="docker">
 <h2>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h2>
-<p>If you have <cite>Docker</cite> installed on your system, we provide <cite>vscode devcontainer</cite> settings that can be used for dockerized development.
-Otherwise, run the following commands to manually build and employ the ProMis Dockerfile.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># Enters the ProMis directiory, builds a new docker image and runs it in interactive mode</span>
+<p>We provide a Docker setup for a containerized development environment, which ensures all dependencies are handled correctly.</p>
+<p><strong>Using VS Code Dev Containers</strong></p>
+<p>The easiest way to get started is by using <a class="reference external" href="https://code.visualstudio.com/docs/devcontainers/containers">VS Code’s Dev Containers extension</a>.
+Simply open the cloned repository in VS Code and, when prompted, click “Reopen in Container”.
+This will automatically build the Docker image and configure your environment.</p>
+<p><strong>Manual Docker Build</strong></p>
+<p>If you prefer to manage Docker manually, you can build and run the container from your terminal.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="c1"># Build the Docker image</span>
 <span class="linenos">2</span>docker<span class="w"> </span>build<span class="w"> </span>.<span class="w"> </span>-t<span class="w"> </span>promis
-<span class="linenos">3</span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>promis
+<span class="linenos">3</span>
+<span class="linenos">4</span><span class="c1"># Run the container with the local source code mounted.</span>
+<span class="linenos">5</span><span class="c1"># This allows you to edit files on your host machine and run them inside the container.</span>
+<span class="linenos">6</span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">&quot;</span>:/workspaces/ProMis<span class="w"> </span>-w<span class="w"> </span>/workspaces/ProMis<span class="w"> </span>promis<span class="w"> </span>bash
 </pre></div>
 </div>
 </section>
