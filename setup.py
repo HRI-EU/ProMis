@@ -94,4 +94,10 @@ setuptools.setup(
             "pytest-sugar",
         ],
     },
+    entry_points={
+        "console_scripts": [
+            "promis_gui=promis.gui.cli:main"
+        ]
+    },
+    include_package_data=True,
 )

@@ -26,9 +26,12 @@ jobs:
         with:
           python-version: "3.10"
 
+      - uses: actions/setup-node@v4
+
       - name: Build release distributions
         run: |
           # NOTE: put your own distribution build steps here.
+          bash ./setup.sh
           python -m pip install build
           python -m build
 

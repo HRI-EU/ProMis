@@ -1,10 +1,10 @@
 from pydantic import BaseModel, RootModel
 
-from .layer import Layer
-from .line import Line
-from .location_type_table import LocationTypeEntry
-from .marker import Marker
-from .polygon import Polygon
+from promis.gui.models.layer import Layer
+from promis.gui.models.line import Line
+from promis.gui.models.location_type_table import LocationTypeEntry
+from promis.gui.models.marker import Marker
+from promis.gui.models.polygon import Polygon
 
 
 class LayerConfig(RootModel):

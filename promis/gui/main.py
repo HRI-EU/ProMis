@@ -1,8 +1,10 @@
+import os
 import re
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from geojson_pydantic import Feature
 from numpy import eye
 from pydantic import ValidationError
@@ -15,18 +17,17 @@ from promis.geo import (
     PolarPolygon,
     PolarPolyLine,
 )
+from promis.gui.models.colors import get_random_color
+from promis.gui.models.config import DynamicLayer, LayerConfig, LocationTypeTable
+from promis.gui.models.layer import Layer
+from promis.gui.models.line import Line
+from promis.gui.models.location_type_table import LocationTypeEntry
+from promis.gui.models.marker import Marker
+from promis.gui.models.polygon import Polygon
+from promis.gui.models.run_request import RunRequest
 from promis.loaders import OsmLoader
 
-from .models.colors import get_random_color
-from .models.config import DynamicLayer, LayerConfig, LocationTypeTable
-from .models.layer import Layer
-from .models.line import Line
-from .models.location_type_table import LocationTypeEntry
-from .models.marker import Marker
-from .models.polygon import Polygon
-from .models.run_request import RunRequest
-
-# typing
+program_storage_path = os.path.join(os.path.expanduser('~'), ".promis_gui")
 
 app = FastAPI()
 
@@ -40,6 +41,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+
+app.mount("/gui", StaticFiles(directory=frontend_path, html=True), name="static")
+
+def path_of_cache_or_config(filename:str):
+    config_dir_path = os.path.join(program_storage_path, "config")
+    cache_dir_path = os.path.join(program_storage_path, "cache")
+    match filename:
+        case "config.json":
+            return os.path.join(config_dir_path, filename)
+        case "dynamic_layer.json":
+            return os.path.join(config_dir_path, filename)
+        case "location_type_table.json":
+            return os.path.join(config_dir_path, filename)
+        case _:
+            return os.path.join(cache_dir_path, filename)
 
 def find_necessary_type(source: str) -> set[str]:
     spatial_relation = r"(distance|over)"
@@ -59,7 +77,8 @@ def create_hash(text:str):
 def _get_config() -> LayerConfig:
     config = LayerConfig([])
     try:
-        with open('./config/config.json') as f:
+        path = path_of_cache_or_config("config.json")
+        with open(path) as f:
             config = f.read()
             try:
                 config = LayerConfig.model_validate_json(config)
@@ -68,7 +87,8 @@ def _get_config() -> LayerConfig:
                 raise HTTPException(status_code=500, detail="fail to parse config file")
     except FileNotFoundError:
         # create an empty file in place
-        with open('./models/default_layer.json') as f:
+        data_path = os.path.join(os.path.dirname(__file__), 'data', 'default_layer.json')
+        with open(data_path) as f:
             default_layer = f.read()
             try:
                 default_layer = Layer.model_validate_json(default_layer)
@@ -76,7 +96,10 @@ def _get_config() -> LayerConfig:
             except ValidationError as e:
                 print(e)
                 raise HTTPException(status_code=500, detail="fail to parse default layer")
-        with open('./config/config.json', 'w', encoding='utf-8') as f:
+
+        dir_path = os.path.join(program_storage_path, "config")
+        os.makedirs(dir_path, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
             f.write(config.model_dump_json(indent=2))
 
     return config
@@ -84,7 +107,8 @@ def _get_config() -> LayerConfig:
 def _get_dynamic_layer() -> DynamicLayer:
     dynamic_layer = DynamicLayer(markers=[], polylines=[], polygons=[])
     try:
-        with open('./config/dynamic_layer.json') as f:
+        path = path_of_cache_or_config("dynamic_layer.json")
+        with open(path) as f:
             dynamic_layer = f.read()
             try:
                 dynamic_layer = DynamicLayer.model_validate_json(dynamic_layer)
@@ -102,14 +126,18 @@ def _get_dynamic_layer() -> DynamicLayer:
                         std_dev=0,
                         origin="internal")
         dynamic_layer.markers.append(default_origin)
-        with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
+
+        dir_path = os.path.join(program_storage_path, "config")
+        os.makedirs(dir_path, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
             f.write(dynamic_layer.model_dump_json(indent=2))
     return dynamic_layer
 
 def _get_location_type_table() -> LocationTypeTable:
     location_type_table = LocationTypeTable([])
     try:
-        with open('./config/location_type_table.json') as f:
+        path = path_of_cache_or_config("location_type_table.json")
+        with open(path) as f:
             location_type_table = f.read()
             try:
                 location_type_table = LocationTypeTable.model_validate_json(location_type_table)
@@ -118,14 +146,18 @@ def _get_location_type_table() -> LocationTypeTable:
                 raise HTTPException(status_code=500, detail="fail to parse location type table file")
     except FileNotFoundError:
         # create an empty file in place non file found
-        with open('./models/default_loc_table.json') as f:
+        data_path = os.path.join(os.path.dirname(__file__), 'data', 'default_loc_table.json')
+        with open(data_path) as f:
             default_loc_table = f.read()
             try:
                 location_type_table = LocationTypeTable.model_validate_json(default_loc_table)
             except ValidationError as e:
                 print(e)
                 raise HTTPException(status_code=500, detail="fail to parse default location type table")
-        with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
+
+        dir_path = os.path.join(program_storage_path, "config")
+        os.makedirs(dir_path, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
             f.write(location_type_table.model_dump_json(indent=2))
     return location_type_table
 
@@ -176,18 +208,21 @@ def load_map_data(req: RunRequest):
 
     _rm_unnecessary_loc_type(feature_description, source)
     # load the cache info
+    path = path_of_cache_or_config(f"uam_{hash_val}.pickle")
     try:
-        with open(f"./cache/uam_{hash_val}.pickle", 'rb'):
-            uam = PolarMap.load(f"./cache/uam_{hash_val}.pickle")
+        with open(path, 'rb'):
+            uam = PolarMap.load(path)
             has_cache = True
             print("found cache map data in loadmapdata")
     except FileNotFoundError:
+        dir_path = os.path.join(program_storage_path, "cache")
+        os.makedirs(dir_path, exist_ok=True)
         has_cache = False
 
     if (not has_cache):
         uam = OsmLoader(mission_center, (width, height), feature_description).to_polar_map()
 
-        uam.save(f"./cache/uam_{hash_val}.pickle")
+        uam.save(path)
 
     return hash_val
 
@@ -201,8 +236,9 @@ def calculate_star_map(req: RunRequest, hash_val: int):
 
     # load the cache info
     try:
-        with open(f"./cache/uam_{hash_val}.pickle", 'rb'):
-            polar_map = PolarMap.load(f"./cache/uam_{hash_val}.pickle")
+        path = path_of_cache_or_config(f"uam_{hash_val}.pickle")
+        with open(path, 'rb'):
+            polar_map = PolarMap.load(path)
 
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="No map data found on this request.")
@@ -229,7 +265,7 @@ def calculate_star_map(req: RunRequest, hash_val: int):
     for entry in loc_type_table:
         if entry.std_dev != 0:
             loc_to_uncertainty[entry.location_type] = (entry.std_dev**2) * eye(2)
-    
+
     carte_map = polar_map.to_cartesian()
     carte_map.apply_covariance(loc_to_uncertainty)
 
@@ -240,14 +276,14 @@ def calculate_star_map(req: RunRequest, hash_val: int):
         if marker.location_type == "":
             continue
 
-        polar_marker = PolarLocation(marker.latlng[1], 
-                                        marker.latlng[0], 
+        polar_marker = PolarLocation(marker.latlng[1],
+                                        marker.latlng[0],
                                         location_type=marker.location_type)
         if marker.std_dev != 0:
             cartesian_marker = polar_marker.to_cartesian(origin)
             cartesian_marker.covariance = (marker.std_dev**2) * eye(2)
             polar_marker = cartesian_marker.to_polar(origin)
-            
+
         polar_map.features.append(polar_marker)
 
     for polyline in polylines:
@@ -256,14 +292,14 @@ def calculate_star_map(req: RunRequest, hash_val: int):
         locations = []
         for location in polyline.latlngs:
             locations.append(PolarLocation(location[1], location[0]))
-        
+
         polyline_feature = PolarPolyLine(locations, location_type=polyline.location_type)
 
         if polyline.std_dev != 0:
             cartesian_polyline = polyline_feature.to_cartesian(origin)
             cartesian_polyline.covariance = (polyline.std_dev**2) * eye(2)
             polyline_feature = cartesian_polyline.to_polar(origin)
-            
+
         polar_map.features.append(polyline_feature)
 
     for polygon in polygons:
@@ -279,12 +315,12 @@ def calculate_star_map(req: RunRequest, hash_val: int):
             cartesian_polygon = polygon_feature.to_cartesian(origin)
             cartesian_polygon.covariance = (polygon.std_dev**2) * eye(2)
             polygon_feature = cartesian_polygon.to_polar(origin)
-            
+
         polar_map.features.append(polygon_feature)
-    
+
 
     uam = polar_map.to_cartesian()
-    
+
     # Setting up the probabilistic spatial relations from the UAM
     star_map = StaRMap(uam)
 
@@ -339,7 +375,8 @@ def inference(req: RunRequest, hash_val: int):
 
 @app.post("/update_total_layer_config")
 def update_total_layer_config(layer_config: LayerConfig):
-    with open('./config/config.json', 'w', encoding='utf-8') as f:
+    path = path_of_cache_or_config("config.json")
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(layer_config.model_dump_json(indent=2))
 
 @app.post("/update_layer_config_entry")
@@ -355,38 +392,45 @@ def update_layer_config_entry(layer: Layer):
 
     if not already_existed:
         layer_config.append(layer)
-    with open('./config/config.json', 'w', encoding='utf-8') as f:
+
+    path = path_of_cache_or_config("config.json")
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(layer_config.model_dump_json(indent=2))
 
 @app.post("/delate_layer_config_entry/{layer_pos}")
 def delete_layer_config_entry(layer_pos: int):
     layer_config = _get_config()
     layer_config.remove(layer_pos)
-    with open('./config/config.json', 'w', encoding='utf-8') as f:
+    path = path_of_cache_or_config("config.json")
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(layer_config.model_dump_json(indent=2))
 
 @app.post("/update_total_dynamic_layer")
 def update_total_dynamic_layer(dynamic_layer: DynamicLayer):
-    with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
+    path = path_of_cache_or_config("dynamic_layer.json")
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(dynamic_layer.model_dump_json(indent=2))
 
 @app.post("/update_dynamic_layer_entry")
 def update_dynamic_layer_entry(entry: Marker | Line | Polygon):
     dynamic_layer = _get_dynamic_layer()
     dynamic_layer.update_or_add_entry(entry)
-    with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
+    path = path_of_cache_or_config("dynamic_layer.json")
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(dynamic_layer.model_dump_json(indent=2))
 
 @app.post("/delete_dynamic_layer_entry")
 def delete_dynamic_layer_entry(entry: Marker | Line | Polygon):
     dynamic_layer = _get_dynamic_layer()
     dynamic_layer.delete_entry(entry)
-    with open('./config/dynamic_layer.json', 'w', encoding='utf-8') as f:
+    path = path_of_cache_or_config("dynamic_layer.json")
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(dynamic_layer.model_dump_json(indent=2))
 
 @app.post("/update_total_location_type_table")
 def update_total_location_type_table(location_type_table: LocationTypeTable):
-    with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
+    path = path_of_cache_or_config("location_type_table.json")
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(location_type_table.model_dump_json(indent=2))
 
 @app.post("/update_location_type_entry")
@@ -402,7 +446,9 @@ def update_location_type_entry(location_type_entry: LocationTypeEntry):
 
     if not already_existed:
         location_type_table.append(location_type_entry)
-    with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
+
+    path = path_of_cache_or_config("location_type_table.json")
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(location_type_table.model_dump_json(indent=2))
 
 @app.post('/delete_location_type_id/{id}')
@@ -411,7 +457,8 @@ def delete_location_type_with_id(id: int):
 
     new_location_type_table = LocationTypeTable([entry for entry in location_type_table if entry.id != id])
 
-    with open('./config/location_type_table.json', 'w', encoding='utf-8') as f:
+    path = path_of_cache_or_config("location_type_table.json")
+    with open(path, 'w', encoding='utf-8') as f:
         f.write(new_location_type_table.model_dump_json(indent=2))
 
 @app.get("/app_config")
@@ -501,7 +548,7 @@ def fetch_external_update():
         app.temp_dyn_obj_and_loc_type["polylines"] = []
         app.temp_dyn_obj_and_loc_type["polygons"] = []
         app.temp_dyn_obj_and_loc_type["loc_type_entries"] = []
-    
+
     app.temp_dyn_obj_and_loc_type["markers"].reverse()
     app.temp_dyn_obj_and_loc_type["polylines"].reverse()
     app.temp_dyn_obj_and_loc_type["polygons"].reverse()
