@@ -28,6 +28,7 @@ from promis.gui.models.run_request import RunRequest
 from promis.loaders import OsmLoader
 
 program_storage_path = os.path.join(os.path.expanduser('~'), ".promis_gui")
+resources_path_dev = os.path.join(os.path.dirname(__file__), "..", "..", "resources") 
 
 app = FastAPI()
 
@@ -43,8 +44,13 @@ app.add_middleware(
 )
 
 frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+frontend_path_dev = os.path.join(resources_path_dev, "frontend")
+# check if path exists
 
-app.mount("/gui", StaticFiles(directory=frontend_path, html=True), name="static")
+if os.path.isdir(frontend_path):
+    app.mount("/gui", StaticFiles(directory=frontend_path, html=True), name="static")
+else:
+    app.mount("/gui", StaticFiles(directory=frontend_path_dev, html=True), name="static")
 
 def path_of_cache_or_config(filename:str):
     config_dir_path = os.path.join(program_storage_path, "config")
@@ -88,14 +94,26 @@ def _get_config() -> LayerConfig:
     except FileNotFoundError:
         # create an empty file in place
         data_path = os.path.join(os.path.dirname(__file__), 'data', 'default_layer.json')
-        with open(data_path) as f:
-            default_layer = f.read()
-            try:
-                default_layer = Layer.model_validate_json(default_layer)
-                config.append(default_layer)
-            except ValidationError as e:
-                print(e)
-                raise HTTPException(status_code=500, detail="fail to parse default layer")
+        try:
+            with open(data_path) as f:
+                default_layer = f.read()
+                try:
+                    default_layer = Layer.model_validate_json(default_layer)
+                    config.append(default_layer)
+                except ValidationError as e:
+                    print(e)
+                    raise HTTPException(status_code=500, detail="fail to parse default layer")
+        except FileNotFoundError:
+            # if the file is not inplace then search for it in dev folder
+            data_path_dev = os.path.join(resources_path_dev, 'data', 'default_layer.json')
+            with open(data_path_dev) as f:
+                default_layer = f.read()
+                try:
+                    default_layer = Layer.model_validate_json(default_layer)
+                    config.append(default_layer)
+                except ValidationError as e:
+                    print(e)
+                    raise HTTPException(status_code=500, detail="fail to parse default layer")
 
         dir_path = os.path.join(program_storage_path, "config")
         os.makedirs(dir_path, exist_ok=True)
@@ -146,14 +164,24 @@ def _get_location_type_table() -> LocationTypeTable:
                 raise HTTPException(status_code=500, detail="fail to parse location type table file")
     except FileNotFoundError:
         # create an empty file in place non file found
-        data_path = os.path.join(os.path.dirname(__file__), 'data', 'default_loc_table.json')
-        with open(data_path) as f:
-            default_loc_table = f.read()
-            try:
-                location_type_table = LocationTypeTable.model_validate_json(default_loc_table)
-            except ValidationError as e:
-                print(e)
-                raise HTTPException(status_code=500, detail="fail to parse default location type table")
+        try:
+            data_path = os.path.join(os.path.dirname(__file__), 'data', 'default_loc_table.json')
+            with open(data_path) as f:
+                default_loc_table = f.read()
+                try:
+                    location_type_table = LocationTypeTable.model_validate_json(default_loc_table)
+                except ValidationError as e:
+                    print(e)
+                    raise HTTPException(status_code=500, detail="fail to parse default location type table")
+        except FileNotFoundError:
+            data_path_dev = os.path.join(resources_path_dev, 'data', 'default_loc_table.json')
+            with open(data_path_dev) as f:
+                default_loc_table = f.read()
+                try:
+                    location_type_table = LocationTypeTable.model_validate_json(default_loc_table)
+                except ValidationError as e:
+                    print(e)
+                    raise HTTPException(status_code=500, detail="fail to parse default location type table")
 
         dir_path = os.path.join(program_storage_path, "config")
         os.makedirs(dir_path, exist_ok=True)

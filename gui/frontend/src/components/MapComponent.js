@@ -55,7 +55,7 @@ function MapComponent() {
   });
 
   let didInit = false;
-  const delayUpdateTime = 5000 //ms
+  const delayUpdateTime = 500 //ms
 
   useEffect(() => {
     if (didInit)

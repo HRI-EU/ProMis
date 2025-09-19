@@ -56,6 +56,7 @@ setuptools.setup(
         "geopy",
         "shapely",
         "overpy",
+        "geojson_pydantic"
         # probabilistic logic and modelling
         "pyro-ppl",
         "pysdd",
