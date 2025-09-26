@@ -135,6 +135,7 @@ export default function LocationTypeSettingTabs() {
         if (oldUncertainty != uncertainty) {
             C().mapMan.updateUncertainty(locationType, uncertainty);
         }
+        C().autoComplete.push(locationType)
         C().sourceMan.editLocationType({
             locationType: locationType,
             filter: filter,

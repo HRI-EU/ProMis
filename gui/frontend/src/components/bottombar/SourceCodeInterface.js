@@ -1,9 +1,11 @@
 import * as React from 'react';
 import PropTypes from "prop-types";
+import { C } from "../../managers/Core";
 
 import "./SourceCodeInterface.css";
+require('petrel/css/dark.css')
 
-import hljs from "highlight.js";
+import { CodeEditor } from "petrel"
 
 import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid2";
@@ -15,8 +17,9 @@ import CloseIcon from "@mui/icons-material/CloseRounded";
 
 export default function SourceCodeInterface({sourceCode, onEdit, highlightSourceElement}){
     const [inEdit, setInEdit] = React.useState(false);
-    const codeRef = React.useRef(null);
     const hiddenFileInput = React.useRef(null);
+    let codeEditor = null
+    let isInit = false
 
     function hasSource(sourceCode) {
         return sourceCode !== "";
@@ -24,20 +27,17 @@ export default function SourceCodeInterface({sourceCode, onEdit, highlightSource
 
     // reset the file input to allow the same file to be uploaded again
     React.useEffect(() => {
-        if (hiddenFileInput.current) {
-            hiddenFileInput.current.setAttribute("onclick", "this.value=null;");
+        if (!isInit){
+            if (hiddenFileInput.current) {
+                hiddenFileInput.current.setAttribute("onclick", "this.value=null;");
+            }
+            console.log(highlightSourceElement)
+            codeEditor = new CodeEditor(document.getElementById("editor"))
+            codeEditor.setAutoCompleteHandler(C().autoComplete) 
+            codeEditor.create()
         }
+        isInit = true
     }, []);
-
-    React.useEffect(() => {
-        if (codeRef.current === null){
-            return;
-        }
-        codeRef.current.removeAttribute("data-highlighted");
-        hljs.highlightAll(codeRef.current)
-    });
-
-
 
     // Toggle the file input
     function toggleFile() {
@@ -65,21 +65,6 @@ export default function SourceCodeInterface({sourceCode, onEdit, highlightSource
         fileReader.readAsText(file);
     }
 
-    function checkTab(element, event) {
-        let code = element.value;
-        if(event.key == "Tab") {
-            /* Tab key pressed */
-            event.preventDefault(); // stop normal
-            let before_tab = code.slice(0, element.selectionStart); // text before tab
-            let after_tab = code.slice(element.selectionEnd, element.value.length); // text after tab
-            let cursor_pos = element.selectionStart + 1; // where cursor moves after tab - moving forward by 1 char to after tab
-            element.value = before_tab + "\t" + after_tab; // add tab char
-            // move cursor
-            element.selectionStart = cursor_pos;
-            element.selectionEnd = cursor_pos;
-            onEdit(element.value); // Update text to include indent
-        }
-    }
 
     return (
         <Grid
@@ -147,48 +132,13 @@ export default function SourceCodeInterface({sourceCode, onEdit, highlightSource
             
             </Grid>
 
-            <Grid
-                container
-                spacing={0}
-                direction="column"
-                alignItems="center"
-                justifyContent="start"
-                m={0}
-                sx={{ 
-                    display: "flex",
-                    marginTop: "12px",
-                    paddingLeft: "32px",
-                    paddingRight: "32px",
+            <div 
+                id="editor"
+                style={{
+                    width: "100%",
+                    height: 200
                 }}
-            >
-                {inEdit ? 
-                    <textarea id="editing"
-                    className={highlightSourceElement ? "errorSignal": ""}
-                    value={sourceCode}
-                    onChange={(e) => onEdit(e.target.value)}
-                    onKeyDown={(e) => checkTab(e.target, e)}
-                    style={{
-                        height: "200px",
-                        color: "#ffffff",
-                        paddingLeft: "16px",
-                    }}
-                    >
-                    </textarea>
-                    :
-                    <pre
-                    className={highlightSourceElement ? "errorSignal": ""}
-                    id="highlighting"
-                    >
-                    <code 
-                        id="codeBlock"
-                        ref={codeRef}
-                        className={hasSource(sourceCode) ? "prolog" : ""}
-                    >
-                        {sourceCode}
-                    </code>
-                    </pre>
-                }
-            </Grid>
+            > </div>
         </Grid>);
 }
 

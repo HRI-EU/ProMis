@@ -1,6 +1,7 @@
 import LayerManager from "./LayerManager";
 import MapManager from "./MapManager";
 import SourceCodeManager from "./SourceCodeManager";
+import PushDownAutoComplete from "../utils/PushDownAutoCompletion"
 
 class Core {
   //References for UI element update callbacks
@@ -25,6 +26,8 @@ class Core {
     this.layerMan = new LayerManager();
     this.mapMan = new MapManager();
     this.sourceMan = new SourceCodeManager();
+    this.autoComplete = new PushDownAutoComplete();
+    this.autoComplete.push_list(this.sourceMan.locationTypes.map((loc_type) => loc_type.locationType))
   }
 
   //Call to access core instance
