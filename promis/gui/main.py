@@ -1,3 +1,15 @@
+"""This module implements the FastAPI backend for the ProMis GUI.
+
+It provides endpoints for:
+    - Loading and caching map data from OpenStreetMap
+    - Managing and updating layer, dynamic layer, and location type table configurations
+    - Running StaRMap computations and inference
+    - Adding and updating geographic features (markers, lines, polygons) via GeoJSON
+    - Serving the frontend static files
+
+The API supports configuration persistence, dynamic updates, and integration with the ProMis and StaRMap core logic.
+"""
+
 import os
 import re
 from uuid import uuid4
