@@ -40,7 +40,7 @@ from promis.gui.models.run_request import RunRequest
 from promis.loaders import OsmLoader
 
 program_storage_path = os.path.join(os.path.expanduser('~'), ".promis_gui")
-resources_path_dev = os.path.join(os.path.dirname(__file__), "..", "..", "resources") 
+resources_path_dev = os.path.join(os.path.dirname(__file__), "..", "..") 
 
 app = FastAPI()
 
@@ -56,7 +56,7 @@ app.add_middleware(
 )
 
 frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
-frontend_path_dev = os.path.join(resources_path_dev, "frontend")
+frontend_path_dev = os.path.join(resources_path_dev, "gui", "frontend", "build")
 # check if path exists
 
 if os.path.isdir(frontend_path):

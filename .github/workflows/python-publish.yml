@@ -31,7 +31,7 @@ jobs:
       - name: Build release distributions
         run: |
           # NOTE: put your own distribution build steps here.
-          bash ./setup.sh
+          bash ./scripts/build_gui.sh
           python -m pip install build
           python -m build
 
