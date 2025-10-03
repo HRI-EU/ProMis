@@ -1,8 +1,9 @@
 import os
 import re
+import asyncio
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, WebSocket, HTTPException, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from geojson_pydantic import Feature
@@ -25,10 +26,13 @@ from promis.gui.models.location_type_table import LocationTypeEntry
 from promis.gui.models.marker import Marker
 from promis.gui.models.polygon import Polygon
 from promis.gui.models.run_request import RunRequest
+from promis.gui.models.connection_manager import ConnectionManager
 from promis.loaders import OsmLoader
 
 program_storage_path = os.path.join(os.path.expanduser('~'), ".promis_gui")
 resources_path_dev = os.path.join(os.path.dirname(__file__), "..", "..", "resources") 
+
+manager = ConnectionManager()
 
 app = FastAPI()
 
@@ -498,24 +502,18 @@ def get_config() -> tuple[LayerConfig, DynamicLayer, LocationTypeTable]:
 
 
 @app.post("/add_geojson")
-def add_geo_object(new_obj: Feature):
+async def add_geo_object(new_obj: Feature):
     location_type = new_obj.properties["location_type"] if "location_type" in new_obj.properties else ""
     loc_type_table = _get_location_type_table()
     loc_type_entry = loc_type_table.find(location_type)
     color = get_random_color()
-    if not hasattr(app, 'temp_dyn_obj_and_loc_type'):
-        app.temp_dyn_obj_and_loc_type = dict()
-        app.temp_dyn_obj_and_loc_type["markers"] = []
-        app.temp_dyn_obj_and_loc_type["polylines"] = []
-        app.temp_dyn_obj_and_loc_type["polygons"] = []
-        app.temp_dyn_obj_and_loc_type["loc_type_entries"] = []
 
     if loc_type_entry is None:
         new_loc_type_entry = LocationTypeEntry(id=uuid4().int % 2**31,
                                                location_type=location_type,
                                                color=color)
         update_location_type_entry(new_loc_type_entry)
-        app.temp_dyn_obj_and_loc_type["loc_type_entries"].append(new_loc_type_entry)
+        await manager.broadcast_loc_type(new_loc_type_entry)
     else:
         color = loc_type_entry.color
 
@@ -534,7 +532,7 @@ def add_geo_object(new_obj: Feature):
                             std_dev=0.0,
                             origin="external")
             update_dynamic_layer_entry(marker)
-            app.temp_dyn_obj_and_loc_type["markers"].append(marker)
+            await manager.broadcast_entity(marker)
         case "LineString":
             line = Line(id=str(new_obj.id),
                         latlngs=[[loc[1], loc[0]] for loc in coords],
@@ -543,7 +541,7 @@ def add_geo_object(new_obj: Feature):
                         std_dev=0.0,
                         origin="external")
             update_dynamic_layer_entry(line)
-            app.temp_dyn_obj_and_loc_type["polylines"].append(line)
+            await manager.broadcast_entity(line)
         case "Polygon":
             latlngs = [(loc[1], loc[0]) for loc in coords[0]] if len(coords) >= 1 else []
             latlngs = latlngs[:-1]
@@ -561,30 +559,20 @@ def add_geo_object(new_obj: Feature):
                               std_dev=0.0,
                               origin="external")
             update_dynamic_layer_entry(polygon)
-            app.temp_dyn_obj_and_loc_type["polygons"].append(polygon)
+            await manager.broadcast_entity(polygon)
 
 @app.post("/add_geojson_map")
-def add_geo_objects(new_objs: list[Feature]):
+async def add_geo_objects(new_objs: list[Feature]):
     for feature in new_objs:
-        add_geo_object(feature)
+        await add_geo_object(feature)
 
-@app.get("/external_update")
-def fetch_external_update():
-    if not hasattr(app, 'temp_dyn_obj_and_loc_type'):
-        app.temp_dyn_obj_and_loc_type = dict()
-        app.temp_dyn_obj_and_loc_type["markers"] = []
-        app.temp_dyn_obj_and_loc_type["polylines"] = []
-        app.temp_dyn_obj_and_loc_type["polygons"] = []
-        app.temp_dyn_obj_and_loc_type["loc_type_entries"] = []
 
-    app.temp_dyn_obj_and_loc_type["markers"].reverse()
-    app.temp_dyn_obj_and_loc_type["polylines"].reverse()
-    app.temp_dyn_obj_and_loc_type["polygons"].reverse()
-    result = app.temp_dyn_obj_and_loc_type.copy()
-
-    # clean up
-    app.temp_dyn_obj_and_loc_type["markers"] = []
-    app.temp_dyn_obj_and_loc_type["polylines"] = []
-    app.temp_dyn_obj_and_loc_type["polygons"] = []
-    app.temp_dyn_obj_and_loc_type["loc_type_entries"] = []
-    return result
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.send_text("ping")
+            await asyncio.sleep(5)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)

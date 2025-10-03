@@ -915,36 +915,38 @@ class MapManager {
       return;
     }
     // add markers
-    markers.forEach((marker) => {
-      const markerId = marker.id;
-      const markerName = marker.name;
-      const markerPosition = marker.latlng;
-      const markerShape = marker.shape;
-      const markerColor = marker.color;
-      const markerLocationType = marker.location_type;
-      const markerOrigin = marker.origin;
-      const markerLayer = new L.marker(markerPosition, { icon: MapManager.icons[markerShape](markerColor, markerOrigin), 
-                                                         pmIgnore: markerOrigin === LayerType.EXTERNAL ? true : false });
-      const markerUncertainty = marker.std_dev;
-      markerLayer.on("pm:edit", function() {
-        // update the configuration data on the backend
-        updateDynamicLayerEntry(C().mapMan.getMarker(markerLayer));
-        console.log("marker edited");
-      });
-      MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor, markerId, markerUncertainty, markerOrigin);
-      this.dynamicFeatureGroup.addLayer(markerLayer);
-      markerLayer.on("dblclick", MapManager._ondblClickLayer);
+    markers.forEach((marker) => this.importMarker(marker));
+  }
 
-      // update number of markers to avoid name conflicts
-      // ignore if marker name is not in the format "Marker x" with x is a number
-      if (markerName.startsWith("Marker ")) {
-        const number = parseInt(markerName.split(" ")[1]);
-        // check if the number is greater than the current nameNumber and number is a valid number
-        if (!isNaN(number) && number >= this.nameNumber) {
-          this.nameNumber = number + 1;
-        }
-      }
+  importMarker(marker) {
+    const markerId = marker.id;
+    const markerName = marker.name;
+    const markerPosition = marker.latlng;
+    const markerShape = marker.shape;
+    const markerColor = marker.color;
+    const markerLocationType = marker.location_type;
+    const markerOrigin = marker.origin;
+    const markerLayer = new L.marker(markerPosition, { icon: MapManager.icons[markerShape](markerColor, markerOrigin), 
+                                                        pmIgnore: markerOrigin === LayerType.EXTERNAL ? true : false });
+    const markerUncertainty = marker.std_dev;
+    markerLayer.on("pm:edit", function() {
+      // update the configuration data on the backend
+      updateDynamicLayerEntry(C().mapMan.getMarker(markerLayer));
+      console.log("marker edited");
     });
+    MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor, markerId, markerUncertainty, markerOrigin);
+    this.dynamicFeatureGroup.addLayer(markerLayer);
+    markerLayer.on("dblclick", MapManager._ondblClickLayer);
+
+    // update number of markers to avoid name conflicts
+    // ignore if marker name is not in the format "Marker x" with x is a number
+    if (markerName.startsWith("Marker ")) {
+      const number = parseInt(markerName.split(" ")[1]);
+      // check if the number is greater than the current nameNumber and number is a valid number
+      if (!isNaN(number) && number >= this.nameNumber) {
+        this.nameNumber = number + 1;
+      }
+    }
   }
 
   _cleanupDynamicLayer(layers){
@@ -997,7 +999,20 @@ class MapManager {
     this.importMarkers(this._filterUnique(dynamicLayers.markers));
     this.importPolylines(this._filterUnique(dynamicLayers.polylines));
     this.importPolygons(this._filterUnique(dynamicLayers.polygons));
+  }
 
+  importExternalEntity(dynamicEntity) {
+    this._cleanupDynamicLayer([dynamicEntity]);
+    if (dynamicEntity.shape !== undefined) {
+      // handle marker import
+      this.importMarker(dynamicEntity);
+    } else if (dynamicEntity.holes !== undefined) {
+      // handle polygon import
+      this.importPolygon(dynamicEntity);
+    } else {
+      // handle polyline import
+      this.importPolyline(dynamicEntity);
+    }
   }
 
 
@@ -1007,31 +1022,33 @@ class MapManager {
       return;
     }
     // add polylines
-    polylines.forEach((polyline) => {
-      const polylineLayer = new L.polyline(polyline.latlngs, {pmIgnore: polyline.origin === LayerType.EXTERNAL ? true : false});
-      polylineLayer.on("pm:edit", function() {
-        // update the configuration data on the backend
-        updateDynamicLayerEntry(C().mapMan.getPolyline(polylineLayer));
-      });
-      MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id, polyline.std_dev, polyline.origin);
-      
-      if (polyline.color) {
-        polylineLayer.setStyle({
-          color: polyline.color,
-          weight: polyline.origin === LayerType.INTERNAL ? 3 : 5 
-        });
-      }
+    polylines.forEach((polyline) => this.importPolyline(polyline));
+  }
 
-      polylineLayer.on("dblclick", MapManager._ondblClickLayer);
-
-      this.dynamicFeatureGroup.addLayer(polylineLayer);
-      if (polyline.origin === LayerType.EXTERNAL) {
-        const highlightLayers = polyline.latlngs.map((latlng) => {
-          return L.circle(latlng, {radius: 2, color:"red"}).addTo(this.map);
-        })
-        polylineLayer.feature.highlightLayers = highlightLayers;
-      }
+  importPolyline(polyline) {
+    const polylineLayer = new L.polyline(polyline.latlngs, {pmIgnore: polyline.origin === LayerType.EXTERNAL ? true : false});
+    polylineLayer.on("pm:edit", function() {
+      // update the configuration data on the backend
+      updateDynamicLayerEntry(C().mapMan.getPolyline(polylineLayer));
     });
+    MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id, polyline.std_dev, polyline.origin);
+    
+    if (polyline.color) {
+      polylineLayer.setStyle({
+        color: polyline.color,
+        weight: polyline.origin === LayerType.INTERNAL ? 3 : 5 
+      });
+    }
+
+    polylineLayer.on("dblclick", MapManager._ondblClickLayer);
+
+    this.dynamicFeatureGroup.addLayer(polylineLayer);
+    if (polyline.origin === LayerType.EXTERNAL) {
+      const highlightLayers = polyline.latlngs.map((latlng) => {
+        return L.circle(latlng, {radius: 2, color:"red"}).addTo(this.map);
+      })
+      polylineLayer.feature.highlightLayers = highlightLayers;
+    }
   }
 
   // import all polygons from json config file
@@ -1040,42 +1057,44 @@ class MapManager {
       return;
     }
     // add polygons
-    polygons.forEach((polygon) => {
-      let polygonLatlngs = [];
-      let polygonLatLngsFlat = [];
-      polygonLatlngs.push(polygon.latlngs);
-      polygonLatLngsFlat.push(...polygon.latlngs);
-      // add holes to the polygon
-      if (polygon.holes) {
-        polygonLatlngs = polygonLatlngs.concat(polygon.holes);
-        polygon.holes.forEach((hole) => polygonLatLngsFlat.push(...hole));
-      }
-      const polygonLayer = new L.polygon(polygonLatlngs, {pmIgnore: polygon.origin === LayerType.EXTERNAL ? true : false});
-      polygonLayer.on("pm:edit", function() {
-        // update the configuration data on the backend
-        updateDynamicLayerEntry(C().mapMan.getPolygon(polygonLayer));
-      });
-      MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color, polygon.id, polygon.std_dev, polygon.origin);
-      // add color style to the polygon
-      if (polygon.color) {
-        polygonLayer.setStyle({
-          fillColor: polygon.color,
-          color: polygon.color,
-          weight: polygon.origin === LayerType.INTERNAL ? 3 : 5 
-        });
-      }
-
-      polygonLayer.on("dblclick", MapManager._ondblClickLayer);
-
-      this.dynamicFeatureGroup.addLayer(polygonLayer);
-      if (polygon.origin === LayerType.EXTERNAL) {
-        const highlightLayers = polygonLatLngsFlat.map((latlng) => {
-          return L.circle(latlng, {radius: 2, color:"red"}).addTo(this.map);
-        })
-        polygonLayer.feature.highlightLayers = highlightLayers;
-      }
-    });
+    polygons.forEach((polygon) => this.importPolygon(polygon));
     //console.log("polygon added!!")
+  }
+
+  importPolygon(polygon) {
+    let polygonLatlngs = [];
+    let polygonLatLngsFlat = [];
+    polygonLatlngs.push(polygon.latlngs);
+    polygonLatLngsFlat.push(...polygon.latlngs);
+    // add holes to the polygon
+    if (polygon.holes) {
+      polygonLatlngs = polygonLatlngs.concat(polygon.holes);
+      polygon.holes.forEach((hole) => polygonLatLngsFlat.push(...hole));
+    }
+    const polygonLayer = new L.polygon(polygonLatlngs, {pmIgnore: polygon.origin === LayerType.EXTERNAL ? true : false});
+    polygonLayer.on("pm:edit", function() {
+      // update the configuration data on the backend
+      updateDynamicLayerEntry(C().mapMan.getPolygon(polygonLayer));
+    });
+    MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color, polygon.id, polygon.std_dev, polygon.origin);
+    // add color style to the polygon
+    if (polygon.color) {
+      polygonLayer.setStyle({
+        fillColor: polygon.color,
+        color: polygon.color,
+        weight: polygon.origin === LayerType.INTERNAL ? 3 : 5 
+      });
+    }
+
+    polygonLayer.on("dblclick", MapManager._ondblClickLayer);
+
+    this.dynamicFeatureGroup.addLayer(polygonLayer);
+    if (polygon.origin === LayerType.EXTERNAL) {
+      const highlightLayers = polygonLatLngsFlat.map((latlng) => {
+        return L.circle(latlng, {radius: 2, color:"red"}).addTo(this.map);
+      })
+      polygonLayer.feature.highlightLayers = highlightLayers;
+    }
   }
 
   // initialize the location type click event listeners
