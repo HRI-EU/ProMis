@@ -1382,6 +1382,13 @@ class MapManager {
     }
   }
 
+  updateInfoBox() {
+    if (this.dblclickedEntity != null) {
+      let data = MapManager._getInfoBoxDataFromLayer(this.dblclickedEntity);
+      C().updateMapComponent(data, 1);
+    }
+  }
+
 }
 
 export default MapManager;

@@ -27,7 +27,15 @@ class Core {
     this.mapMan = new MapManager();
     this.sourceMan = new SourceCodeManager();
     this.autoComplete = new PushDownAutoComplete();
-    this.autoComplete.push_list(this.sourceMan.locationTypes.map((loc_type) => loc_type.locationType))
+    this.autoComplete.push_list(this.sourceMan.locationTypes.map((loc_type) => loc_type.locationType));
+  }
+
+  initCodeEditor(codeEditor) {
+    this.codeEditor = codeEditor;
+  }
+
+  getCodeEditor() {
+    return this.codeEditor !== undefined ? this.codeEditor : null
   }
 
   //Call to access core instance

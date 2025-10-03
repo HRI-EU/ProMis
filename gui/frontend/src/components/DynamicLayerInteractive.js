@@ -4,8 +4,9 @@ import React from "react";
 import PropTypes from 'prop-types';
 
 import TextField from '@mui/material/TextField';
+import Typography from "@mui/material/Typography";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Box, Grid2, IconButton, MenuItem, Paper, Select, SvgIcon, FormControl, InputLabel } from "@mui/material";
+import { Box, Grid2, IconButton, MenuItem, Paper, Select, SvgIcon, FormControl, InputLabel, Tooltip } from "@mui/material";
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import PolylineIcon from '@mui/icons-material/Polyline';
@@ -19,6 +20,8 @@ const darkTheme = createTheme({
     mode: 'dark',
   },
 });
+
+const fontSize = "0.95rem"
 
 export default function DynamicLayerInteractive({id, icon, name, coordinates, locationType, uncertainty, toggle, hidden, disabled}) {
     const [dynamicOnTop, setDynamicOnTop] = React.useState(false);
@@ -143,7 +146,11 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
 
     // create a grid with icon depending on the type of entity
     const entityGrid =
-      <Grid2 container spacing={2} padding={2}>
+      <Grid2 container spacing={2} padding={2}
+        sx={{
+          fontSize: fontSize
+        }}
+      >
         <Grid2 size={3}>
           <SvgIcon>
             {getIconJSX(icon)}
@@ -232,19 +239,25 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
             }}
           >
             <FormControl
-              size="small"
               sx={{
-                width: "100%"
+                width: "100%",
+                fontSize: fontSize
               }}
             >
               <InputLabel
-                  style={{ color: "rgba(255, 255, 255, 0.7)"  }}
+                  sx={{ 
+                    color: "rgba(255, 255, 255, 0.7)",
+                    fontSize: fontSize
+                  }}
               >Location Type</InputLabel>
               <Select
                 label="Location Type"
                 value={locationTypeInput}
                 onChange={onLocationTypeChange}
                 size="small"
+                sx={{
+                  fontSize: fontSize
+                }}
                 disabled={disabled}
               >
                 {createSelectItems()}
@@ -254,25 +267,35 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
         </Grid2>
         <Grid2 
         >
-          <Box sx={{
-            maxWidth:130
-          }}
-          >
-            <TextField
-              type="number"
-              value={uncertaintyInput}
-              onChange={(e) => setUncertaintyInput(parseFloat(e.target.value))}
-              size="small"
-              label="Uncertainty: σ (m)"
-              fullWidth
-              disabled={disabled}
-              sx={{
-                input:{
-                  color: isUniqueUncertainty ? "white" : "gray"
-                }
-              }}
-            />
-          </Box>
+          <Tooltip title = "Uncertainty">
+            <Box sx={{
+              maxWidth:80,
+              fontSize: fontSize
+            }}
+            >
+              <TextField
+                type="number"
+                value={uncertaintyInput}
+                onChange={(e) => setUncertaintyInput(parseFloat(e.target.value))}
+                size="small"
+                label={<Typography variant="body2" color="textSecondary">σ (m)</Typography>}
+                fullWidth
+                disabled={disabled}
+                sx={{
+                  input:{
+                    color: isUniqueUncertainty ? "white" : "gray"
+                  }
+                }}
+                slotProps={{
+                  htmlInput: {
+                    style: {
+                      fontSize: fontSize
+                    }
+                  }
+                }}
+              />
+            </Box>
+          </Tooltip>
         </Grid2>
       </Grid2>;
 
@@ -318,7 +341,7 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
                   top: "10px",
                   left: "60px",
                   zIndex: 1001,
-                  maxWidth: "310px",
+                  maxWidth: "270px",
                   maxHeight: "400px", 
                   backgroundColor: "#0D0F21"
                 }}

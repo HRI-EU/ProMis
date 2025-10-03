@@ -180,6 +180,8 @@ function MapComponent() {
         });
 
         C().sourceMan.locationTypes = location_type_table;
+        C().autoComplete.flush();
+        C().autoComplete.push_list(location_type_table.map((loc_type) => loc_type.locationType));
       }
       if (dynamic_layer !== null) {
         const markers = dynamic_layer.markers;
