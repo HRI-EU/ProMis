@@ -60,7 +60,7 @@ export default function LocationTypeSettingTabs() {
     React.useEffect(() => {
         return () => {
             C().mapMan.removeLocationTypeOnClick();
-            //TODOS: fix the bug which allows user to ignore duplicate location type check when in edit and unmount the component
+            C().sourceMan.cleanLocationType();
         }
     }, [])
     
@@ -88,6 +88,7 @@ export default function LocationTypeSettingTabs() {
     function onDelete() {
         C().sourceMan.deleteLocationTypeIndex(tabState);
         setTabState(tabState - 1); 
+        C().mapMan.updateInfoBox();
     }
 
     function isDefaultTab(i) {
@@ -128,6 +129,11 @@ export default function LocationTypeSettingTabs() {
 
         if (oldLocationType !== locationType){
             C().mapMan.updateLocationType(locationType, oldLocationType);
+            if (oldLocationType !== "") {
+                C().autoComplete.replace(oldLocationType, locationType);
+            } else {
+                C().autoComplete.push(locationType);
+            }
         }
         if (oldColor != color) {
             C().mapMan.updateLocationTypeColor(locationType, color);
@@ -141,6 +147,7 @@ export default function LocationTypeSettingTabs() {
             color: color,
             uncertainty: uncertainty
         }, tabState);
+        C().mapMan.updateInfoBox();
         setEditMode(false);
         return true;
     }
@@ -420,8 +427,6 @@ export default function LocationTypeSettingTabs() {
                 variant="scrollable"
                 value={tabState}
                 onChange={(event, newValue) => {
-                    console.log("click event to new location type tab");
-                    console.log(event);
                     if (editMode) {
                         if (onEdit()) {
                             setTabState(newValue);

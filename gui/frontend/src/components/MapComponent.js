@@ -12,7 +12,7 @@ import { Container } from "react-bootstrap";
 import { C } from "../managers/Core.js";
 import "./MapComponent.css";
 import { getConfig } from "../utils/Utility.js";
-import { checkExternalUpdate } from "../utils/Utility.js";
+import { establishWebsocket } from "../utils/Utility.js";
 
 //UI
 import SidebarRight from "./SidebarRight.js";
@@ -55,7 +55,6 @@ function MapComponent() {
   });
 
   let didInit = false;
-  const delayUpdateTime = 500 //ms
 
   useEffect(() => {
     if (didInit)
@@ -81,7 +80,7 @@ function MapComponent() {
     C().addMapComponentCallback(changeState);
 
     // add interval to check for external updates
-    setInterval(externalUpdate, delayUpdateTime);
+    webSocketConnect();
 
     // hide zoom control
     const zoomControl = document.querySelector(".leaflet-control-zoom");
@@ -92,26 +91,6 @@ function MapComponent() {
     didInit = true;
   }, []); // Empty dependency array ensures the effect runs once after the initial render
 
-  function externalUpdate() {
-    if (!didInit) {
-      return;
-    }
-    checkExternalUpdate().then((update) => {
-      if (update === undefined) {
-        return;
-      }
-      C().mapMan.importExternal(update);
-      const location_type_table = update.loc_type_entries;
-      // iterate over locationTypes and change location_type field to locationType
-      location_type_table.forEach((locationType) => {
-        locationType.locationType = locationType.location_type;
-        delete locationType.location_type;
-      });
-      const cloneLocationTable = structuredClone(C().sourceMan.locationTypes)
-      cloneLocationTable.push(...location_type_table);
-      C().sourceMan.locationTypes = cloneLocationTable;
-    });
-  }
 
   // This function is called by the MapManager to trigger a state change of info box
   // Ensure toggle is toggled (when type = 0), type is set when we want to change display entity without forcing info box to appear
@@ -180,6 +159,8 @@ function MapComponent() {
         });
 
         C().sourceMan.locationTypes = location_type_table;
+        C().autoComplete.flush();
+        C().autoComplete.push_list(location_type_table.map((loc_type) => loc_type.locationType));
       }
       if (dynamic_layer !== null) {
         const markers = dynamic_layer.markers;
@@ -192,6 +173,29 @@ function MapComponent() {
     });
     
     return null;
+  }
+
+  function webSocketConnect() {
+    const websocket = establishWebsocket()
+    websocket.addEventListener("message", (e) => {
+      if (e.data == "ping") {
+        return;
+      }
+      const flterMessage = JSON.parse(e.data);
+      const message = JSON.parse(flterMessage);
+      if (message.filter !== undefined) {
+        // handle location type tab
+        const location_type_entry = message
+        // iterate over locationTypes and change location_type field to locationType
+        location_type_entry.locationType = location_type_entry.location_type;
+        delete location_type_entry.location_type;
+        C().sourceMan.locationTypes.push(location_type_entry)
+      }
+      else {
+        // handle entity change
+        C().mapMan.importExternalEntity(message);
+      }
+    })
   }
 
   return (

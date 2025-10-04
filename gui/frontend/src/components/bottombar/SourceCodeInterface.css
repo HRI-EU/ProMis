@@ -1,32 +1,5 @@
 
-#editing, #highlighting {
-  /* Both elements need the same text and space styling so they are directly on top of each other */
-  background: #282C34;
-  width: 100%;
-  margin: auto;
-  border-radius: 8px;
-  border: 1px solid #282C34;
-  text-align: left;
-}
-
-#editing, #highlighting, #highlighting * {
-  /* Also add text styles to highlighting tokens */
-  font-size: 12pt;
-  font-family: monospace;
-  line-height: 15pt;
-  tab-size: 2;
-}
-
-/* Move the textarea in front of the result */
-#editing {
-  z-index: 1;
-}
-
-#highlighting {
-  z-index: 0;
-}
-
-#editing.errorSignal, #highlighting.errorSignal {
+#editorWrapper.errorSignal{
   animation-name: changeBlackToRed;
   animation-duration: 1s;
 }
@@ -36,30 +9,7 @@
   50%  {border-color: red;}
   100% {border-color: #282C34;}
 }
-
-#editing {
-  overflow: auto;
-  white-space: pre; /* Allows textarea to scroll horizontally */
-}
-
-/* No resize on textarea */
-#editing {
-  resize: none;
-}
-
 /* Firefox */
 input[type=number] {
   -moz-appearance: textfield;
-}
-
-pre {
-  max-height: 100px;
-  overflow: auto;
-}
-
-
-@keyframes changeBlackToRed {
-  0%   {border-color: #282C34;}
-  50%  {border-color: red;}
-  100% {border-color: #282C34;}
 }

@@ -364,3 +364,9 @@ export async function checkExternalUpdate() {
     console.error(error.message);
   }
 }
+
+export function establishWebsocket() {
+  const url = "ws://localhost:8000/ws";
+  const websocket = new WebSocket(url);
+  return websocket
+}
