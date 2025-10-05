@@ -57,7 +57,7 @@ setuptools.setup(
         "geopy",
         "shapely",
         "overpy",
-        "geojson_pydantic"
+        "geojson_pydantic",
         # probabilistic logic and modelling
         "nflows",
         "torch",
