@@ -1,7 +1,7 @@
 """This module contains a class for handling a collection of spatially referenced data."""
 
 #
-# Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
+# Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors
 #
 # This file is part of ProMis and licensed under the BSD 3-Clause License.
 # You should have received a copy of the BSD 3-Clause License along with ProMis.
@@ -9,7 +9,7 @@
 #
 
 # Standard Library
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from copy import deepcopy
 from pickle import dump, load
@@ -47,20 +47,20 @@ from promis.models import GaussianProcess
 
 
 class Collection(ABC):
-    """A collection of values over a polar or Cartesian space.
+    """An abstract base class for a collection of spatially referenced data points.
 
-    Locations are stored as Cartesian coordinates, but data can be unpacked into both
-    polar and Cartesian frames.
+    This class provides a common interface for managing data points that have associated spatial
+    coordinates and values. It uses a pandas DataFrame for internal storage. Subclasses implement
+    specific coordinate systems, such as Cartesian or Polar.
 
     Args:
-        origin: The polar coordinates of this collection's Cartesian frame's center
-        data: A list of Cartesian location and value pairs
+        columns: The names of the columns for the internal DataFrame. The first two columns are
+            expected to be coordinates, followed by value columns.
+        origin: The polar coordinates of this collection's reference frame's center.
+        number_of_values: The number of value columns to associate with each location.
     """
 
-    def __init__(
-        self, columns: list[str], origin: PolarLocation, number_of_values: int = 1
-    ) -> None:
-        # Attributes setup
+    def __init__(self, columns: list[str], origin: PolarLocation, number_of_values: int = 1) -> None:
         self.number_of_values = number_of_values
         self.origin = origin
         self.basemap = None
@@ -68,41 +68,27 @@ class Collection(ABC):
         # Initialize the data frame
         self.data = DataFrame(columns=columns)
 
-    @classmethod
-    def make_latin_hypercube(
-        cls,
-        origin: PolarLocation,
-        width: float,
-        height: float,
-        number_of_samples: int,
-        number_of_values: int = 1,
-        include_corners: bool = False
-    ) -> "Collection":
-        samples = LatinHypercube(d=2).random(n=number_of_samples)
-        samples = scale(samples, [-width / 2, -height / 2], [width / 2, height / 2])
-
-        collection = cls(origin, number_of_values)
-        collection.append_with_default(samples, 0.0)
-
-        if include_corners:
-            collection.append_with_default(
-                array([
-                    [-width / 2, -height / 2],
-                    [-width / 2, height / 2],
-                    [width / 2, -height / 2],
-                    [width / 2, height / 2]
-                ]),
-                0.0
-            )
-
-        return collection
-
     @staticmethod
     def load(path) -> "Collection":
+        """Load a collection from a pickle file.
+
+        Args:
+            path: The path to the file.
+
+        Returns:
+            The loaded Collection instance.
+        """
+
         with open(path, "rb") as file:
             return load(file)
 
     def save(self, path: str):
+        """Save the collection to a pickle file.
+
+        Args:
+            path: The path to the file, including its name and file extension.
+        """
+
         with open(path, "wb") as file:
             dump(self, file)
 
@@ -111,11 +97,22 @@ class Collection(ABC):
 
         self.data = self.data.iloc[0:0]
 
+    @property
+    @abstractmethod
+    def dimensions(self) -> tuple[float, float]:
+        """Get the dimensions of this Collection in meters.
+
+        Returns:
+            The dimensions of this Collection in meters as ``(width, height)``.
+        """
+
+        raise NotImplementedError
+
     def extent(self) -> tuple[float, float, float, float]:
         """Get the extent of this collection, i.e., the min and max coordinates.
 
         Returns:
-            The minimum and maximum coordinates in order ``west, east, south, north``
+            The minimum and maximum coordinates in order ``west, east, south, north``.
         """
 
         # TODO this might fail near the international date line for polar coordinates
@@ -130,7 +127,7 @@ class Collection(ABC):
         """Unpack the location values as numpy array.
 
         Returns:
-            The values of this Collection as numpy array
+            The values of this Collection as numpy array.
         """
 
         value_columns = self.data.columns[2:]
@@ -140,18 +137,35 @@ class Collection(ABC):
         """Unpack the location coordinates as numpy array.
 
         Returns:
-            The values of this Collection as numpy array
+            The values of this Collection as numpy array.
         """
 
         location_columns = self.data.columns[:2]
         return self.data[location_columns].to_numpy()
 
+    def __getitem__(self, position: tuple[float, float]) -> NDArray[Any]:
+        """Get the value(s) at a specific coordinate.
+
+        Args:
+            position: A tuple `(x, y)` representing the coordinate to look up.
+
+        Returns:
+            A numpy array of value(s) at the specified coordinate.
+        """
+
+        x, y = position
+        return (
+            self.data.loc[(self.data[self.data.columns[0]] == x) & (self.data[self.data.columns[1]] == y)]
+            .to_numpy()[:, 2:]  # Get all columns except the first two
+            .squeeze(0)  # Makes sure we get a 1D array
+        )
+
     def to_csv(self, path: str, mode: str = "w"):
         """Saves the collection as comma-separated values file.
 
         Args:
-            path: The path with filename to write to
-            mode: The writing mode, one of {w, x, a}
+            path: The path with filename to write to.
+            mode: The writing mode, one of {w, x, a}.
         """
 
         self.data.to_csv(path, mode=mode, index=False, float_format="%f")
@@ -164,8 +178,8 @@ class Collection(ABC):
         """Append location and associated value vectors to collection.
 
         Args:
-            coordinates: A list of locations to append or matrix of coordinates
-            values: The associated values as 2D matrix, each row belongs to a single location
+            coordinates: A list of locations to append or matrix of coordinates.
+            values: The associated values as 2D matrix, each row belongs to a single location.
         """
 
         assert len(coordinates) == values.shape[0], (
@@ -197,32 +211,27 @@ class Collection(ABC):
         """Append location with a default value.
 
         Args:
-            coordinates: A list of locations to append or matrix of coordinates
-            values: The default value to assign to all locations
+            coordinates: A list of locations or a matrix of coordinates to append.
+            value: The default value to assign to all new locations.
         """
 
-        self.append(
-            atleast_2d(coordinates),
-            repeat(atleast_2d(value), len(coordinates), axis=0)
-        )
+        self.append(atleast_2d(coordinates), repeat(atleast_2d(value), len(coordinates), axis=0))
 
     def get_basemap(self, zoom=16):
         """Obtain the OSM basemap image of the collection's area.
 
         Args:
-            zoom: The zoom level requested from OSM
+            zoom: The zoom level requested from OSM.
 
         Returns:
-            The basemap image
+            The basemap image.
         """
 
         # Would cause circular import if done at module scope
         from promis.loaders import OsmLoader
 
         # Get OpenStreetMap and crop to relevant area
-        south, west, north, east = OsmLoader.compute_polar_bounding_box(
-            self.origin, self.dimensions
-        )
+        south, west, north, east = OsmLoader.compute_polar_bounding_box(self.origin, self.dimensions)
         map = smopy.Map((south, west, north, east), z=zoom)
         left, bottom = map.to_pixels(south, west)
         right, top = map.to_pixels(north, east)
@@ -234,24 +243,27 @@ class Collection(ABC):
         """Get the closest coordinate in this collection relative to a given point.
 
         Args:
-            point: The point to find the nearest coordinate to
+            point: The point to find the nearest coordinate to.
 
         Returns:
-            The coordinate that is closest to the given point
+            The coordinate that is closest to the given point.
         """
 
         nearest = min(self.coordinates(), key=lambda node: norm(point - array(node)))
         return nearest
 
     def get_distance_to(self, other: "Collection") -> NDArray:
-        """Computes the distances from this collection to another.
+        """Computes the minimum distance from each point in another collection to this collection.
+
+        For each point in the `other` collection, this method finds the distance to the
+        closest point in the current (`self`) collection.
 
         Args:
-            other: The other collection to compute the distance to
+            other: The other collection.
 
         Returns:
-            An array that contains the distance to the respectively closest point in
-            the other collection
+            A numpy array where the i-th element is the minimum distance from the i-th point
+            in `other` to any point in this collection.
         """
 
         own_coordinates = self.coordinates()
@@ -269,22 +281,26 @@ class Collection(ABC):
         value_index: int = 0,
         acquisition_method: str = "entropy",
     ) -> None:
-        """Automatic improvement of the collection via informed sampling.
+        """Improves the collection by adding new, informative points.
+
+        This method uses an active learning approach to iteratively add points to the collection.
+        At each iteration, it samples candidate points, scores them based on an acquisition
+        function, and adds the highest-scoring points to the collection.
 
         Args:
-            candidate_sampler: A sampler that provides a candidate Collection that may be used
-                to improve this collection
-            value_function: The function to get new values from for the chosen points
-            number_of_iterations: The number of iterations to run the improvement for
-            number_of_improvement_points: The number of samples to take at
-                every iteration (will be multiplied by number of value columns)
-            scaler: How much to scale the entropy or standard deviation within the
-                score relative to the distance
-            acquisition_method: The scoreing method to use, one of {entropy, gaussian_process}
+            candidate_sampler: A function that, when called, returns a `Collection` of
+                candidate points.
+            value_function: A function that computes the value(s) for a given set of new
+                point coordinates.
+            number_of_iterations: The number of improvement iterations to run.
+            number_of_improvement_points: The number of new points to add at each iteration.
+            scaler: A factor to scale the contribution of entropy or standard deviation
+                in the acquisition score, relative to the distance.
+            value_index: The index of the value column to use for acquisition methods like
+                'entropy' or 'gaussian_process'.
+            acquisition_method: The scoring method to use for selecting new points.
+                Supported methods are "entropy" and "gaussian_process".
         """
-
-        # Get minimum distances to candidates and get nearest neigbours index
-        # candidate_coordinates = candidate_collection.coordinates()
 
         if acquisition_method == "gaussian_process":
             gp = GaussianProcess()
@@ -303,7 +319,7 @@ class Collection(ABC):
                 entropy = self.get_entropy(value_index=value_index)
 
                 distances_norm = (distances - distances.min()) / (distances.max() - distances.min())
-                entropies_norm = (entropy - entropy.min()) / (entropy.max() - entropy.min())
+                entropies_norm = (entropy - entropy.min()) / (entropy.max() - entropy.min() + 1e-12)
 
                 score = distances_norm * (1 + scaler * entropies_norm[indices.flatten()])
             elif acquisition_method == "gaussian_process":
@@ -328,20 +344,17 @@ class Collection(ABC):
             self.append(next_points, next_values)
 
     def get_entropy(
-        self,
-        number_of_neighbours: int = 4,
-        number_of_bins: int = 10,
-        value_index: int = 0
+        self, number_of_neighbours: int = 4, number_of_bins: int = 10, value_index: int = 0
     ) -> NDArray:
         """Compute the local entropy in the collection.
 
         Args:
-            number_of_neighbours: The number of neighbours of a point to take into account
-            number_of_bins: The number of bins to be used for the histogram
-            value_index: Decides which value of the collection the entropy is computed from
+            number_of_neighbours: The number of neighbours of a point to take into account.
+            number_of_bins: The number of bins to be used for the histogram.
+            value_index: Decides which value of the collection the entropy is computed from.
 
         Returns:
-            The local entropy for each point
+            The local entropy for each point.
         """
 
         coordinates = self.coordinates()
@@ -354,10 +367,7 @@ class Collection(ABC):
         for i, neighbors in enumerate(indices):
             neighbor_values = values[neighbors[1:]]
             hist, _ = histogram(
-                neighbor_values,
-                bins=number_of_bins,
-                range=(min(values), max(values)),
-                density=True
+                neighbor_values, bins=number_of_bins, range=(min(values), max(values)), density=True
             )
             hist += 1e-12
             hist /= sum(hist)
@@ -365,20 +375,16 @@ class Collection(ABC):
 
         return entropies
 
-    def scatter(
-        self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs
-    ):
+    def scatter(self, value_index: int = 0, plot_basemap=True, ax=None, zoom=16, **kwargs):
         """Create a scatterplot of this Collection.
 
         Args:
-            value_index: Which value of the
-            plot_basemap: Whether an OpenStreetMap tile shall be rendered below
-            ax: The axis to plot to, default pyplot context if None
-            zoom: The zoom level of the OSM basemap, default 16
-            **kwargs: Args passed to the matplotlib scatter function
+            value_index: Which value of the collection to plot.
+            plot_basemap: Whether an OpenStreetMap tile shall be rendered below.
+            ax: The axis to plot to, default pyplot context if None.
+            zoom: The zoom level of the OSM basemap, default 16.
+            **kwargs: Args passed to the matplotlib scatter function.
         """
-
-        # Would cause circular import if done at module scope
 
         # Either render with given axis or default context
         if ax is None:
@@ -399,11 +405,51 @@ class Collection(ABC):
 
 class CartesianCollection(Collection):
     def __init__(self, origin: PolarLocation, number_of_values: int = 1):
+        """Initializes a CartesianCollection.
+
+        Args:
+            origin: The polar coordinates of this collection's reference frame's center.
+            number_of_values: The number of value columns to associate with each location.
+        """
+
         super().__init__(CartesianCollection._columns(number_of_values), origin, number_of_values)
 
     @staticmethod
     def _columns(number_of_values: int) -> list[str]:
         return ["east", "north"] + [f"v{i}" for i in range(number_of_values)]
+
+    @classmethod
+    def make_latin_hypercube(
+        cls,
+        origin: PolarLocation,
+        width: float,
+        height: float,
+        number_of_samples: int,
+        number_of_values: int = 1,
+        include_corners: bool = False,
+    ) -> "CartesianCollection":
+        """Creates a collection by sampling points from a Latin Hypercube design."""
+
+        samples = LatinHypercube(d=2).random(n=number_of_samples)
+        samples = scale(samples, [-width / 2, -height / 2], [width / 2, height / 2])
+
+        collection = cls(origin, number_of_values)
+        collection.append_with_default(samples, 0.0)
+
+        if include_corners:
+            collection.append_with_default(
+                array(
+                    [
+                        [-width / 2, -height / 2],
+                        [-width / 2, height / 2],
+                        [width / 2, -height / 2],
+                        [width / 2, height / 2],
+                    ]
+                ),
+                0.0,
+            )
+
+        return collection
 
     @property
     def dimensions(self) -> tuple[float, float]:
@@ -418,6 +464,12 @@ class CartesianCollection(Collection):
         return east - west, north - south
 
     def to_cartesian_locations(self) -> list[CartesianLocation]:
+        """Converts the collection's coordinates to a list of CartesianLocation objects.
+
+        Returns:
+            A list of `CartesianLocation` objects.
+        """
+
         coordinates = self.coordinates()
 
         locations = []
@@ -427,6 +479,15 @@ class CartesianCollection(Collection):
         return locations
 
     def to_polar(self) -> "PolarCollection":
+        """Converts this CartesianCollection to a PolarCollection.
+
+        The coordinates are projected from the local Cartesian plane back to polar
+        (WGS84) coordinates using the collection's origin.
+
+        Returns:
+            A new `PolarCollection` with the data from this collection.
+        """
+
         # Apply the inverse projection of the origin location
         longitudes, latitudes = self.origin.projection(
             self.data["east"].to_numpy(), self.data["north"].to_numpy(), inverse=True
@@ -444,11 +505,26 @@ class CartesianCollection(Collection):
         return polar_collection
 
     def into(
-        self,
-        other: "Collection",
-        interpolation_method: str = "linear",
-        in_place: bool = True
+        self, other: "Collection", interpolation_method: str = "linear", in_place: bool = True
     ) -> "Collection":
+        """Interpolates the values of this collection onto the coordinates of another collection.
+
+        This method takes the spatial data from the current collection and uses an interpolation
+        strategy to estimate the values at the coordinate locations of the `other` collection.
+        The `other` collection's values are then updated with these interpolated values.
+
+        Args:
+            other: The target collection whose coordinates will be used for interpolation and
+                whose values will be updated.
+            interpolation_method: The interpolation method to use. Supported methods are
+                "linear", "nearest", "hybrid", "gaussian_process", and "clough-tocher".
+            in_place: If True, the `other` collection is modified directly. If False, a deep
+                copy of `other` is created and modified instead.
+
+        Returns:
+            The modified collection (either `other` itself or a copy) with interpolated values.
+        """
+
         if in_place:
             target = other
         else:
@@ -467,13 +543,13 @@ class CartesianCollection(Collection):
 
     def get_interpolator(self, interpolation_method: str = "linear") -> Any:
         """Get an interpolator for the data.
-
+        
         Args:
             interpolation_method: The interpolation method to use, one
-                of {linear, nearest, hybrid, gaussian_process}
+                of {linear, nearest, hybrid, gaussian_process, clough-tocher}.
 
         Returns:
-            A callable interpolator function
+            A callable interpolator function.
         """
 
         # Create interpolator
@@ -500,10 +576,18 @@ class CartesianCollection(Collection):
         self,
         threshold: float,
     ):
+        """Reduces the number of points in the collection by clustering nearby points.
+
+        This method uses Agglomerative Clustering to group points. For each cluster, only one
+        representative point (the first one encountered in the cluster) is kept. This is useful
+        for simplifying dense point clouds.
+
+        Args:
+            threshold: The maximum distance between points to be considered in the same cluster.
+        """
+
         coordinates = self.coordinates()
-        clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=threshold).fit(
-            coordinates
-        )
+        clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=threshold).fit(coordinates)
 
         pruning_index = sort(unique(clusters.labels_, return_index=True)[1])
         pruned_coordinates = coordinates[pruning_index]
@@ -515,6 +599,13 @@ class CartesianCollection(Collection):
 
 class PolarCollection(Collection):
     def __init__(self, origin: PolarLocation, number_of_values: int = 1):
+        """Initializes a PolarCollection.
+
+        Args:
+            origin: The polar coordinates of this collection's reference frame's center.
+            number_of_values: The number of value columns to associate with each location.
+        """
+
         super().__init__(PolarCollection._columns(number_of_values), origin, number_of_values)
 
     @staticmethod
@@ -529,9 +620,25 @@ class PolarCollection(Collection):
             The dimensions of this Collection in meters as ``(width, height)``.
         """
 
-        return self.to_cartesian().dimensions
+        if self.data.empty:
+            return 0.0, 0.0
+
+        # Project polar coordinates to Cartesian to get dimensions in meters
+        easts, norths = self.origin.projection(
+            self.data["longitude"].to_numpy(), self.data["latitude"].to_numpy()
+        )
+        width = easts.max() - easts.min()
+        height = norths.max() - norths.min()
+
+        return width, height
 
     def to_polar_locations(self) -> list[PolarLocation]:
+        """Converts the collection's coordinates to a list of PolarLocation objects.
+
+        Returns:
+            A list of `PolarLocation` objects.
+        """
+
         coordinates = self.coordinates()
 
         locations = []
@@ -541,6 +648,15 @@ class PolarCollection(Collection):
         return locations
 
     def to_cartesian(self) -> CartesianCollection:
+        """Converts this PolarCollection to a CartesianCollection.
+
+        The polar (WGS84) coordinates are projected onto a local Cartesian plane
+        centered at the collection's origin.
+
+        Returns:
+            A new `CartesianCollection` with the data from this collection.
+        """
+
         # Apply the inverse projection of the origin location
         easts, norths = self.origin.projection(
             self.data["longitude"].to_numpy(), self.data["latitude"].to_numpy()
@@ -559,12 +675,23 @@ class PolarCollection(Collection):
 
 
 class HybridInterpolator:
+    """An interpolator that combines linear and nearest-neighbor interpolation.
 
-    def __init__(self, coordinates, values):
+    This interpolator first attempts to use linear interpolation. For any points where
+    linear interpolation results in NaN (which occurs for points outside the convex
+    hull of the input data), it falls back to nearest-neighbor interpolation. This
+    provides a robust way to interpolate over a whole grid, even at the edges.
+
+    Args:
+        coordinates: The coordinates of the data points.
+        values: The values at the data points.
+    """
+
+    def __init__(self, coordinates: NDArray, values: NDArray):
         self.linear = LinearNDInterpolator(coordinates, values)
         self.nearest = NearestNDInterpolator(coordinates, values)
 
-    def __call__(self, coordinates):
+    def __call__(self, coordinates: NDArray) -> NDArray:
         result = self.linear(coordinates)
         nan_values = isnan(result).reshape(len(result))
         result[nan_values] = self.nearest(coordinates[nan_values])

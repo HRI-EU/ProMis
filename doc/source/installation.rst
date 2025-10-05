@@ -1,52 +1,108 @@
 Installation
 ============
 
-Requirements
-------------
+This guide covers the installation of ProMis and its dependencies.
 
-To use ProMis, the following requirements are needed depending on the features you want to use.
+Prerequisites
+-------------
 
-* `Python >= 3.10 <https://www.python.org/downloads/>`_ is required to run ProMis itself.
-* `Node.js <https://docs.npmjs.com/downloading-and-installing-node-js-and-npm>`_ is needed to use ProMis' graphical user interface.
-* `GDAL ,https://gdal.org/en/stable/download.html>`_ is necessary to work with nautical chart data.
+Before installing ProMis, you need to set up your environment.
 
-From Pypi
----------
+**Python**
 
-ProMis can be easily installed using the following commands.
+ProMis requires Python 3.10 or newer. You can download it from `python.org <https://www.python.org/downloads/>`_.
+
+**Probabilistic Logic Backend**
+
+ProMis relies on a modified version of the `ProbLog <https://dtai.cs.kuleuven.be/problog/>`_ inference engine that supports distributional clauses. 
+This is not available on PyPI and must be installed directly from a specific Git repository. 
+The installation commands below include this step.
+
+**Optional Dependencies**
+
+*   **GUI:** To use the graphical user interface, you will need `Node.js <https://docs.npmjs.com/downloading-and-installing-node-js-and-npm>`_.
+*   **Nautical Charts:** To work with nautical chart data (e.g., from S-57 files), `GDAL <https://gdal.org/en/stable/download.html>`_ is required. GDAL can be tricky to install, but here are some tips for common platforms:
+
+    .. code-block:: bash
+
+        # Ubuntu / Debian
+        sudo apt-get update
+        sudo apt-get install python3-gdal libgdal-dev
+
+        # macOS (using Homebrew)
+        brew install gdal
+
+    For other systems, please refer to the `official GDAL documentation <https://gdal.org/en/stable/download.html>`_.
+
+Standard Installation
+---------------------
+
+This is the recommended method for most users. It installs the latest stable version of ProMis from PyPI and the required ProbLog backend from GitHub.
 
 .. code-block:: bash
     :linenos:
 
-    # Installing ProMis and a probabilistic reasoning backend
+    # 1. Install ProMis from PyPI
     pip install promis
+
+    # 2. Install the required ProbLog version
     pip install git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
 
-
-Local Installation
-------------------
-
-In case you would like to contribute to the project, the following sets up ProMis for development.
+If you plan to work with nautical charts, install the necessary extras. 
+Make sure you have installed GDAL first (see Prerequisites).
 
 .. code-block:: bash
     :linenos:
 
+    pip install "promis[nautical]"
+
+Developer Installation
+----------------------
+
+If you want to contribute to ProMis, you should clone the repository and install it in editable mode. 
+This allows you to modify the code and see your changes immediately.
+
+.. code-block:: bash
+    :linenos:
+
+    # 1. Clone the repository
     git clone git@github.com:HRI-EU/ProMis.git
     cd ProMis
+
+    # 2. Install in editable mode with development and documentation dependencies
     pip install -e ".[dev,doc]"
+
+    # 3. Install the required ProbLog version
     pip install git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
 
-For nautical applications using marine chart data, you can install the additional dependencies with `pip install . "[nautical]"`.
+To also include dependencies for nautical applications, add the ``nautical`` extra:
+
+.. code-block:: bash
+    :linenos:
+
+    pip install -e ".[dev,doc,nautical]"
 
 Docker
 ------
 
-If you have `Docker` installed on your system, we provide `vscode devcontainer` settings that can be used for dockerized development.
-Otherwise, run the following commands to manually build and employ the ProMis Dockerfile.
+We provide a Docker setup for a containerized development environment, which ensures all dependencies are handled correctly.
+
+**Using VS Code Dev Containers**
+
+The easiest way to get started is by using `VS Code's Dev Containers extension <https://code.visualstudio.com/docs/devcontainers/containers>`_. 
+Simply open the cloned repository in VS Code and, when prompted, click "Reopen in Container". 
+This will automatically build the Docker image and configure your environment.
+
+**Manual Docker Build**
+
+If you prefer to manage Docker manually, you can build and run the container from your terminal.
 
 .. code-block:: bash
     :linenos:
 
-    # Enters the ProMis directiory, builds a new docker image and runs it in interactive mode
+    # Build the Docker image
     docker build . -t promis
-    docker run -it promis
+
+    # Run the container with the local source code mounted.
+    # This allows you to edit files on your host machine and run them inside the container.
+    docker run -it --rm -v "$(pwd)":/workspaces/ProMis -w /workspaces/ProMis promis bash

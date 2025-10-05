@@ -275,7 +275,11 @@ dist
 .idea
 
 # Folders with derived content
-**.pkl
+examples/**/*.pkl
+examples/**/*.npy
+examples/**/*.npz
 examples/**/*.gif
 examples/**/*.mp4
+examples/**/*.pdf
 examples/cofi-exports/**
+examples/coco/data/**

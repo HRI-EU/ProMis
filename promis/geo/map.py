@@ -2,7 +2,7 @@
 coordinates using shapely."""
 
 #
-# Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH
+# Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors
 #
 # This file is part of ProMis and licensed under the BSD 3-Clause License.
 # You should have received a copy of the BSD 3-Clause License along with ProMis.
@@ -141,6 +141,22 @@ class Map(ABC):
             to their uncertainties and underlying sample methods
         """
 
+        # TODO: investigate why the parallelization is not working
+        # (it makes all features be the same in the sampled maps
+        #  because on Linux, processes are not individually re-seeded)
+
+        # with Pool(n_jobs) as pool:
+        #     sampled_feature_lists = list(
+        #         track(
+        #             pool.imap_unordered(
+        #                 Map._sample_features, repeat(self.features, number_of_samples), chunksize=1
+        #             ),
+        #             description=f"Resampling Map {number_of_samples} times",
+        #             total=number_of_samples,
+        #             disable=not show_progress,
+        #         )
+        #     )
+
         return [
             type(self)(self.origin, Map._sample_features(self.features)) for _ in range(number_of_samples)
         ]
@@ -152,8 +168,6 @@ class Map(ABC):
             covariance: The covariance matrix to set for all featuers or a dictionary
                 mapping location_type to covariance matrix
         """
-
-        # TODO: investigae how the covariance of the final relation is computed
 
         if isinstance(covariance, dict):
             for feature in self.features:
@@ -205,7 +219,7 @@ class PolarMap(Map):
 
         return CartesianMap(self.origin, cartesian_features)
 
-    def send_to_gui(self, url: str ="http://localhost:8000/add_geojson_map", timeout: int = 10):
+    def send_to_gui(self, url: str = "http://localhost:8000/add_geojson_map", timeout: int = 10):
         """Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.
 
         Args:
@@ -221,11 +235,12 @@ class PolarMap(Map):
         data = "["
         for feature in self.features:
             data += feature.to_geo_json()
-            data += ','
+            data += ","
         data = data[:-1]
-        data += ']'
+        data += "]"
         r = post(url=url, data=data, timeout=timeout)
         r.raise_for_status()
+
 
 class CartesianMap(Map):
     """A map containing geospatial objects based on local coordinates with a global reference point.
