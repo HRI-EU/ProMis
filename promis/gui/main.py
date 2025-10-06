@@ -7,15 +7,16 @@ It provides endpoints for:
     - Adding and updating geographic features (markers, lines, polygons) via GeoJSON
     - Serving the frontend static files
 
-The API supports configuration persistence, dynamic updates, and integration with the ProMis and StaRMap core logic.
+The API supports configuration persistence, dynamic updates,
+and integration with the ProMis and StaRMap core logic.
 """
 
+import asyncio
 import os
 import re
-import asyncio
 from uuid import uuid4
 
-from fastapi import FastAPI, WebSocket, HTTPException, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from geojson_pydantic import Feature
@@ -32,17 +33,17 @@ from promis.geo import (
 )
 from promis.gui.models.colors import get_random_color
 from promis.gui.models.config import DynamicLayer, LayerConfig, LocationTypeTable
+from promis.gui.models.connection_manager import ConnectionManager
 from promis.gui.models.layer import Layer
 from promis.gui.models.line import Line
 from promis.gui.models.location_type_table import LocationTypeEntry
 from promis.gui.models.marker import Marker
 from promis.gui.models.polygon import Polygon
 from promis.gui.models.run_request import RunRequest
-from promis.gui.models.connection_manager import ConnectionManager
 from promis.loaders import OsmLoader
 
 program_storage_path = os.path.join(os.path.expanduser('~'), ".promis_gui")
-resources_path_dev = os.path.join(os.path.dirname(__file__), "..", "..") 
+resources_path_dev = os.path.join(os.path.dirname(__file__), "..", "..")
 
 manager = ConnectionManager()
 

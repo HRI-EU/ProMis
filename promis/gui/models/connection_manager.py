@@ -1,8 +1,10 @@
 from fastapi import WebSocket, WebSocketDisconnect
+
 from promis.gui.models.line import Line
-from promis.gui.models.polygon import Polygon
-from promis.gui.models.marker import Marker
 from promis.gui.models.location_type_table import LocationTypeEntry
+from promis.gui.models.marker import Marker
+from promis.gui.models.polygon import Polygon
+
 
 class ConnectionManager:
     def __init__(self):
