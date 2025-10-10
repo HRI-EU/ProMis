@@ -75,7 +75,6 @@ class LayerManager {
 
   //Delete layer with this layerId
   deleteLayer(layerId) {
-    C().mapMan.removeMarkers();
     var pos = LayerManager.findLayerPos(this.layers, layerId);
     C().mapMan.removeMarkerFromLayer(this.layers[pos]);
     this.layers = this.layers.filter((layer) => layer.id !== layerId);

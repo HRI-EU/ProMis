@@ -62,6 +62,7 @@ export default function DynamicLayerInteractive({id, icon, name, coordinates, lo
         C().mapMan.removeCircleHighlight();
       }
       setUncertaintyInput(uncertainty);
+      setLocationTypeInput(locationType);
     }, [id])
 
     React.useEffect(() => {

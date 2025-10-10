@@ -118,7 +118,7 @@ export default function LandscapeSetting({origin,
             >
                 <Grid
                 >
-                <TextField type="number" size="small" label="Width" variant="outlined" 
+                <TextField type="number" size="small" label="Width (m)" variant="outlined" 
                 value={dimensions[0]}
                 onFocus={() =>
                     C().mapMan.highlightBoundaryAlter(origin, dimensions,

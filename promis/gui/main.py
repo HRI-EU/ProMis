@@ -516,7 +516,7 @@ def get_config() -> tuple[LayerConfig, DynamicLayer, LocationTypeTable]:
 
 @app.post("/add_geojson")
 async def add_geo_object(new_obj: Feature):
-    location_type = new_obj.properties["location_type"] if "location_type" in new_obj.properties else ""
+    location_type = new_obj.properties["location_type"] if "location_type" in new_obj.properties else "UNKNOWN"
     loc_type_table = _get_location_type_table()
     loc_type_entry = loc_type_table.find(location_type)
     color = get_random_color()
@@ -532,9 +532,11 @@ async def add_geo_object(new_obj: Feature):
 
     coords = new_obj.geometry.coordinates
 
+    id = new_obj.id if new_obj.id is not None else uuid4().int % 2**31
+
     match new_obj.geometry.type:
         case "Point":
-            marker = Marker(id=str(new_obj.id),
+            marker = Marker(id=str(id),
                             latlng=[coords[1], coords[0]] ,
                             shape=new_obj.properties["shape"] if "shape" in new_obj.properties
                                   else 'defaultMarker',
@@ -547,7 +549,7 @@ async def add_geo_object(new_obj: Feature):
             update_dynamic_layer_entry(marker)
             await manager.broadcast_entity(marker)
         case "LineString":
-            line = Line(id=str(new_obj.id),
+            line = Line(id=str(id),
                         latlngs=[[loc[1], loc[0]] for loc in coords],
                         location_type=location_type,
                         color=color,
@@ -564,7 +566,7 @@ async def add_geo_object(new_obj: Feature):
                     hole = [(loc[1], loc[0]) for loc in coords[ind]]
                     hole = hole[:-1]
                     holes.append(hole)
-            polygon = Polygon(id=str(new_obj.id),
+            polygon = Polygon(id=str(id),
                               latlngs=latlngs,
                               holes=holes,
                               location_type=location_type,

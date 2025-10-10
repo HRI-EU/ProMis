@@ -120,6 +120,7 @@ export class HeatmapRectRender extends LeafletNativeRender {
                     pathOptions: {
                         color: hsl,
                     },
+                    pmIgnore: true,
                 };
                 // Creating a rectangle
                 var rectangle = new L.rectangle(
@@ -170,6 +171,7 @@ export class HeatmapCircleRender extends LeafletNativeRender {
                     pathOptions: {
                         color: hsl,
                     },
+                    pmIgnore: true,
                 };
                 // Creating a circle
                 var circle = new L.circle(marker.position, circleOptions);
@@ -248,6 +250,7 @@ export class VoronoiRender extends LeafletNativeRender {
                         fillOpacity: currentLayer.opacity * 0.01,
                         weight: 1.5,
                         stroke: false,
+                        pmIgnore: true,
                         //color: hsla, //Outline color
                     };
                     // Creating a polygon
