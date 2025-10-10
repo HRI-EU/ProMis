@@ -57,6 +57,7 @@ setuptools.setup(
         "geopy",
         "shapely",
         "overpy",
+        "geojson_pydantic",
         # probabilistic logic and modelling
         "nflows",
         "torch",
@@ -95,4 +96,10 @@ setuptools.setup(
             "pytest",
         ],
     },
+    entry_points={
+        "console_scripts": [
+            "promis_gui=promis.gui.cli:main"
+        ]
+    },
+    include_package_data=True,
 )

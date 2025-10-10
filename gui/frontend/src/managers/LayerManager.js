@@ -47,7 +47,8 @@ class LayerManager {
     this.layers.push(layer);
     this.hideAllLayers = false;
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
+    const otherLayers = [];
+    C().mapMan.renderLayer(layer, otherLayers, false);
     updateLayerConfig(layer);
   }
 
@@ -57,7 +58,8 @@ class LayerManager {
     this.layers.splice(0, 0, layer);
     this.hideAllLayers = false;
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
+    const otherLayers = []
+    C().mapMan.renderLayer(layer, otherLayers);
     updateTotalConfig(this.layers);
   }
 
@@ -65,21 +67,20 @@ class LayerManager {
    * Delete all previously added layers from the map and from the SidebarLeft
    */
   deleteAllLayers() {
+    C().mapMan.removeMarkers();
     this.layers = [];
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
     updateTotalConfig(this.layers);
   }
 
   //Delete layer with this layerId
   deleteLayer(layerId) {
-    C().mapMan.removeMarkers();
     var pos = LayerManager.findLayerPos(this.layers, layerId);
+    C().mapMan.removeMarkerFromLayer(this.layers[pos]);
     this.layers = this.layers.filter((layer) => layer.id !== layerId);
     // check if all layers are hidden
     this.hideAllLayers = this.layers.every((layer) => !layer.visible);
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
     deleteLayerConfig(pos);
   }
 
@@ -103,7 +104,12 @@ class LayerManager {
     var pos = LayerManager.findLayerPos(this.layers, layerId);
     this.layers[pos].visible = visible;
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
+    const otherLayers = LayerManager.layersCutFromPos(this.layers, pos);
+    if (visible) {
+      C().mapMan.renderLayer(this.layers[pos], otherLayers);
+    } else {
+      C().mapMan.removeMarkerFromLayer(this.layers[pos]);
+    }
     updateLayerConfig(this.layers[pos]);
   }
 
@@ -128,22 +134,23 @@ class LayerManager {
   }
 
   //Change layer color
-  changeLayerColor(layerId, hue) {
-    var pos = LayerManager.findLayerPos(this.layers, layerId);
-    this.layers[pos].hue = hue;
+  changeLayerColor(layer, hue) {
+    layer.hue = hue;
     C().updateSidebarRight();
-    if (this.layers[pos].visible){
-      C().mapMan.updateLayerColor(this.layers[pos]);
+    if (layer.visible){
+      C().mapMan.updateLayerColor(layer);
     }
   }
 
   //Change layer opacity
-  changeLayerOpacity(layerId, opacity) {
-    var pos = LayerManager.findLayerPos(this.layers, layerId);
-    this.layers[pos].opacity = opacity;
+  changeLayerOpacity(layer, opacity, commited=true) {
+    layer.opacity = opacity;
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
-    updateLayerConfig(this.layers[pos]);
+    if (layer.visible){
+      C().mapMan.updateLayerColor(layer);
+    }
+    if (commited) 
+      updateLayerConfig(layer);
   }
 
   //Change layer render mode
@@ -151,7 +158,8 @@ class LayerManager {
     var pos = LayerManager.findLayerPos(this.layers, layerId);
     this.layers[pos].renderMode = renderMode;
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
+    const otherLayers = LayerManager.layersCutFromPos(this.layers, pos);
+    C().mapMan.renderLayer(this.layers[pos], otherLayers);
     updateLayerConfig(this.layers[pos]);
   }
 
@@ -163,7 +171,8 @@ class LayerManager {
     this.layers[pos].markerDstLat = markerDst[0];
     this.layers[pos].markerDstLng = markerDst[1];
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
+    const otherLayers = LayerManager.layersCutFromPos(this.layers, pos);
+    C().mapMan.renderLayer(this.layers[pos], otherLayers);
     updateLayerConfig(this.layers[pos]);
   }
 
@@ -172,7 +181,8 @@ class LayerManager {
     var pos = LayerManager.findLayerPos(this.layers, layerId);
     this.layers[pos].valueRange = valueRange;
     C().updateSidebarRight();
-    C().mapMan.refreshMap();
+    const otherLayers = LayerManager.layersCutFromPos(this.layers, pos);
+    C().mapMan.renderLayer(this.layers[pos], otherLayers);
     updateLayerConfig(this.layers[pos]);
   }
 
@@ -193,7 +203,8 @@ class LayerManager {
       //this.layers[pos] = this.layers[pos-1];
       //this.layers[pos-1] = lay;
       C().updateSidebarRight();
-      C().mapMan.refreshMap();
+      const otherLayers = LayerManager.layersCutFromPos(this.layers, pos - 1);
+      C().mapMan.renderLayer(this.layers[pos - 1], otherLayers);
       updateTotalConfig(this.layers);
     }
   }
@@ -215,7 +226,8 @@ class LayerManager {
       //this.layers[pos] = this.layers[pos+1];
       //this.layers[pos+1] = lay;
       C().updateSidebarRight();
-      C().mapMan.refreshMap();
+      const otherLayers = LayerManager.layersCutFromPos(this.layers, pos + 1);
+      C().mapMan.renderLayer(this.layers[pos + 1], otherLayers);
       updateTotalConfig(this.layers);
     }
   }
@@ -284,6 +296,10 @@ class LayerManager {
   //Takes layers array and layerId, returns layer pos in array or -1 if not found
   static findLayerPos(layers, layerId) {
     return layers.findIndex((layer) => layer.id === layerId);
+  }
+
+  static layersCutFromPos(layers, pos){
+    return layers.slice(0, pos);
   }
 }
 

@@ -1,0 +1,79 @@
+[
+  {
+    "id": 2075396262,
+    "location_type": "UNKNOWN",
+    "filter": "",
+    "color": "black",
+    "std_dev": 0
+  },
+  {
+    "id": 1328715238,
+    "location_type": "ORIGIN",
+    "filter": "",
+    "color": "gray",
+    "std_dev": 0
+  },
+  {
+    "id": 3525042322,
+    "location_type": "VERTIPORT",
+    "filter": "",
+    "color": "blue",
+    "std_dev": 0
+  },
+  {
+    "id": 3838605292,
+    "location_type": "primary",
+    "filter": "['highway' = 'primary']",
+    "color": "blue",
+    "std_dev": 15
+  },
+  {
+    "id": 1880208973,
+    "location_type": "secondary",
+    "filter": "['highway' = 'secondary']",
+    "color": "red",
+    "std_dev": 10
+  },
+  {
+    "id": 1622829938,
+    "location_type": "tertiary",
+    "filter": "['highway' = 'tertiary']",
+    "color": "green",
+    "std_dev": 5
+  },
+  {
+    "id": 2543436890,
+    "location_type": "park",
+    "filter": "['leisure' = 'park']",
+    "color": "yellow",
+    "std_dev": 0
+  },
+  {
+    "id": 2543416890,
+    "location_type": "service",
+    "filter": "['highway' = 'service']",
+    "color": "orange",
+    "std_dev": 2.5
+  },
+  {
+    "id": 2443436890,
+    "location_type": "crossing",
+    "filter": "['footway' = 'crossing']",
+    "color": "purple",
+    "std_dev": 0
+  },
+  {
+    "id": 2543436690,
+    "location_type": "bay",
+    "filter": "['natural' = 'bay']",
+    "color": "white",
+    "std_dev": 0
+  },
+  {
+    "id": 2542436890,
+    "location_type": "rail",
+    "filter": "['railway' = 'rail']",
+    "color": "brown",
+    "std_dev": 0
+  }
+]

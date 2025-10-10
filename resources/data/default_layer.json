@@ -80003,30 +80003,32 @@
       "radius": 5.0
     }
   ],
+  "width": 100,
+  "height": 100,
   "visible": true,
-  "settingsMenuExpanded": false,
-  "colorMenuExpanded": false,
+  "settings_menu_expanded": false,
+  "color_menu_expanded": false,
   "hue": 180,
-  "opacity": 0.6,
+  "opacity": 60,
   "renderMode": "VORONOI",
   "radius": 5.0,
-  "valueRange": [
+  "value_range": [
     0.1,
     1.0
   ],
-  "markersValMinMax": [
+  "markers_val_min_max": [
     0.0,
     1.0
   ],
-  "markersLatMinMax": [
+  "markers_lat_min_max": [
     49.87239656780816,
     49.88160320972968
   ],
-  "markersLngMinMax": [
+  "markers_lng_min_max": [
     8.645876191791833,
     8.66012380820817
   ],
-  "markerDstLat": 0.000045000045000045,
-  "markerDstLng": 0.0000698224958396357,
-  "isEnable": true
+  "marker_dst_lat": 0.000045000045000045,
+  "marker_dst_lng": 0.0000698224958396357,
+  "is_enable": true
 }

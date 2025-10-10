@@ -266,25 +266,50 @@ class SidebarRightItem extends React.Component {
       textfieldRangeMinStr: this.layer.valueRange[0] + "",
       textfieldRangeMaxStr: this.layer.valueRange[1] + "",
       layerName: this.layer.name,
+      currentHue: this.layer.hue,
+      currentOpacity: this.layer.opacity,
     };
     this.index = props.index;
   }
 
   // change the hue of the layer when the hue slider is changed
   hueSliderChanged = (layer, hue) => {
-    C().layerMan.changeLayerColor(layer.id, hue);
+    // skip if render mode is *image
+    if (
+      layer.renderMode === RenderMode.PNGImage ||
+      layer.renderMode === RenderMode.SVGImage
+    ) {
+      layer.hue = hue;
+      this.setState({ currentHue: hue });
+      return;
+    }
+    C().layerMan.changeLayerColor(layer, hue);
   };
 
   // change the hue of the layer when the hue slider is changed
   commitHueSliderChanged = (layer, hue) => {
-    C().layerMan.changeLayerColor(layer.id, hue);
+    C().layerMan.changeLayerColor(layer, hue);
     updateLayerConfig(layer);
   };
 
 
   // change the opacity of the layer when the opacity slider is changed
-  opacitySliderChanged = (selectedLayerId, opacityRange) => {
-    C().layerMan.changeLayerOpacity(selectedLayerId, opacityRange);
+  opacitySliderChanged = (layer, opacityRange, commited) => {
+    // skip if render mode is *image and is not committed
+    if (
+      layer.renderMode === RenderMode.PNGImage ||
+      layer.renderMode === RenderMode.SVGImage
+    ) {
+      if (!commited) {
+        this.layer.opacity = opacityRange;
+        this.setState({
+          currentOpacity: opacityRange,
+        });
+        return;
+      }
+    }
+
+    C().layerMan.changeLayerOpacity(layer, opacityRange, commited);
   };
 
   // change the radius of the layer when the radius slider is changed
@@ -346,6 +371,10 @@ class SidebarRightItem extends React.Component {
         return "Heatmap (Circles)";
       case RenderMode.Voronoi:
         return "Voronoi";
+      case RenderMode.SVGImage:
+        return "SVG Image";
+      case RenderMode.PNGImage:
+        return "PNG Image";
     }
   }
 
@@ -752,11 +781,11 @@ class SidebarRightItem extends React.Component {
                 min={0}
                 max={359}
                 value={layer.hue}
-                onChangeCommitted={(event, newValue) => {
-                  this.commitHueSliderChanged(layer, newValue);
-                }}
                 onChange={(event, newValue) => {
                   this.hueSliderChanged(layer, newValue);
+                }}
+                onChangeCommitted={(event, newValue) => {
+                  this.commitHueSliderChanged(layer, newValue);
                 }}
                 valueLabelDisplay="auto"
                 style={{
@@ -779,12 +808,14 @@ class SidebarRightItem extends React.Component {
               </div>
 
               <Slider
-                defaultValue={layer.opacity * 100}
+                value={layer.opacity}
                 min={0}
                 max={100}
+                onChange={(event, newValue) => {
+                  this.opacitySliderChanged(layer, newValue, false);
+                }}
                 onChangeCommitted={(event, newValue) => {
-                  console.log(event);
-                  this.opacitySliderChanged(layer.id, newValue * 0.01);
+                  this.opacitySliderChanged(layer, newValue, true);
                 }}
                 valueLabelDisplay="auto"
                 style={{
@@ -866,10 +897,15 @@ class SidebarRightItem extends React.Component {
                     Heatmap (Circles)
                   </MenuItem>
                   <MenuItem value={RenderMode.Voronoi}>Voronoi</MenuItem>
+                  <MenuItem value={RenderMode.SVGImage}>SVG Image</MenuItem>
+                  <MenuItem value={RenderMode.PNGImage}>PNG Image</MenuItem>
                 </Select>
               </FormControl>
 
-              {layer.renderMode !== RenderMode.Voronoi ? (
+              {layer.renderMode !== RenderMode.Voronoi  &&
+               layer.renderMode !== RenderMode.SVGImage &&
+               layer.renderMode !== RenderMode.PNGImage
+               ? (
                 <Grid
                   container
                   spacing={0}

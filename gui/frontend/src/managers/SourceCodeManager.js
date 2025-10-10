@@ -1,5 +1,30 @@
 import { C } from "./Core.js";
-import { updateConfigLocationTypes } from "../utils/Utility.js";
+import { updateConfigLocationTypes, randomId, updateConfigLocationTypeEntry, deleteConfigLocationTypeEntry } from "../utils/Utility.js";
+import Color from "../models/Color.js";
+
+const defaultLocationTypes = [
+  {
+    "id": 2075396262,
+    "locationType": "UNKNOWN",
+    "filter": "",
+    "color": "#0000FF",
+    "uncertainty": 10
+  },
+  {
+    "id": 1328715238,
+    "locationType": "ORIGIN",
+    "filter": "",
+    "color": "#0000FF",
+    "uncertainty": 10
+  },
+  {
+    "id": 3525042322,
+    "locationType": "VERTIPORT",
+    "filter": "",
+    "color": "#0000FF",
+    "uncertainty": 10
+  }
+];
 
 const defaultSourceCode = `% UAV properties
 initial_charge ~ normal(90, 5).
@@ -10,7 +35,7 @@ weight ~ normal(0.2, 0.1).
 1/10::fog; 9/10::clear.
 
 % Visual line of sight
-vlos(X) :- 
+0.8::vlos(X) :- 
     fog, distance(X, operator) < 50;
     clear, distance(X, operator) < 100;
     clear, over(X, bay), distance(X, operator) < 400.
@@ -22,9 +47,12 @@ can_return(X) :-
 
 % Permits related to local features
 permits(X) :- 
-    distance(X, service) < 15; distance(X, primary) < 15;
-    distance(X, secondary) < 10; distance(X, tertiary) < 5;
-    distance(X, crossing) < 5; distance(X, rail) < 5;
+    distance(X, service) < 15; 
+    distance(X, primary) < 15;
+    distance(X, secondary) < 10; 
+    distance(X, tertiary) < 5;
+    distance(X, rail) < 5; 
+    distance(X, crossing) < 5; 
     over(X, park).
 
 % Definition of a valid mission
@@ -35,32 +63,64 @@ landscape(X) :-
 
 class SourceCodeManager {
   constructor() {
-    this.hasSource = true;
-    this.source = defaultSourceCode;
     this.success = true;
     this.closed = true;
     this.origin = "";
-    this.edit = false;
-    this.locationTypes = [];
+    this.locationTypes = defaultLocationTypes;
     this.interpolation = "linear";
+    this.source = defaultSourceCode;
+  }
+
+  setSource(source) {
+    this.source = source;
+  }
+
+  getSource() {
+    return this.source;
+  }
+
+  getUncertaintyFromLocationType(locationType) {
+    const matchedRow =  this.locationTypes.find((row) => {
+      return row.locationType === locationType
+    });
+    if (matchedRow !== undefined) {
+      return matchedRow.uncertainty;
+    }
+    else {
+      return 0;
+    }
+  }
+
+  getColorFromLocationType(locationType) {
+    const matchedRow =  this.locationTypes.find((row) => {
+      return row.locationType === locationType
+    });
+    if (matchedRow !== undefined) {
+      return matchedRow.color;
+    }
+    return new Error("No Color found from this location type");
+  }
+
+  getListLocationType() {
+    return this.locationTypes.map((entry) => entry.locationType);
   }
 
   getDefaultLocationTypesRows() {
+    const defaultLocationType = defaultLocationTypes.map((loc_type) => loc_type.locationType);
     return this.locationTypes.filter((row) => {
-      const defaultLocationType = ["UNKNOWN", "ORIGIN", "VERTIPORT"];
       return defaultLocationType.includes(row.locationType);
     })
   }
 
 
   getRequestBody({
-    dimensionWidth
-    , dimensionHeight
-    , resolutionWidth
-    , resolutionHeight
-    , supportResolutionWidth
-    , supportResolutionHeight
-    , sampleSize
+    origin,
+    sourceCode,
+    dimensions,
+    resolutions,
+    supportResolutions,
+    sampleSize,
+    interpolation
   }) {
     // sort the location types by location type
     const sortedTypes = [...this.locationTypes].sort((a, b) => (a.locationType > b.locationType) ? 1 : -1);
@@ -77,52 +137,42 @@ class SourceCodeManager {
       locationTypes[locationType.locationType] = locationType.filter;
     }
 
-    const originLatLong = C().mapMan.latlonFromMarkerName(this.origin);
+    const originLatLong = C().mapMan.latlonFromMarkerName(origin);
     const body = {
-      source: this.source,
+      source: sourceCode,
       origin: [originLatLong.lat, originLatLong.lng],
-      dimensions: [dimensionWidth, dimensionHeight],
-      resolutions: [resolutionWidth, resolutionHeight],
+      dimensions: dimensions,
+      resolutions: resolutions,
       location_types: locationTypes,
-      support_resolutions: [supportResolutionWidth, supportResolutionHeight],
+      support_resolutions: supportResolutions,
       sample_size: sampleSize,
-      interpolation: this.interpolation
+      interpolation: interpolation
     };
     return body;
   }
 
   async intermediateCalls({
-    dimensionWidth
-    , dimensionHeight
-    , resolutionWidth
-    , resolutionHeight
-    , supportResolutionWidth
-    , supportResolutionHeight
-    , sampleSize
+    origin,
+    sourceCode,
+    dimensions,
+    resolutions,
+    supportResolutions,
+    sampleSize,
+    interpolation
   }, endpoint, hashValue=-1) {
     // close alert if open
     if (!this.closed){
       this.closed = true;
     }
 
-    if (!this.hasSource){
-      console.log("No source code!!!");
-      return;
-    }
-    // check if origin is set
-    if (this.origin === ""){
-      console.log("No origin set!!!");
-      return;
-    }
-
     const bodyParams = {
-      dimensionWidth
-      , dimensionHeight
-      , resolutionWidth
-      , resolutionHeight
-      , supportResolutionWidth
-      , supportResolutionHeight
-      , sampleSize
+      origin,
+      sourceCode,
+      dimensions,
+      resolutions,
+      supportResolutions,
+      sampleSize,
+      interpolation
     };
     const body = this.getRequestBody(bodyParams);
     //Run the source code
@@ -136,7 +186,11 @@ class SourceCodeManager {
         },
       });
       if (!response.ok) {
-        throw new Error("error during endpoint:" + endpoint + "\nreport error: " + response.status);
+        console.log(body)
+        const result = await response.json();
+        throw new Error("error during calling:" + response.url + "\nreport error: " + response.status + "\n"
+            + "result:" + "\n" + JSON.stringify(result)
+        );
       }
       if (endpoint !== "inference") {
         const success = await response.text();
@@ -161,11 +215,6 @@ class SourceCodeManager {
     }
   }
 
-  toggleEdit() {
-    this.edit = !this.edit;
-    C().updateBottomBar();
-  }
-
   closeAlert() {
     this.closed = true;
     C().updateBottomBar();
@@ -181,35 +230,40 @@ class SourceCodeManager {
     C().updateBottomBar();
   }
 
-  /**
-   * Import source code
-   * @param {string} source
-   */
-  importSource(source) {
-    
-    if (source.slice(-1) == "\n") {
-      source += " ";
-    }
-
-    this.hasSource = true;
-    this.source = source;
-    C().updateBottomBar();
-  }
-
-  //Remove the source code
-  removeSource() {
-    this.hasSource = false;
-    this.source = "";
-    C().updateBottomBar();
-  }
-
   updateLocationTypes(locationTypes) {
     this.locationTypes = locationTypes;
     updateConfigLocationTypes(locationTypes);
     // TODOS: update polygons and polylines and marker appropriately
   }
 
-  
+  deleteLocationTypeIndex(index) {
+    deleteConfigLocationTypeEntry(this.locationTypes[index].id);
+    C().mapMan.deleteLocationType(this.locationTypes[index].locationType);
+    C().autoComplete.pop(this.locationTypes[index].locationType);
+    this.locationTypes.splice(index, 1);
+  }
+
+  addTempLocationType() {
+    this.locationTypes.push({
+      id: randomId(),
+      locationType: "",
+      filter: "",
+      color: Color.randomHex(),
+      uncertainty: 10
+    })
+  }
+
+  cleanLocationType() {
+    this.locationTypes = this.locationTypes.filter((loc_type) => loc_type.locationType !== "")
+  }
+
+  editLocationType(locationType, index) {
+    this.locationTypes[index].locationType = locationType.locationType;
+    this.locationTypes[index].filter = locationType.filter;
+    this.locationTypes[index].color = locationType.color;
+    this.locationTypes[index].uncertainty = locationType.uncertainty;
+    updateConfigLocationTypeEntry(this.locationTypes[index]);
+  }
 }
 
 export default SourceCodeManager;

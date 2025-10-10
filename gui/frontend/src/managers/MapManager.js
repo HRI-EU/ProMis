@@ -1,20 +1,31 @@
 import L from "leaflet";
+import { DomEvent } from "leaflet";
 import "leaflet.heat";
 import * as turf from "@turf/turf";
 
 import ColorHelper from "../utils/ColorHelper.js";
 import { updateDynamicLayerEntry, deleteDynamicLayerEntry, updateConfigDynamicLayers, randomId } from "../utils/Utility.js";
+import { HeatmapRectRender, HeatmapCircleRender, VoronoiRender, SVGImageRender, PNGImageRender } from "../models/Render.js"
 
 import { C } from "./Core.js";
-import { getDefaultMarker, getDroneIcon, getLandingPadIcon } from "../utils/getIcons.js";
-
-import { Voronoi } from "../libs/rhill-voronoi-core.min.js";
+import { getDefaultMarker, getDroneIcon, getLandingPadIcon, LayerType } from "../utils/getIcons.js";
+import LayerManager from "./LayerManager.js";
 
 //Marker RenderMode "enum"
 export class RenderMode {
   static HeatmapRect = "HEATMAP_RECT";
   static HeatmapCircle = "HEATMAP_CIRCLE";
   static Voronoi = "VORONOI";
+  static SVGImage = "SVG_IMAGE";
+  static PNGImage = "PNG_IMAGE";
+}
+
+const renderModeToRenderer = {
+  HEATMAP_RECT: HeatmapRectRender,
+  HEATMAP_CIRCLE: HeatmapCircleRender,
+  VORONOI: VoronoiRender,
+  SVG_IMAGE: SVGImageRender,
+  PNG_IMAGE: PNGImageRender
 }
 
 class MapManager {
@@ -33,6 +44,8 @@ class MapManager {
     this.bBoxFeatureGroup = null;
     this.svgElement = null;
     this.svgOverlay = null;
+    this.circleHighlight = null;
+    this.dblclickedEntity = null;
   }
 
   getDynamicLayer(layer) {
@@ -55,6 +68,8 @@ class MapManager {
       shape: layer.feature.properties["shape"],
       location_type: layer.feature.properties["locationType"],
       color: layer.feature.properties["color"],
+      std_dev: layer.feature.properties["uncertainty"],
+      origin: layer.feature.properties["origin"]
     }
   }
 
@@ -79,6 +94,8 @@ class MapManager {
       latlngs: layer.getLatLngs().map((latlng) => [latlng.lat, latlng.lng]),
       location_type: layer.feature.properties["locationType"],
       color: layer.feature.properties["color"],
+      std_dev: layer.feature.properties["uncertainty"],
+      origin: layer.feature.properties["origin"]
     }
   }
 
@@ -106,6 +123,8 @@ class MapManager {
       holes: holes,
       location_type: layer.feature.properties["locationType"],
       color: layer.feature.properties["color"],
+      std_dev: layer.feature.properties["uncertainty"],
+      origin: layer.feature.properties["origin"]
     }
   }
 
@@ -349,6 +368,8 @@ class MapManager {
       console.log("marker edited now");
     });
 
+    layer.on("dblclick", MapManager._ondblClickLayer);
+
     // update bottombar
     C().updateBottomBar();
 
@@ -366,6 +387,7 @@ class MapManager {
       updateDynamicLayerEntry(C().mapMan.getPolyline(layer));
     });
     layer.setStyle({ color: color });
+    layer.on("dblclick", MapManager._ondblClickLayer);
     // update the configuration data on the backend
     updateDynamicLayerEntry(C().mapMan.getPolyline(layer));
   }
@@ -379,11 +401,12 @@ class MapManager {
       updateDynamicLayerEntry(C().mapMan.getPolygon(layer));
     });
     layer.setStyle({ color: color });
+    layer.on("dblclick", MapManager._ondblClickLayer);
     // update the configuration data on the backend
     updateDynamicLayerEntry(C().mapMan.getPolygon(layer));
   }
 
-  static _initLayerProperties(layer, name, shape, locationType = "UNKNOWN", color = "black", id = null) {
+  static _initLayerProperties(layer, name, shape, locationType = "UNKNOWN", color = "black", id = null, uncertainty = null, origin=LayerType.INTERNAL) {
     layer.feature = layer.feature || {};
     layer.feature.type = "Feature";
     layer.feature.properties = layer.feature.properties || {};
@@ -395,7 +418,79 @@ class MapManager {
     layer.feature.properties["shape"] = shape;
     layer.feature.properties["name"] = name;
     layer.feature.properties["locationType"] = locationType;
+    
+    if (uncertainty !== null) {
+      layer.feature.properties["uncertainty"] = uncertainty;
+    } else {
+      const newUncertainty = C().sourceMan.getUncertaintyFromLocationType(locationType);
+      layer.feature.properties["uncertainty"] = newUncertainty;
+    }
+    
     layer.feature.properties["color"] = color;
+    layer.feature.properties["origin"] = origin;
+  }
+
+  static _ondblClickLayer(event) {
+    /*
+      synthesize data from layer.
+      data structure:
+      {
+        type: "defaultMarker", "droneMarker", "landingSiteMarker", "Line", "Polygon",
+        id: "unique_id", // unique identifier for the entity
+        name: "name", // name of the marker
+        coordinates: [latitude, longitude], // for markers
+        coordinates: [[lat1, lon1], [lat2, lon2]], // for polylines/polygons
+        locationType: "type_name", // for markers, polylines, polygons
+        uncertainty: 0.0, // for markers, polylines, polygons
+        // other properties can be added as needed
+      }
+    */
+    DomEvent.stopPropagation(event);
+    const layer = event.sourceTarget;
+    C().mapMan.dblclickedEntity = layer;
+    const data = MapManager._getInfoBoxDataFromLayer(layer)
+    // call the onClickFunction with the data
+    C().updateMapComponent(data);
+  }
+
+  static _getInfoBoxDataFromLayer(layer) {
+    const properties = layer.feature.properties;
+    const icon = properties["shape"];
+    const id = properties["id"];
+    let name = properties["name"];
+    if (icon === "Line" || icon === "Polygon") {
+      name = icon;
+    }
+    let coordinates = [];
+    if (icon === "defaultMarker" || icon === "droneMarker" || icon === "landingSiteMarker") {
+      coordinates = [layer.getLatLng().lat, layer.getLatLng().lng];
+    } else if (icon === "Line") {
+      coordinates = layer.getLatLngs().map((latlng) => [latlng.lat, latlng.lng]);
+    } else if (icon === "Polygon") {
+      coordinates = layer.getLatLngs()[0].map((latlng) => [latlng.lat, latlng.lng]);
+    }
+    
+    const locationType = properties["locationType"];
+    const uncertainty = properties["uncertainty"];
+    const disabled = properties["origin"] === LayerType.EXTERNAL;
+    const data = {
+      icon,
+      id,
+      name,
+      coordinates,
+      locationType,
+      uncertainty,
+      disabled
+    };
+    return data;
+  }
+
+  // remove dynamic layer (use for deleting external entities with highlight entities)
+  _removeDynamicLayer(layer) {
+    if (layer.feature.highlightLayers !== undefined) {
+      layer.feature.highlightLayers.forEach((highlight) => this.map.removeLayer(highlight));
+    }
+    this.dynamicFeatureGroup.removeLayer(layer);
   }
 
   /**
@@ -433,6 +528,29 @@ class MapManager {
     });
   }
 
+  removeMarkerFromLayer(layer) {
+    if (layer.markerLayer) {
+      this.map.removeLayer(layer.markerLayer);
+      layer.markerLayer = null;
+    }
+  }
+
+  renderLayer(layer, topofLayers, onTop=true) {
+    // remove old rendered layer if existed
+    this.removeMarkerFromLayer(layer);
+    if (!C().layerMan.hideAllLayers && layer.visible) {
+      const layerGroup = new L.FeatureGroup().addTo(this.map);
+      const renderer = new renderModeToRenderer[layer.renderMode](this.map, layerGroup);
+      renderer.render(layer);
+      if (!onTop) layerGroup.bringToBack();
+      topofLayers.toReversed().forEach((layer) => {
+        if (layer.markerLayer) {
+          layer.markerLayer.bringToFront();
+        }
+      })
+    }
+  }
+
   /**
    * Remove old markers and redraw all markers on the map
    */
@@ -442,228 +560,38 @@ class MapManager {
     //Draw all layers (in reversed order to draw top layer (position 0) last)
     C()
       .layerMan.layers.toReversed()
-      .forEach((currentLayer, layerIndex) => {
+      .forEach((currentLayer) => {
         //console.log("renderLayers currentLayer: ", currentLayer);
         if (!C().layerMan.hideAllLayers && currentLayer.visible) {
-          console.log("renderLayers currentLayer...");
-          const layerGroup = new L.LayerGroup().addTo(this.map);
-          let voronoiPolygonDict = null;
-          if (currentLayer.renderMode === RenderMode.Voronoi) {
-            voronoiPolygonDict = this.renderLayerToVoronoi(
-              currentLayer,
-              layerIndex,
-            );
-            //console.log("polygons: ", voronoiPolygonDict);
-          }
-          const satFactor =
-            100 /
-            Math.max(
-              ...currentLayer.markers.map((marker) => marker.probability),
-            );
-
-          const markers = currentLayer.markers.map((marker) => {
-            const positive = marker.probability >= 0;
-            let sat = Math.abs(Math.round(marker.probability * satFactor));
-            var hsl = ColorHelper.calcHslFromParams(
-              currentLayer.hue,
-              sat,
-              positive,
-            );
-
-            /*var hsla = ColorHelper.calcHslaFromParams(
-              currentLayer.hue,
-              sat,
-              currentLayer.opacity,
-              positive,
-            );*/
-
-            if (
-              marker.probability >= currentLayer.valueRange[0] - 0.000000001 &&
-              marker.probability <= currentLayer.valueRange[1] + 0.000000001
-            ) {
-              var createdMarker = null;
-              switch (currentLayer.renderMode) {
-                case RenderMode.HeatmapRect:
-                  // Creating rectOptions
-                  var rectOptions = {
-                    fillColor: hsl,
-                    weight: 1,
-                    fillOpacity: currentLayer.opacity,
-                    stroke: false,
-                    pathOptions: {
-                      color: hsl,
-                    },
-                  };
-                  // Creating a rectangle
-                  var rectangle = new L.rectangle(
-                    this.calcRectBounds(
-                      marker,
-                      currentLayer.markerDstLat,
-                      currentLayer.markerDstLng,
-                    ),
-                    rectOptions,
-                  );
-                  createdMarker = rectangle;
-                  break;
-                case RenderMode.HeatmapCircle:
-                  // Creating circleOptions
-                  var circleOptions = {
-                    fillColor: hsl,
-                    radius: currentLayer.radius,
-                    fillOpacity: currentLayer.opacity,
-                    stroke: false,
-                    pathOptions: {
-                      color: hsl,
-                    },
-                  };
-                  // Creating a circle
-                  var circle = new L.circle(marker.position, circleOptions);
-                  createdMarker = circle;
-                  break;
-                case RenderMode.Voronoi:
-                  // console.log(marker);
-                  var key = JSON.stringify([
-                    marker.position[0],
-                    marker.position[1],
-                  ]);
-                  // console.log("key: ", key);
-                  var voronoiPolygon = voronoiPolygonDict[key];
-                  // console.log("voronoiPolygon: ", voronoiPolygon);
-
-                  if (voronoiPolygon) {
-                    // Creating polygonOptions
-                    var polygonOptions = {
-                      fillColor: hsl,
-                      fillOpacity: currentLayer.opacity,
-                      weight: 1.5,
-                      stroke: false,
-                      //color: hsla, //Outline color
-                    };
-                    // Creating a polygon
-                    var polygon = new L.polygon(voronoiPolygon, polygonOptions);
-                    createdMarker = polygon;
-                  } else {
-                    console.error("Voronoi polygon not found for key: ", key);
-                    return null; // or handle the missing polygon in some way
-                  }
-              }
-              layerGroup.addLayer(createdMarker);
-              this.addPopup(
-                createdMarker,
-                marker.probability,
-                marker.position[0],
-                marker.position[1],
-              );
-              // Add feature properties to marker
-              var feature = (createdMarker.feature =
-                createdMarker.feature || {});
-              feature.type = "Feature";
-              feature.properties = feature.properties || {};
-              feature.properties["value"] = marker.probability;
-              feature.properties["layer"] = currentLayer.name;
-              // calculate hex from hsl
-              const hex = ColorHelper.hslToHex(
-                currentLayer.hue,
-                Math.round(marker.probability * satFactor),
-                50,
-              );
-              feature.properties["fill"] = hex;
-              feature.properties["fill-opacity"] = currentLayer.opacity;
-              // add radius property if render mode is circle
-              if (currentLayer.renderMode === RenderMode.HeatmapCircle) {
-                feature.properties["radius"] = currentLayer.radius;
-              }
-
-              return createdMarker;
-            }
-          });
-          currentLayer.leafletOverlays = markers;
-          currentLayer.markerLayer = layerGroup;
+          const layerGroup = new L.FeatureGroup().addTo(this.map);
+          let renderer = new renderModeToRenderer[currentLayer.renderMode](this.map, layerGroup);
+          renderer.render(currentLayer);
         }
       });
   }
-
-  /**
-   * Binds popup to given element
-   * @param {*} elem
-   * @param {*} val
-   * @param {*} lat
-   * @param {*} lng
-   * @returns
-   */
-  addPopup(elem, val, lat, lng) {
-    // specify popup options
-    var customOptions = {
-      color: "red",
-      background: "#ff0000",
-      className: "stylePopup",
-    };
-
-    elem.bindPopup(
-      "Val: " + val + "<br>" + "Lat: " + lat + "<br>" + "Lng: " + lng + "<br>",
-      customOptions,
-    );
-    return elem;
-  }
-
-  /**
-   * Calculate [(lat,lng), (lat,lng)] positions based on marker position and lat/lng distances to span a rectangle between those points
-   * @param {*} marker marker from layer class
-   * @param {*} markerDstLat
-   * @param {*} markerDstLng
-   * @returns [(lat,lng), (lat,lng)] position
-   */
-  calcRectBounds(marker, markerDstLat, markerDstLng) {
-    return new L.latLngBounds(
-      [marker.position[0] - markerDstLat, marker.position[1] - markerDstLng],
-      [marker.position[0] + markerDstLat, marker.position[1] + markerDstLng],
-    );
-  }
-
-  /**
-   * render layer to voronoi tiles
-   * @param {*} layer
-   * @param {*} layerIndex
-   * @returns array of polygons
-   */
-  renderLayerToVoronoi = (layer) => {
-    // Extract the positions of the markers in the layer
-    const positions = layer.markers.map((marker) => marker.position);
-    const markerDict = {};
-    const sites = positions.map((point) => ({ x: point[0], y: point[1] })); // Convert to rhill format
-    const minx = Math.min(...sites.map((site) => site.x));
-    const miny = Math.min(...sites.map((site) => site.y));
-    const maxx = Math.max(...sites.map((site) => site.x));
-    const maxy = Math.max(...sites.map((site) => site.y));
-    const bbox = { xl: minx, xr: maxx, yt: miny, yb: maxy };
-    var voronoi = new Voronoi();
-    var result = voronoi.compute(sites, bbox);
-    var cells = result.cells;
-
-    for (let i = 0; i < cells.length; i++) {
-      markerDict[JSON.stringify([cells[i].site.x, cells[i].site.y])] = cells[
-        i
-      ].halfedges.map((halfedge) => [
-        halfedge.getStartpoint().x,
-        halfedge.getStartpoint().y,
-      ]);
-    }
-
-    return markerDict;
-  };
 
   /**
    * Update the color of the markers in the layer
    * @param {*} layer
    */
   updateLayerColor(layer) {
+    // just refresh the layer if it is not a heatmap from leaflet native (render from image)
+    if (layer.renderMode === RenderMode.PNGImage || layer.renderMode === RenderMode.SVGImage) {
+      const layers = C().layerMan.layers;
+      const pos = layers.indexOf(layer);
+      const otherLayers = LayerManager.layersCutFromPos(layers, pos);
+      this.renderLayer(layer, otherLayers);
+      return;
+    }
+
+
     // calculate the satFactor based on the probability range
     let satFactor = 100 / layer.markersValMinMax[1];
     layer.markers.forEach((marker, index) => {
       // ignore markers outside the value range
       if (
-        marker.probability < layer.valueRange[0] ||
-        marker.probability > layer.valueRange[1]
+        marker.probability < layer.valueRange[0] - 0.000000001 ||
+        marker.probability > layer.valueRange[1] + 0.000000001
       ) {
         return;
       }
@@ -678,6 +606,7 @@ class MapManager {
       layer.leafletOverlays[index].setStyle({
         fillColor: hsl,
         color: hsl,
+        fillOpacity: layer.opacity * 0.01,
       });
     });
   }
@@ -745,46 +674,75 @@ class MapManager {
       return;
     }
     // add markers
-    markers.forEach((marker) => {
-      const markerId = marker.id;
-      const markerName = marker.name;
-      const markerPosition = marker.latlng;
-      const markerShape = marker.shape;
-      const markerColor = marker.color;
-      const markerLocationType = marker.location_type;
-      const markerLayer = new L.marker(markerPosition, { icon: MapManager.icons[markerShape](markerColor) });
-      markerLayer.on("pm:edit", function() {
-        // update the configuration data on the backend
-        updateDynamicLayerEntry(C().mapMan.getMarker(markerLayer));
-        console.log("marker edited");
-      });
-      MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor, markerId);
-      this.dynamicFeatureGroup.addLayer(markerLayer);
+    markers.forEach((marker) => this.importMarker(marker));
+  }
 
-      // update number of markers to avoid name conflicts
-      // ignore if marker name is not in the format "Marker x" with x is a number
-      if (markerName.startsWith("Marker ")) {
-        const number = parseInt(markerName.split(" ")[1]);
-        // check if the number is greater than the current nameNumber and number is a valid number
-        if (!isNaN(number) && number >= this.nameNumber) {
-          this.nameNumber = number + 1;
-        }
-      }
+  importMarker(marker) {
+    const markerId = marker.id;
+    const markerName = marker.name;
+    const markerPosition = marker.latlng;
+    const markerShape = marker.shape;
+    const markerColor = marker.color;
+    const markerLocationType = marker.location_type;
+    const markerOrigin = marker.origin;
+    const markerLayer = new L.marker(markerPosition, { icon: MapManager.icons[markerShape](markerColor, markerOrigin), 
+                                                        pmIgnore: markerOrigin === LayerType.EXTERNAL ? true : false });
+    const markerUncertainty = marker.std_dev;
+    markerLayer.on("pm:edit", function() {
+      // update the configuration data on the backend
+      updateDynamicLayerEntry(C().mapMan.getMarker(markerLayer));
+      console.log("marker edited");
     });
+    MapManager._initLayerProperties(markerLayer, markerName, markerShape, markerLocationType, markerColor, markerId, markerUncertainty, markerOrigin);
+    this.dynamicFeatureGroup.addLayer(markerLayer);
+    markerLayer.on("dblclick", MapManager._ondblClickLayer);
+
+    // update number of markers to avoid name conflicts
+    // ignore if marker name is not in the format "Marker x" with x is a number
+    if (markerName.startsWith("Marker ")) {
+      const number = parseInt(markerName.split(" ")[1]);
+      // check if the number is greater than the current nameNumber and number is a valid number
+      if (!isNaN(number) && number >= this.nameNumber) {
+        this.nameNumber = number + 1;
+      }
+    }
   }
 
   _cleanupDynamicLayer(layers){
     if (!this.dynamicFeatureGroup) {
       return;
     }
-    // remove all dynamic layers that have the same id as the layers in the list
-    layers.forEach((layer) => {
-      this.dynamicFeatureGroup.eachLayer((existingLayer) => {
-        if (existingLayer.feature.properties["id"] === layer.id) {
-          this.dynamicFeatureGroup.removeLayer(existingLayer);
-        }
-      });
+    const layersId = layers.map((layer) => layer.id);
+    let toBeRemove = [];
+    // remove all dynamic layers that have the same id as the layer in the list
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      if (layersId.includes(layer.feature.properties["id"])) {
+        toBeRemove.push(layer);
+      }
     });
+    toBeRemove.forEach((layer) => this._removeDynamicLayer(layer));
+  }
+
+  _filterUnique(entities) { 
+    let foundIds = [];
+    let toBeDeletedIndex = [];
+    for(var i = 0; i < entities.length; i++) {
+      const currentId = entities[i].id;
+      let found = false;
+      for (var j = 0; j < foundIds.length; j++) {
+        if (currentId === foundIds[j]) {
+          found = true;
+          toBeDeletedIndex.push(i);
+          break;
+        }
+      }
+      if (!found) {
+        foundIds.push(currentId);
+      }
+    }
+    return entities.filter((_, index) => {
+      return !toBeDeletedIndex.includes(index);
+    })
   }
 
   // import all external layers from backend type=1: marker, type=2: polyline, type=3: polygon
@@ -793,15 +751,27 @@ class MapManager {
       return;
     }
 
-    this._cleanupDynamicLayer(dynamicLayers.markers);
-    this._cleanupDynamicLayer(dynamicLayers.polylines);
-    this._cleanupDynamicLayer(dynamicLayers.polygons);
+    const toBeProcessedLayers = dynamicLayers.markers.concat(dynamicLayers.polylines, dynamicLayers.polygons);
+    this._cleanupDynamicLayer(toBeProcessedLayers);
     
     // import markers, polylines and polygons
-    this.importMarkers(dynamicLayers.markers);
-    this.importPolylines(dynamicLayers.polylines);
-    this.importPolygons(dynamicLayers.polygons);
+    this.importMarkers(this._filterUnique(dynamicLayers.markers));
+    this.importPolylines(this._filterUnique(dynamicLayers.polylines));
+    this.importPolygons(this._filterUnique(dynamicLayers.polygons));
+  }
 
+  importExternalEntity(dynamicEntity) {
+    this._cleanupDynamicLayer([dynamicEntity]);
+    if (dynamicEntity.shape !== undefined) {
+      // handle marker import
+      this.importMarker(dynamicEntity);
+    } else if (dynamicEntity.holes !== undefined) {
+      // handle polygon import
+      this.importPolygon(dynamicEntity);
+    } else {
+      // handle polyline import
+      this.importPolyline(dynamicEntity);
+    }
   }
 
 
@@ -811,22 +781,33 @@ class MapManager {
       return;
     }
     // add polylines
-    polylines.forEach((polyline) => {
-      const polylineLayer = new L.polyline(polyline.latlngs);
-      polylineLayer.on("pm:edit", function() {
-        // update the configuration data on the backend
-        updateDynamicLayerEntry(C().mapMan.getPolyline(polylineLayer));
-      });
-      MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id);
-      // add color style to the line
-      if (polyline.color) {
-        polylineLayer.setStyle({
-          color: polyline.color,
-        });
-      }
+    polylines.forEach((polyline) => this.importPolyline(polyline));
+  }
 
-      this.dynamicFeatureGroup.addLayer(polylineLayer);
+  importPolyline(polyline) {
+    const polylineLayer = new L.polyline(polyline.latlngs, {pmIgnore: polyline.origin === LayerType.EXTERNAL ? true : false});
+    polylineLayer.on("pm:edit", function() {
+      // update the configuration data on the backend
+      updateDynamicLayerEntry(C().mapMan.getPolyline(polylineLayer));
     });
+    MapManager._initLayerProperties(polylineLayer, "", "Line", polyline.location_type, polyline.color, polyline.id, polyline.std_dev, polyline.origin);
+    
+    if (polyline.color) {
+      polylineLayer.setStyle({
+        color: polyline.color,
+        weight: polyline.origin === LayerType.INTERNAL ? 3 : 5 
+      });
+    }
+
+    polylineLayer.on("dblclick", MapManager._ondblClickLayer);
+
+    this.dynamicFeatureGroup.addLayer(polylineLayer);
+    if (polyline.origin === LayerType.EXTERNAL) {
+      const highlightLayers = polyline.latlngs.map((latlng) => {
+        return L.circle(latlng, {radius: 2, color:"red"}).addTo(this.map);
+      })
+      polylineLayer.feature.highlightLayers = highlightLayers;
+    }
   }
 
   // import all polygons from json config file
@@ -835,35 +816,49 @@ class MapManager {
       return;
     }
     // add polygons
-    polygons.forEach((polygon) => {
-      let polygonLatlngs = [];
-      polygonLatlngs.push(polygon.latlngs);
-      // add holes to the polygon
-      if (polygon.holes) {
-        polygonLatlngs = polygonLatlngs.concat(polygon.holes);
-      }
-      const polygonLayer = new L.polygon(polygonLatlngs);
-      polygonLayer.on("pm:edit", function() {
-        // update the configuration data on the backend
-        updateDynamicLayerEntry(C().mapMan.getPolygon(polygonLayer));
-      });
-      MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color, polygon.id);
-      // add color style to the polygon
-      if (polygon.color) {
-        polygonLayer.setStyle({
-          fillColor: polygon.color,
-          color: polygon.color,
-        });
-      }
-
-      this.dynamicFeatureGroup.addLayer(polygonLayer);
-    });
+    polygons.forEach((polygon) => this.importPolygon(polygon));
     //console.log("polygon added!!")
+  }
+
+  importPolygon(polygon) {
+    let polygonLatlngs = [];
+    let polygonLatLngsFlat = [];
+    polygonLatlngs.push(polygon.latlngs);
+    polygonLatLngsFlat.push(...polygon.latlngs);
+    // add holes to the polygon
+    if (polygon.holes) {
+      polygonLatlngs = polygonLatlngs.concat(polygon.holes);
+      polygon.holes.forEach((hole) => polygonLatLngsFlat.push(...hole));
+    }
+    const polygonLayer = new L.polygon(polygonLatlngs, {pmIgnore: polygon.origin === LayerType.EXTERNAL ? true : false});
+    polygonLayer.on("pm:edit", function() {
+      // update the configuration data on the backend
+      updateDynamicLayerEntry(C().mapMan.getPolygon(polygonLayer));
+    });
+    MapManager._initLayerProperties(polygonLayer, "", "Polygon", polygon.location_type, polygon.color, polygon.id, polygon.std_dev, polygon.origin);
+    // add color style to the polygon
+    if (polygon.color) {
+      polygonLayer.setStyle({
+        fillColor: polygon.color,
+        color: polygon.color,
+        weight: polygon.origin === LayerType.INTERNAL ? 3 : 5 
+      });
+    }
+
+    polygonLayer.on("dblclick", MapManager._ondblClickLayer);
+
+    this.dynamicFeatureGroup.addLayer(polygonLayer);
+    if (polygon.origin === LayerType.EXTERNAL) {
+      const highlightLayers = polygonLatLngsFlat.map((latlng) => {
+        return L.circle(latlng, {radius: 2, color:"red"}).addTo(this.map);
+      })
+      polygonLayer.feature.highlightLayers = highlightLayers;
+    }
   }
 
   // initialize the location type click event listeners
   // type: all, marker, polyline, polygon, vertiport
-  setLocationTypeOnClick(locationType, color, type="all") {
+  setLocationTypeOnClick(locationType, color, uncertainty, type="all") {
     if (!this.dynamicFeatureGroup) {
       return;
     }
@@ -878,6 +873,7 @@ class MapManager {
         // update the properties of the layer
         layer.feature.properties["locationType"] = locationType;
         layer.feature.properties["color"] = color;
+        layer.feature.properties["uncertainty"] = uncertainty;
 
         // update the color of the layer for line and polygon
         if (layer.feature.properties["shape"] === "Line" || layer.feature.properties["shape"] === "Polygon") {
@@ -942,7 +938,6 @@ class MapManager {
           layer.setIcon(MapManager.icons[markerShape](color));
         }
 
-
         layer.feature.properties["color"] = color;
       }
     });
@@ -977,20 +972,43 @@ class MapManager {
     updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
   }
 
-  deleteLocationType(locationType) {
+  // update the location type of the markers
+  // used by the LocationTypeSetting component when the location type is changed
+  updateUncertainty(locationType, uncertainty) {
     if (!this.dynamicFeatureGroup) {
       return;
     }
     this.dynamicFeatureGroup.eachLayer((layer) => {
+      // update the location type of the marker if it has the old location type
       if (layer.feature.properties["locationType"] === locationType) {
-        this.dynamicFeatureGroup.removeLayer(layer);
+        layer.feature.properties["uncertainty"] = uncertainty;
+        if (layer === this.dblclickedEntity) {
+          const data = MapManager._getInfoBoxDataFromLayer(layer);
+          C().updateMapComponent(data, 1);
+        }
       }
     });
     // update the configuration data on the backend
     updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
   }
 
+  deleteLocationType(locationType) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    let toBeDeletedLayer = [];
+    this.dynamicFeatureGroup.eachLayer((layer) => {
+      if (layer.feature.properties["locationType"] === locationType) {
+        toBeDeletedLayer.push(layer);
+      }
+    });
+    toBeDeletedLayer.forEach((layer) => this._removeDynamicLayer(layer));
+    // update the configuration data on the backend
+    updateConfigDynamicLayers(C().mapMan.getMarkers(), C().mapMan.getPolylines(), C().mapMan.getPolygons());
+  }
+
   _getBBox(originLatlng, width, height) {
+    console.log("originLatlng: ", originLatlng);
     const origin = turf.point([originLatlng.lng, originLatlng.lat]);
     // calculate coordinates of the rectangle bounding box based on the origin and the width and height of box
     const north = turf.destination(origin, height / 2000, 0, { units: "kilometers" });
@@ -1001,77 +1019,37 @@ class MapManager {
     return L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
   }
 
-  _createGrid(originLatlng, width, height, resolutionWidth, resolutionHeight,
-              color = "#0000ff", borderWeight = 1, fillOpacity = 0.2) {
-    // calculate the coordinates of the bounding box
-    const bbox = this._getBBox(originLatlng, width, height);
-    // calculate the width and height of each grid cell
-    const cellWidth = (bbox.getEast() - bbox.getWest()) / resolutionWidth;
-    const cellHeight = (bbox.getNorth() - bbox.getSouth()) / resolutionHeight;
-    // create the grid
-    for (let i = 0; i < resolutionWidth; i++) {
-      for (let j = 0; j < resolutionHeight; j++) {
-        const cell = L.rectangle(
-          [
-            [bbox.getSouth() + j * cellHeight, bbox.getWest() + i * cellWidth],
-            [bbox.getSouth() + (j + 1) * cellHeight, bbox.getWest() + (i + 1) * cellWidth],
-          ],
-          { color: color, weight: borderWeight, fillOpacity: fillOpacity },
-        );
-        this.bBoxFeatureGroup.addLayer(cell);
-      }
-    }
-  }
-
-  // highlight the boundary of the selected area
-  highlightBoundary(origin,
-                    dimensionWidth, 
-                    dimensionHeight, 
-                    resolutionWidth, 
-                    resolutionHeight,
-                    supportResolutionWidth,
-                    supportResolutionHeight,
-                  ) {
-    // do nothing if origin is not selected or any of the dimension or resolution is not set
-    if (origin === "") {
-      return;
-    }
-    console.log("highlightBoundary");
-
-    // remove the old bounding box layer
-    this.unhighlightBoundary();
-    // create feature group to store the bounding box layer
-    this.bBoxFeatureGroup = L.featureGroup().addTo(this.map);
-    // calculate the bounding box
-    const originLatlng = C().mapMan.latlonFromMarkerName(origin);
-    const bbox = this._getBBox(originLatlng, dimensionWidth, dimensionHeight);
-    // create the bounding box layer
-    const bBoxLayer = L.rectangle(bbox, { color: "white", weight: 1 });
-    this.bBoxFeatureGroup.addLayer(bBoxLayer);
-
-    // create the grid
-    
-    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, resolutionWidth, resolutionHeight, "#d9a766", 1);
-    this._createGrid(originLatlng, dimensionWidth, dimensionHeight, supportResolutionWidth, supportResolutionHeight, "#31e30e", 2, 0);
-    // zoom to the bounding box
-    //this.map.fitBounds(bbox);
-  }
-
-
   highlightBoundaryAlter(origin,
-    dimensionWidth, 
-    dimensionHeight, 
-    resolutionWidth, 
-    resolutionHeight,
-    supportResolutionWidth,
-    supportResolutionHeight,
+    dimensions, 
+    resolutions, 
+    supportResolutions
   ) {
      // do nothing if origin is not selected or any of the dimension or resolution is not set
      if (origin === "") {
       return;
     }
+
     // remove the old bounding box layer
     this.unhighlightBoundaryAlter();
+
+    const dimensionWidth = dimensions[0];
+    const dimensionHeight = dimensions[1];
+    const resolutionWidth = resolutions[0];
+    const resolutionHeight = resolutions[1];
+    const supportResolutionWidth = supportResolutions[0];
+    const supportResolutionHeight = supportResolutions[1];
+
+    // do nothing if any of the dimensions or resolutions is not a number or less than or equal to zero
+    if (
+      isNaN(dimensionWidth) || dimensionWidth <= 0 ||
+      isNaN(dimensionHeight) || dimensionHeight <= 0 ||
+      isNaN(resolutionWidth) || resolutionWidth <= 0 ||
+      isNaN(resolutionHeight) || resolutionHeight <= 0 ||
+      isNaN(supportResolutionWidth) || supportResolutionWidth <= 0 ||
+      isNaN(supportResolutionHeight) || supportResolutionHeight <= 0
+    ) {
+      return;
+    }
 
     // calculate the bounding box
     const originLatlng = C().mapMan.latlonFromMarkerName(origin);
@@ -1112,14 +1090,6 @@ class MapManager {
     this.svgElement = svgElement;
   }
 
-  // remove the bounding box feature group if it exists
-  unhighlightBoundary() {
-    if (this.bBoxFeatureGroup) {
-      console.log("unhighlightBoundary");
-      this.map.removeLayer(this.bBoxFeatureGroup);
-    }
-  }
-
   unhighlightBoundaryAlter() {
     console.log("unhighlightBoundaryAlter");
     if (this.svgElement) {
@@ -1137,6 +1107,63 @@ class MapManager {
       this.dynamicFeatureGroup.bringToFront();
     } else {
       this.dynamicFeatureGroup.bringToBack();
+    }
+  }
+
+  setMapCircleHighlight(coordinate) {
+    this.removeCircleHighlight();
+    if (this.map !== null)
+      this.circleHighlight = L.circleMarker(coordinate, {radius: 2, color:"black"}).addTo(this.map);
+  }
+
+  removeCircleHighlight(){
+    if (this.circleHighlight !== null) {
+      this.map.removeLayer(this.circleHighlight);
+    }
+  }
+
+  uncertaintyChange(uncertainty){
+    if (this.dblclickedEntity !== null){
+      const oldUncertainty = this.dblclickedEntity.feature.properties.uncertainty;
+      if (oldUncertainty !== uncertainty){
+        this.dblclickedEntity.feature.properties.uncertainty = uncertainty;
+        updateDynamicLayerEntry(this.getDynamicLayer(this.dblclickedEntity));
+      }
+    }
+  }
+
+  locationTypeChange(locationType){
+    if (this.dblclickedEntity !== null) {
+      const oldLocationType = this.dblclickedEntity.feature.properties.locationType;
+      if (oldLocationType !== locationType){
+        this.dblclickedEntity.feature.properties.locationType = locationType;
+
+        // update color
+        const color = C().sourceMan.getColorFromLocationType(locationType);
+        this.dblclickedEntity.feature.properties.color = color;
+        // update the color of the layer for line and polygon
+        if (this.dblclickedEntity.feature.properties["shape"] === "Line" || this.dblclickedEntity.feature.properties["shape"] === "Polygon") {
+          this.dblclickedEntity.setStyle({
+            fillColor: color,
+            color: color,
+          });
+        }
+        else {
+          // update the icon of the markers
+          let markerShape = this.dblclickedEntity.feature.properties["shape"];
+          this.dblclickedEntity.setIcon(MapManager.icons[markerShape](color));
+        }
+
+
+        updateDynamicLayerEntry(this.getDynamicLayer(this.dblclickedEntity));
+      }
+    }
+  }
+
+  updateInfoBox() {
+    if (this.dblclickedEntity != null) {
+      let data = MapManager._getInfoBoxDataFromLayer(this.dblclickedEntity);
+      C().updateMapComponent(data, 1);
     }
   }
 

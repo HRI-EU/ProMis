@@ -1,6 +1,7 @@
 import LayerManager from "./LayerManager";
 import MapManager from "./MapManager";
 import SourceCodeManager from "./SourceCodeManager";
+import PushDownAutoComplete from "../utils/PushDownAutoCompletion"
 
 class Core {
   //References for UI element update callbacks
@@ -25,12 +26,27 @@ class Core {
     this.layerMan = new LayerManager();
     this.mapMan = new MapManager();
     this.sourceMan = new SourceCodeManager();
+    this.autoComplete = new PushDownAutoComplete();
+    this.autoComplete.push_list(this.sourceMan.locationTypes.map((loc_type) => loc_type.locationType));
+  }
+
+  initCodeEditor(codeEditor) {
+    this.codeEditor = codeEditor;
+  }
+
+  getCodeEditor() {
+    return this.codeEditor !== undefined ? this.codeEditor : null
   }
 
   //Call to access core instance
   C() {
     //Access core, will only create new instance if never called before
     return new Core();
+  }
+
+  addMapComponentCallback(callback) {
+    //Set the callback for the map component
+    this.mapComponentCallback = callback;
   }
 
   //Set the reference to the updateCallback of SidebarRight
@@ -70,6 +86,13 @@ class Core {
   updateBottomBar() {
     if (this.refBottomBar != null) {
       this.refBottomBar();
+    }
+  }
+
+  //Call to trigger the map component update
+  updateMapComponent(entity, type=0) {
+    if (this.mapComponentCallback != null) {
+      this.mapComponentCallback(entity, type);
     }
   }
 }

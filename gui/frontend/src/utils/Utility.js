@@ -96,6 +96,24 @@ function revertLayers(layers, markerLayers, leafletOverlays){
   });
 }
 
+function layerToBody(layer){
+  const body = JSON.stringify(layer, function (key, value) {
+    if (value && typeof value === 'object' && key === "") {
+      var replacement = {};
+      for (var k in value) {
+        if (Object.hasOwnProperty.call(value, k)) {
+          const camelToSnakeCase = str => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+          const snake_k = camelToSnakeCase(k);
+          replacement[snake_k] = value[k];
+        }
+      }
+      return replacement;
+    }
+    return value;
+  }, 2);
+  return body;
+}
+
 // function to update the configuration data on the backend
 export async function updateLayerConfig(layer) {
   const url = "http://localhost:8000/update_layer_config_entry";
@@ -109,12 +127,14 @@ export async function updateLayerConfig(layer) {
 
   // revert layer back to original state
   revertLayer(layer, markerLayer, leafletOverlay);
+
+  const body = layerToBody(layerCpy)
   
   // send the updated configuration data to the backend
   try {
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify(layerCpy, null, 2),
+      body: body,
       headers: {
         "Content-Type": "application/json",
       },
@@ -170,11 +190,19 @@ export async function updateTotalConfig(layers) {
   revertLayers(layers, markerLayers, leafletOverlays);
   // create the configuration data
 
+
+  let body = "[";
+  layersCpy.forEach((layer) => {
+    body += layerToBody(layer);
+    body += ',';
+  })
+  body = body.slice(0, -1)
+  body += ']';
   // send the updated configuration data to the backend
   try {
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify(layersCpy, null, 2),
+      body: body,
       headers: {
         "Content-Type": "application/json",
       },
@@ -255,12 +283,59 @@ export async function updateConfigLocationTypes(locationTypes){
   // iterate over locationTypes and change locationType field to location_type
   locationTypesCpy.forEach((locationType) => {
     locationType.location_type = locationType.locationType;
+    locationType.std_dev = location.uncertainty;
     delete locationType.locationType;
+    delete locationType.uncertainty;
   });
   try {
     const response = await fetch(url, {
       method: "POST",
       body: JSON.stringify(locationTypesCpy, null, 2),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update configuration data");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+export async function updateConfigLocationTypeEntry(locationType){
+  const url = "http://localhost:8000/update_location_type_entry";
+  //console.log(locationTypes);
+  const locationTypeCpy = structuredClone(locationType);
+  // iterate over locationTypes and change locationType field to location_type
+  locationTypeCpy.location_type = locationTypeCpy.locationType;
+  locationTypeCpy.std_dev = locationTypeCpy.uncertainty;
+  delete locationTypeCpy.locationType;
+  delete locationTypeCpy.uncertainty;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(locationTypeCpy, null, 2),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update configuration data");
+    }
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+export async function deleteConfigLocationTypeEntry(id){
+  const url = `http://localhost:8000/delete_location_type_id/${id}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
@@ -288,4 +363,10 @@ export async function checkExternalUpdate() {
   } catch (error) {
     console.error(error.message);
   }
+}
+
+export function establishWebsocket() {
+  const url = "ws://localhost:8000/ws";
+  const websocket = new WebSocket(url);
+  return websocket
 }
