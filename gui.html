@@ -80,28 +80,15 @@
 <h1>Graphical User Interface<a class="headerlink" href="#graphical-user-interface" title="Link to this heading"></a></h1>
 <p>ProMis comes with a GUI that provides an interactive interface to its features.
 To employ the GUI, make sure that you have installed ProMis according to the instructions above.
-Then, first run the following commands to start the backend.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="nb">cd</span><span class="w"> </span>gui/backend
-<span class="linenos">2</span>fastapi<span class="w"> </span>run<span class="w"> </span>main.py
+Then, first run the following commands to start the gui.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>promis_gui
 </pre></div>
 </div>
-<p>Afterwards, you can start the frontend using <cite>npm (Node.js)</cite> with the following commands.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="nb">cd</span><span class="w"> </span>gui/frontend
-<span class="linenos">2</span>npm<span class="w"> </span>install<span class="w">      </span><span class="c1"># Only once or if changes where made</span>
-<span class="linenos">3</span>npm<span class="w"> </span>run<span class="w"> </span>start
-</pre></div>
-</div>
-<p>We also provide Dockerfiles for backend and frontend for an automated setup:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span><span class="nb">cd</span><span class="w"> </span>gui
-<span class="linenos">2</span>docker<span class="w"> </span>compose<span class="w"> </span>build
-<span class="linenos">3</span>docker<span class="w"> </span>compose<span class="w"> </span>up
-</pre></div>
-</div>
-<p>Either way, you can open <a class="reference external" href="http://localhost:3000">http://localhost:3000</a> in a browser of your choice to start interacting with ProMis.</p>
+<p>You can now open <a class="reference external" href="http://localhost:8000/gui">http://localhost:8000/gui</a> in a browser of your choice to start interacting with ProMis.</p>
 <p>Once you have opened the GUI in your browser, you can check that everything works by doing an example run.
 First, from the top-left, click the drone icon and place a marker where you would like to center the mission area.
 Second, click the button at the bottom to open the mission design interface.
-Here, you can either import ProMis code from disk using the <cite>Import Source</cite> button, or click <cite>Edit</cite>.
+Here, you can either import ProMis code from disk using the <cite>Import Source</cite> button, or type the code in the code editor.
 You may further configure your run by selecting an origin, height, width (in meters) and a resolution of the mission landscape.
 Afterwards, you can click the <cite>Run</cite> button and wait for the mission landscape to show on the map.</p>
 <p>The following shows an example of entering the simple model <cite>landscape(X) :- distance(X, building) &gt; 10; distance(X, primary_road) &lt; 5.</cite>:</p>

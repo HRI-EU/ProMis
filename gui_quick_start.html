@@ -1,0 +1,172 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GUI Quick start &mdash; ProMis 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=51b770b3"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            ProMis
+              <img src="_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notebooks/usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gui.html">Graphical User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ProMis</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">GUI Quick start</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/gui_quick_start.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gui-quick-start">
+<h1>GUI Quick start<a class="headerlink" href="#gui-quick-start" title="Link to this heading"></a></h1>
+<p>This document will walks you through some of the GUI key features.</p>
+<section id="setup-geographical-entities">
+<h2>Setup Geographical Entities<a class="headerlink" href="#setup-geographical-entities" title="Link to this heading"></a></h2>
+<p>To work with ProMis framework, we need to setup the geographical environment, in which it will use to do calculation and make inference on.
+There are 3 ways to set this up, which all have it’s advantages and disadvantages.</p>
+<p><strong>Manual Entities Creation</strong></p>
+<p>Entities can be created manually through the left side interface of the gui. Users can create Marker, Polyline and Polygon on the map.
+Interacting with these object with double-click to reveal a information panel, which can be use to change its location type as well as uncertainty’s standard deviation.</p>
+<img alt="_images/left_side_interface.png" src="_images/left_side_interface.png" />
+<p><strong>Loading From OSM</strong></p>
+<p>Manually creating entities can be tedious and time-consuming so entities can also be loaded by providing the gui with a osm tag filters (see <a class="reference external" href="https://wiki.openstreetmap.org/wiki/Overpass_API/Language_Guide#Tag_request_clauses_(or_%22tag_filters%22)">overpass query language docs</a>)</p>
+<img alt="_images/osm_filter.png" src="_images/osm_filter.png" />
+<p><strong>Backend API</strong></p>
+<p>Additionally the backend also provide an HTTP endpoint to add/update geographical entities. It is available as <code class="docutils literal notranslate"><span class="pre">POST</span></code> endpoint under <code class="docutils literal notranslate"><span class="pre">localhost:8000/add_geojson</span></code>
+and require a geojson feature with either point, linestring or polygon geometry as the http request body.</p>
+<p>Here is a simple example of using the api.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="err">#</span><span class="w"> </span><span class="err">e</span><span class="kc">nt</span><span class="err">i</span><span class="kc">t</span><span class="err">y.geojso</span><span class="kc">n</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Feature&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;geometry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Point&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;coordinates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">8.65</span><span class="p">,</span><span class="w"> </span><span class="mf">49.87</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;location_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;civilian&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w">  </span>http://localhost:8000/add_geojson<span class="w"> </span><span class="se">\</span>
+<span class="linenos">2</span><span class="w">    </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="linenos">3</span><span class="w">    </span>-d<span class="w"> </span>@entity.geojson
+</pre></div>
+</div>
+<p>Alternatively, ProMis also provides functions to push its entity or map to the gui.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1"># push a marker to gui</span>
+<span class="linenos"> 2</span><span class="n">location</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.87</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.65</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="s2">&quot;civilian&quot;</span> <span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 3</span><span class="n">location</span><span class="o">.</span><span class="n">send_to_gui</span><span class="p">()</span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="c1"># push the entire map to gui</span>
+<span class="linenos"> 6</span><span class="n">feature_description</span> <span class="o">=</span> <span class="p">{</span>
+<span class="linenos"> 7</span>    <span class="s2">&quot;park&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;leisure&#39; = &#39;park&#39;]&quot;</span><span class="p">,</span>
+<span class="linenos"> 8</span>    <span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;highway&#39; = &#39;primary&#39;]&quot;</span><span class="p">,</span>
+<span class="linenos"> 9</span><span class="p">}</span>
+<span class="linenos">10</span><span class="n">origin</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.87</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.65</span><span class="p">)</span>
+<span class="linenos">11</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="mf">1000.0</span>
+<span class="linenos">12</span><span class="n">uam</span> <span class="o">=</span> <span class="n">OsmLoader</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span> <span class="n">feature_description</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span><span class="o">.</span><span class="n">to_polar_map</span><span class="p">()</span>
+<span class="linenos">13</span><span class="n">uam</span><span class="o">.</span><span class="n">send_to_gui</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="setup-computation-boundary-and-settings">
+<h2>Setup Computation Boundary and Settings<a class="headerlink" href="#setup-computation-boundary-and-settings" title="Link to this heading"></a></h2>
+<p>Computation boundary for the model can be set in the bottom bar by choosing a reference center marker (of type ORIGIN) and set the width and height of the boundary.</p>
+<img alt="_images/landscape_setting.png" src="_images/landscape_setting.png" />
+</section>
+<section id="setup-rules-and-models">
+<h2>Setup Rules and Models<a class="headerlink" href="#setup-rules-and-models" title="Link to this heading"></a></h2>
+<p>Rules and models for the computation can be edited in the code editor in the bottom bar.
+Make sure to have a landscape rules to yield meaningful result</p>
+<img alt="_images/models.png" src="_images/models.png" />
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright Simon Kohaut.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
