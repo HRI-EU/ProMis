@@ -1,7 +1,7 @@
 import LayerManager from "./LayerManager";
 import MapManager from "./MapManager";
 import SourceCodeManager from "./SourceCodeManager";
-import PushDownAutoComplete from "../utils/PushDownAutoCompletion"
+import PushDownAutoComplete from "../utils/PushDownAutoCompletion";
 
 class Core {
   //References for UI element update callbacks
@@ -27,7 +27,9 @@ class Core {
     this.mapMan = new MapManager();
     this.sourceMan = new SourceCodeManager();
     this.autoComplete = new PushDownAutoComplete();
-    this.autoComplete.push_list(this.sourceMan.locationTypes.map((loc_type) => loc_type.locationType));
+    this.autoComplete.push_list(
+      this.sourceMan.locationTypes.map((loc_type) => loc_type.locationType),
+    );
   }
 
   initCodeEditor(codeEditor) {
@@ -35,7 +37,7 @@ class Core {
   }
 
   getCodeEditor() {
-    return this.codeEditor !== undefined ? this.codeEditor : null
+    return this.codeEditor !== undefined ? this.codeEditor : null;
   }
 
   //Call to access core instance
@@ -90,7 +92,7 @@ class Core {
   }
 
   //Call to trigger the map component update
-  updateMapComponent(entity, type=0) {
+  updateMapComponent(entity, type = 0) {
     if (this.mapComponentCallback != null) {
       this.mapComponentCallback(entity, type);
     }

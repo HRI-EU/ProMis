@@ -1,29 +1,34 @@
 import { C } from "./Core.js";
-import { updateConfigLocationTypes, randomId, updateConfigLocationTypeEntry, deleteConfigLocationTypeEntry } from "../utils/Utility.js";
+import {
+  updateConfigLocationTypes,
+  randomId,
+  updateConfigLocationTypeEntry,
+  deleteConfigLocationTypeEntry,
+} from "../utils/Utility.js";
 import Color from "../models/Color.js";
 
 const defaultLocationTypes = [
   {
-    "id": 2075396262,
-    "locationType": "UNKNOWN",
-    "filter": "",
-    "color": "#0000FF",
-    "uncertainty": 10
+    id: 2075396262,
+    locationType: "UNKNOWN",
+    filter: "",
+    color: "#0000FF",
+    uncertainty: 10,
   },
   {
-    "id": 1328715238,
-    "locationType": "ORIGIN",
-    "filter": "",
-    "color": "#0000FF",
-    "uncertainty": 10
+    id: 1328715238,
+    locationType: "ORIGIN",
+    filter: "",
+    color: "#0000FF",
+    uncertainty: 10,
   },
   {
-    "id": 3525042322,
-    "locationType": "VERTIPORT",
-    "filter": "",
-    "color": "#0000FF",
-    "uncertainty": 10
-  }
+    id: 3525042322,
+    locationType: "VERTIPORT",
+    filter: "",
+    color: "#0000FF",
+    uncertainty: 10,
+  },
 ];
 
 const defaultSourceCode = `% UAV properties
@@ -80,20 +85,19 @@ class SourceCodeManager {
   }
 
   getUncertaintyFromLocationType(locationType) {
-    const matchedRow =  this.locationTypes.find((row) => {
-      return row.locationType === locationType
+    const matchedRow = this.locationTypes.find((row) => {
+      return row.locationType === locationType;
     });
     if (matchedRow !== undefined) {
       return matchedRow.uncertainty;
-    }
-    else {
+    } else {
       return 0;
     }
   }
 
   getColorFromLocationType(locationType) {
-    const matchedRow =  this.locationTypes.find((row) => {
-      return row.locationType === locationType
+    const matchedRow = this.locationTypes.find((row) => {
+      return row.locationType === locationType;
     });
     if (matchedRow !== undefined) {
       return matchedRow.color;
@@ -106,12 +110,13 @@ class SourceCodeManager {
   }
 
   getDefaultLocationTypesRows() {
-    const defaultLocationType = defaultLocationTypes.map((loc_type) => loc_type.locationType);
+    const defaultLocationType = defaultLocationTypes.map(
+      (loc_type) => loc_type.locationType,
+    );
     return this.locationTypes.filter((row) => {
       return defaultLocationType.includes(row.locationType);
-    })
+    });
   }
-
 
   getRequestBody({
     origin,
@@ -120,10 +125,12 @@ class SourceCodeManager {
     resolutions,
     supportResolutions,
     sampleSize,
-    interpolation
+    interpolation,
   }) {
     // sort the location types by location type
-    const sortedTypes = [...this.locationTypes].sort((a, b) => (a.locationType > b.locationType) ? 1 : -1);
+    const sortedTypes = [...this.locationTypes].sort((a, b) =>
+      a.locationType > b.locationType ? 1 : -1,
+    );
 
     // process location types to the form that the backend expects
     let locationTypes = {};
@@ -146,22 +153,26 @@ class SourceCodeManager {
       location_types: locationTypes,
       support_resolutions: supportResolutions,
       sample_size: sampleSize,
-      interpolation: interpolation
+      interpolation: interpolation,
     };
     return body;
   }
 
-  async intermediateCalls({
-    origin,
-    sourceCode,
-    dimensions,
-    resolutions,
-    supportResolutions,
-    sampleSize,
-    interpolation
-  }, endpoint, hashValue=-1) {
+  async intermediateCalls(
+    {
+      origin,
+      sourceCode,
+      dimensions,
+      resolutions,
+      supportResolutions,
+      sampleSize,
+      interpolation,
+    },
+    endpoint,
+    hashValue = -1,
+  ) {
     // close alert if open
-    if (!this.closed){
+    if (!this.closed) {
       this.closed = true;
     }
 
@@ -172,11 +183,14 @@ class SourceCodeManager {
       resolutions,
       supportResolutions,
       sampleSize,
-      interpolation
+      interpolation,
     };
     const body = this.getRequestBody(bodyParams);
     //Run the source code
-    const url = "http://localhost:8000/" + endpoint + (hashValue === -1 ? "" : "/" + hashValue);
+    const url =
+      "http://localhost:8000/" +
+      endpoint +
+      (hashValue === -1 ? "" : "/" + hashValue);
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -186,10 +200,17 @@ class SourceCodeManager {
         },
       });
       if (!response.ok) {
-        console.log(body)
+        console.log(body);
         const result = await response.json();
-        throw new Error("error during calling:" + response.url + "\nreport error: " + response.status + "\n"
-            + "result:" + "\n" + JSON.stringify(result)
+        throw new Error(
+          "error during calling:" +
+            response.url +
+            "\nreport error: " +
+            response.status +
+            "\n" +
+            "result:" +
+            "\n" +
+            JSON.stringify(result),
         );
       }
       if (endpoint !== "inference") {
@@ -199,15 +220,14 @@ class SourceCodeManager {
       if (endpoint === "inference") {
         const data = await response.json();
         let currentTime = new Date();
-        let localesTime = currentTime.toLocaleString('en-GB');
+        let localesTime = currentTime.toLocaleString("en-GB");
         C().layerMan.importLayerFromSourceCode(data, { name: localesTime });
         this.success = true;
         this.closed = false;
         C().toggleDrawerSidebarRight();
         C().updateBottomBar();
       }
-    }
-    catch (error) {
+    } catch (error) {
       this.success = false;
       this.closed = false;
       C().updateBottomBar();
@@ -224,7 +244,7 @@ class SourceCodeManager {
     this.origin = origin;
     C().updateBottomBar();
   }
-  
+
   updateInterpolation(interpolation) {
     this.interpolation = interpolation;
     C().updateBottomBar();
@@ -249,12 +269,14 @@ class SourceCodeManager {
       locationType: "",
       filter: "",
       color: Color.randomHex(),
-      uncertainty: 10
-    })
+      uncertainty: 10,
+    });
   }
 
   cleanLocationType() {
-    this.locationTypes = this.locationTypes.filter((loc_type) => loc_type.locationType !== "")
+    this.locationTypes = this.locationTypes.filter(
+      (loc_type) => loc_type.locationType !== "",
+    );
   }
 
   editLocationType(locationType, index) {

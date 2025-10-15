@@ -1,29 +1,26 @@
-import * as React from 'react';
+import * as React from "react";
 
-import { C } from '../../managers/Core';
+import { C } from "../../managers/Core";
 
-import { randomId } from '../../utils/Utility.js';
-import Color from '../../models/Color.js';
+import { randomId } from "../../utils/Utility.js";
+import Color from "../../models/Color.js";
 
-
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/DeleteOutlined';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Close';
-import PanToolAltIcon from '@mui/icons-material/PanToolAlt';
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/DeleteOutlined";
+import SaveIcon from "@mui/icons-material/Save";
+import CancelIcon from "@mui/icons-material/Close";
+import PanToolAltIcon from "@mui/icons-material/PanToolAlt";
 import {
   GridRowModes,
   DataGrid,
   GridToolbarContainer,
   GridActionsCellItem,
   GridRowEditStopReasons,
-} from '@mui/x-data-grid';
+} from "@mui/x-data-grid";
 import PropTypes from "prop-types";
-
-
 
 function EditToolbar(props) {
   const { setRows, setRowModesModel } = props;
@@ -35,10 +32,13 @@ function EditToolbar(props) {
 
   const handleClick = () => {
     const id = randomId();
-    setRows((oldRows) => [...oldRows, { id, locationType: '', key: '', value: '', isNew: true }]);
+    setRows((oldRows) => [
+      ...oldRows,
+      { id, locationType: "", key: "", value: "", isNew: true },
+    ]);
     setRowModesModel((oldModel) => ({
       ...oldModel,
-      [id]: { mode: GridRowModes.Edit, fieldToFocus: 'locationType' },
+      [id]: { mode: GridRowModes.Edit, fieldToFocus: "locationType" },
     }));
   };
 
@@ -75,11 +75,12 @@ export default function LocationTypeSetting({ initialRows }) {
       // remove onclick event listener
       C().mapMan.removeLocationTypeOnClick();
       // remove empty location types
-      let locTypes = C().sourceMan.locationTypes.filter((row) => row.locationType !== '');
+      let locTypes = C().sourceMan.locationTypes.filter(
+        (row) => row.locationType !== "",
+      );
       C().sourceMan.updateLocationTypes(locTypes);
     };
   }, []);
-
 
   const handleRowEditStop = (params, event) => {
     if (params.reason === GridRowEditStopReasons.rowFocusOut) {
@@ -98,7 +99,9 @@ export default function LocationTypeSetting({ initialRows }) {
   const handleDeleteClick = (id) => () => {
     setRows(rows.filter((row) => row.id !== id));
     C().mapMan.removeLocationTypeOnClick();
-    C().mapMan.deleteLocationType(rows.find((row) => row.id === id).locationType);
+    C().mapMan.deleteLocationType(
+      rows.find((row) => row.id === id).locationType,
+    );
   };
 
   const handleCancelClick = (id) => () => {
@@ -115,7 +118,7 @@ export default function LocationTypeSetting({ initialRows }) {
 
   const handleChooseClick = (id) => () => {
     setChooseRow(id);
-    document.body.style.cursor = 'pointer';
+    document.body.style.cursor = "pointer";
     // collect the location type and color of the chosen row
     const chosenRow = rows.find((row) => row.id === id);
     const locationType = chosenRow.locationType;
@@ -124,19 +127,18 @@ export default function LocationTypeSetting({ initialRows }) {
     let type = "all";
     if (locationType === "ORIGIN") {
       type = "marker";
-    }
-    else if (locationType === "VERTIPORT") {
+    } else if (locationType === "VERTIPORT") {
       type = "vertiport";
     }
     // call the map manager to set the location type and color
     C().mapMan.setLocationTypeOnClick(locationType, color, uncertainty, type);
-  }
+  };
 
   const handleUnchooseClick = () => () => {
     setChooseRow(null);
     // call the map manager to unset the location type and color
     C().mapMan.removeLocationTypeOnClick();
-  }
+  };
 
   const processRowUpdate = (newRow) => {
     const updatedRow = { ...newRow, isNew: false };
@@ -144,18 +146,24 @@ export default function LocationTypeSetting({ initialRows }) {
     // check if updatedRow.locationType changed
     if (oldRow.locationType !== updatedRow.locationType) {
       // check if the new location type already exists or is empty
-      const locationTypeExists = rows.some((row) => row.locationType === updatedRow.locationType);
+      const locationTypeExists = rows.some(
+        (row) => row.locationType === updatedRow.locationType,
+      );
       if (locationTypeExists) {
         // if it exists, returns
         return;
       }
       // call the map manager to update the location type
-      C().mapMan.updateLocationType(updatedRow.locationType, oldRow.locationType);
+      C().mapMan.updateLocationType(
+        updatedRow.locationType,
+        oldRow.locationType,
+      );
     }
     // make sure the row has a unique color (default to random chroma color)
     if (updatedRow.color === undefined || updatedRow.color === "") {
       const length = Color.simpleValues.length;
-      let newColor = Color.simpleValues[Math.floor(Math.random() * length)].name;
+      let newColor =
+        Color.simpleValues[Math.floor(Math.random() * length)].name;
       let colorExists = rows.some((row) => row.color === newColor);
       while (colorExists) {
         newColor = Color.simpleValues[Math.floor(Math.random() * length)].name;
@@ -195,16 +203,26 @@ export default function LocationTypeSetting({ initialRows }) {
   };
 
   const columns = [
-    { field: 'locationType', headerName: 'Location Type', width: 120, editable: true },
-    { field: 'filter', headerName: 'Osm Filter', width: 250, editable: true },
-    { field: 'color', headerName: 'Color', width: 80, editable: true },
-    { field: 'uncertainty', headerName: 'Uncertainty', width: 100, editable: true },
     {
-      field: 'actions',
-      type: 'actions',
-      headerName: 'Actions',
+      field: "locationType",
+      headerName: "Location Type",
+      width: 120,
+      editable: true,
+    },
+    { field: "filter", headerName: "Osm Filter", width: 250, editable: true },
+    { field: "color", headerName: "Color", width: 80, editable: true },
+    {
+      field: "uncertainty",
+      headerName: "Uncertainty",
       width: 100,
-      cellClassName: 'actions',
+      editable: true,
+    },
+    {
+      field: "actions",
+      type: "actions",
+      headerName: "Actions",
+      width: 100,
+      cellClassName: "actions",
       getActions: ({ id }) => {
         const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
         const row = rows.find((row) => row.id === id);
@@ -222,7 +240,7 @@ export default function LocationTypeSetting({ initialRows }) {
               icon={<SaveIcon />}
               label="Save"
               sx={{
-                color: 'primary.main',
+                color: "primary.main",
               }}
               onClick={handleSaveClick(id)}
             />,
@@ -262,11 +280,11 @@ export default function LocationTypeSetting({ initialRows }) {
     },
 
     {
-      field: 'choose',
-      type: 'actions',
-      headerName: 'Choose',
+      field: "choose",
+      type: "actions",
+      headerName: "Choose",
       width: 70,
-      cellClassName: 'actions',
+      cellClassName: "actions",
       getActions: ({ id }) => {
         const isChosen = chooseRow === id;
         if (isChosen) {
@@ -288,22 +306,22 @@ export default function LocationTypeSetting({ initialRows }) {
             label="Choose"
             onClick={handleChooseClick(id)}
             color="inherit"
-          />
+          />,
         ];
       },
-    }
+    },
   ];
 
   return (
     <Box
       sx={{
         height: 250,
-        width: '100%',
-        '& .actions': {
-          color: 'text.secondary',
+        width: "100%",
+        "& .actions": {
+          color: "text.secondary",
         },
-        '& .textPrimary': {
-          color: 'text.primary',
+        "& .textPrimary": {
+          color: "text.primary",
         },
       }}
     >
@@ -311,20 +329,21 @@ export default function LocationTypeSetting({ initialRows }) {
         rows={rows}
         columns={columns}
         rowModesModel={rowModesModel}
-        isCellEditable={(params) => 
-          {
-            let isEditable = true;
-            defaultLocationType.forEach((element) => {
-              if (params.value === element) {
-                isEditable = false;
-              }
-              if (params.field === "filter" && params.row.locationType === element) {
-                isEditable = false;
-              }
-            });
-            return isEditable;
-          }
-        }
+        isCellEditable={(params) => {
+          let isEditable = true;
+          defaultLocationType.forEach((element) => {
+            if (params.value === element) {
+              isEditable = false;
+            }
+            if (
+              params.field === "filter" &&
+              params.row.locationType === element
+            ) {
+              isEditable = false;
+            }
+          });
+          return isEditable;
+        }}
         onRowModesModelChange={handleRowModesModelChange}
         onRowEditStop={handleRowEditStop}
         processRowUpdate={processRowUpdate}

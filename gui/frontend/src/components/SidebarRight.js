@@ -40,8 +40,8 @@ import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import SettingsFilledIcon from "@mui/icons-material/Settings";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import AddIcon from "@mui/icons-material/AddRounded";
-import EditIcon from '@mui/icons-material/Edit';
-import DoneIcon from '@mui/icons-material/Done';
+import EditIcon from "@mui/icons-material/Edit";
+import DoneIcon from "@mui/icons-material/Done";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -292,7 +292,6 @@ class SidebarRightItem extends React.Component {
     updateLayerConfig(layer);
   };
 
-
   // change the opacity of the layer when the opacity slider is changed
   opacitySliderChanged = (layer, opacityRange, commited) => {
     // skip if render mode is *image and is not committed
@@ -337,7 +336,7 @@ class SidebarRightItem extends React.Component {
       layerName = this.state.layerName;
     }
     C().layerMan.toggleEditName(layer.id, layerName);
-  }
+  };
 
   // toggle the visibility of the layer
   toggleVisibility = (layer) => {
@@ -479,8 +478,8 @@ class SidebarRightItem extends React.Component {
                 width: "190px",
               }}
             >
-              {layer.editName ? 
-                (<TextField
+              {layer.editName ? (
+                <TextField
                   id="outlined-basic"
                   borderColor="white"
                   label=""
@@ -528,9 +527,9 @@ class SidebarRightItem extends React.Component {
                       fill: "white !important",
                     },
                   }}
-                />)
-                :
-                (<ListItemText
+                />
+              ) : (
+                <ListItemText
                   primary={layer.name === "" ? "Untitled" : layer.name}
                   style={{
                     textAlign: "left",
@@ -542,8 +541,8 @@ class SidebarRightItem extends React.Component {
                     overflow: "hidden",
                     color: layer.visible ? "#ffffff" : "#ffffff88",
                   }}
-                />)
-              }
+                />
+              )}
             </div>
           </Grid>
 
@@ -586,18 +585,14 @@ class SidebarRightItem extends React.Component {
               <MyLocationIcon />
             </IconButton>
 
-            <IconButton 
+            <IconButton
               onClick={() => {
                 this.toggleEditName(layer);
               }}
-              style={{ color: "#eeeeee", fontSize: 12, marginLeft: "10px"}}
+              style={{ color: "#eeeeee", fontSize: 12, marginLeft: "10px" }}
               aria-label="Edit layer name"
             >
-              {layer.editName ? (
-                <DoneIcon />
-              ) : (
-                <EditIcon />
-              )}
+              {layer.editName ? <DoneIcon /> : <EditIcon />}
             </IconButton>
 
             <IconButton
@@ -902,10 +897,9 @@ class SidebarRightItem extends React.Component {
                 </Select>
               </FormControl>
 
-              {layer.renderMode !== RenderMode.Voronoi  &&
-               layer.renderMode !== RenderMode.SVGImage &&
-               layer.renderMode !== RenderMode.PNGImage
-               ? (
+              {layer.renderMode !== RenderMode.Voronoi &&
+              layer.renderMode !== RenderMode.SVGImage &&
+              layer.renderMode !== RenderMode.PNGImage ? (
                 <Grid
                   container
                   spacing={0}

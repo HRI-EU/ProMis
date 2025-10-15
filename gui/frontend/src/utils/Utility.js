@@ -73,51 +73,56 @@ export async function getConfig() {
   return config;
 }
 
-function prepareLayer(layer){
+function prepareLayer(layer) {
   layer.markerLayer = null;
   layer.leafletOverlays = [];
 }
 
-function prepareLayers(layers){
+function prepareLayers(layers) {
   layers.forEach((layer) => {
     prepareLayer(layer);
   });
 }
 
-function revertLayer(layer, markerLayer, leafletOverlays){
+function revertLayer(layer, markerLayer, leafletOverlays) {
   layer.markerLayer = markerLayer;
   layer.leafletOverlays = leafletOverlays;
 }
 
-function revertLayers(layers, markerLayers, leafletOverlays){
+function revertLayers(layers, markerLayers, leafletOverlays) {
   // add markerLayer back to layers
   layers.forEach((layer, index) => {
     revertLayer(layer, markerLayers[index], leafletOverlays[index]);
   });
 }
 
-function layerToBody(layer){
-  const body = JSON.stringify(layer, function (key, value) {
-    if (value && typeof value === 'object' && key === "") {
-      var replacement = {};
-      for (var k in value) {
-        if (Object.hasOwnProperty.call(value, k)) {
-          const camelToSnakeCase = str => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-          const snake_k = camelToSnakeCase(k);
-          replacement[snake_k] = value[k];
+function layerToBody(layer) {
+  const body = JSON.stringify(
+    layer,
+    function (key, value) {
+      if (value && typeof value === "object" && key === "") {
+        var replacement = {};
+        for (var k in value) {
+          if (Object.hasOwnProperty.call(value, k)) {
+            const camelToSnakeCase = (str) =>
+              str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+            const snake_k = camelToSnakeCase(k);
+            replacement[snake_k] = value[k];
+          }
         }
+        return replacement;
       }
-      return replacement;
-    }
-    return value;
-  }, 2);
+      return value;
+    },
+    2,
+  );
   return body;
 }
 
 // function to update the configuration data on the backend
 export async function updateLayerConfig(layer) {
   const url = "http://localhost:8000/update_layer_config_entry";
-  
+
   // prepare layer for serialization
   const markerLayer = layer.markerLayer;
   const leafletOverlay = layer.leafletOverlays;
@@ -128,8 +133,8 @@ export async function updateLayerConfig(layer) {
   // revert layer back to original state
   revertLayer(layer, markerLayer, leafletOverlay);
 
-  const body = layerToBody(layerCpy)
-  
+  const body = layerToBody(layerCpy);
+
   // send the updated configuration data to the backend
   try {
     const response = await fetch(url, {
@@ -146,7 +151,6 @@ export async function updateLayerConfig(layer) {
   } catch (error) {
     console.error(error.message);
   }
-  
 }
 
 // function to delete the configuration data on the backend
@@ -155,8 +159,7 @@ export async function deleteLayerConfig(layerPos) {
 
   // add layer position as path parameter
   const urlWithPos = url + "/" + layerPos;
-  
-  
+
   // send the updated configuration data to the backend
   try {
     const response = await fetch(urlWithPos, {
@@ -172,13 +175,12 @@ export async function deleteLayerConfig(layerPos) {
   } catch (error) {
     console.error(error.message);
   }
-  
 }
 
 // function to update the configuration data on the backend
 export async function updateTotalConfig(layers) {
   const url = "http://localhost:8000/update_total_layer_config";
-  
+
   // prepare layers for serialization
   const markerLayers = layers.map((layer) => layer.markerLayer);
   const leafletOverlays = layers.map((layer) => layer.leafletOverlays);
@@ -190,14 +192,13 @@ export async function updateTotalConfig(layers) {
   revertLayers(layers, markerLayers, leafletOverlays);
   // create the configuration data
 
-
   let body = "[";
   layersCpy.forEach((layer) => {
     body += layerToBody(layer);
-    body += ',';
-  })
-  body = body.slice(0, -1)
-  body += ']';
+    body += ",";
+  });
+  body = body.slice(0, -1);
+  body += "]";
   // send the updated configuration data to the backend
   try {
     const response = await fetch(url, {
@@ -214,10 +215,9 @@ export async function updateTotalConfig(layers) {
   } catch (error) {
     console.error(error.message);
   }
-  
 }
 
-export async function updateDynamicLayerEntry(entry){
+export async function updateDynamicLayerEntry(entry) {
   const url = "http://localhost:8000/update_dynamic_layer_entry";
   try {
     const response = await fetch(url, {
@@ -236,7 +236,7 @@ export async function updateDynamicLayerEntry(entry){
   }
 }
 
-export async function deleteDynamicLayerEntry(entry){
+export async function deleteDynamicLayerEntry(entry) {
   const url = "http://localhost:8000/delete_dynamic_layer_entry";
   try {
     const response = await fetch(url, {
@@ -255,14 +255,12 @@ export async function deleteDynamicLayerEntry(entry){
   }
 }
 
-
-
-export async function updateConfigDynamicLayers(markers, polylines, polygons){
+export async function updateConfigDynamicLayers(markers, polylines, polygons) {
   const url = "http://localhost:8000/update_total_dynamic_layer";
   try {
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify({markers, polylines, polygons}, null, 2),
+      body: JSON.stringify({ markers, polylines, polygons }, null, 2),
       headers: {
         "Content-Type": "application/json",
       },
@@ -276,7 +274,7 @@ export async function updateConfigDynamicLayers(markers, polylines, polygons){
   }
 }
 
-export async function updateConfigLocationTypes(locationTypes){
+export async function updateConfigLocationTypes(locationTypes) {
   const url = "http://localhost:8000/update_total_location_type_table";
   //console.log(locationTypes);
   const locationTypesCpy = structuredClone(locationTypes);
@@ -304,7 +302,7 @@ export async function updateConfigLocationTypes(locationTypes){
   }
 }
 
-export async function updateConfigLocationTypeEntry(locationType){
+export async function updateConfigLocationTypeEntry(locationType) {
   const url = "http://localhost:8000/update_location_type_entry";
   //console.log(locationTypes);
   const locationTypeCpy = structuredClone(locationType);
@@ -330,7 +328,7 @@ export async function updateConfigLocationTypeEntry(locationType){
   }
 }
 
-export async function deleteConfigLocationTypeEntry(id){
+export async function deleteConfigLocationTypeEntry(id) {
   const url = `http://localhost:8000/delete_location_type_id/${id}`;
 
   try {
@@ -348,7 +346,6 @@ export async function deleteConfigLocationTypeEntry(id){
     console.error(error.message);
   }
 }
-
 
 export async function checkExternalUpdate() {
   const url = "http://localhost:8000/external_update";
@@ -368,5 +365,5 @@ export async function checkExternalUpdate() {
 export function establishWebsocket() {
   const url = "ws://localhost:8000/ws";
   const websocket = new WebSocket(url);
-  return websocket
+  return websocket;
 }
