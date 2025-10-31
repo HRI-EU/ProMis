@@ -38,6 +38,21 @@ const darkTheme = createTheme({
 
 const fontSize = "0.95rem";
 
+
+/*
+  This Component includes the lightbolt button in middle left to put geo-entity to front or back
+  and the interactive pop up (when double-clicking an geo-entity) on top left to display and adjust geo-entitys properties like id,
+  coordinates, location type and uncertainty.
+  props: these are information for the interactive pop up
+    id: id of the chosen entity
+    icon ("defaultMarker" | "droneMarker" | "landingSiteMarker" | "Line" | "Polygon"): icon of the entity
+    name (str): name of the entity
+    coordinates ([lat, lng] | [[lat, lng]]): coordinate of the entity
+    locationType (str): location type of the entity
+    toggle (bool): use for forcing the pop-up to appear (change its state to trigger pop up)
+    hidden (bool): set true upon first render to ensure pop up stays hidden
+    disabled (bool): if location type and uncertainty edit is disabled.
+*/
 export default function DynamicLayerInteractive({
   id,
   icon,
@@ -49,14 +64,22 @@ export default function DynamicLayerInteractive({
   hidden,
   disabled,
 }) {
+  // state var to set entity layer on top
   const [dynamicOnTop, setDynamicOnTop] = React.useState(false);
+  // state for uncertainty number input
   const [uncertaintyInput, setUncertaintyInput] = React.useState(uncertainty);
+  // state for current displayed latlng pair for entitys that have multi coordinate (line, polygon)
   const [currentCoordinateIndex, setCurrentCoordinateIndex] = React.useState(0);
+  // state for the location type drop down input
   const [locationTypeInput, setLocationTypeInput] =
     React.useState(locationType);
+
+  // state for changing input color of uncertainty if it is differ from default location type uncertainty
   const [isUniqueUncertainty, setIsUniqueUncertainty] = React.useState(false);
+  // state to hide pop up when close
   const [visible, setVisible] = React.useState(false);
 
+  // update coordinate indicator when change coordinate
   React.useEffect(() => {
     if (!isTypeMarker()) {
       C().mapMan.setMapCircleHighlight(coordinates[currentCoordinateIndex]);
@@ -65,7 +88,7 @@ export default function DynamicLayerInteractive({
     }
   }, [currentCoordinateIndex]);
 
-  // debounce input effect
+  // debounce input effect (update backend and changing color)
   React.useEffect(() => {
     const delayInputTimeoutId = setTimeout(() => {
       C().mapMan.uncertaintyChange(uncertaintyInput);
@@ -81,6 +104,7 @@ export default function DynamicLayerInteractive({
     return () => clearTimeout(delayInputTimeoutId);
   }, [uncertaintyInput]);
 
+  // updates state when change entity
   React.useEffect(() => {
     setCurrentCoordinateIndex(0);
     if (!isTypeMarker()) {
@@ -92,10 +116,12 @@ export default function DynamicLayerInteractive({
     setLocationTypeInput(locationType);
   }, [id]);
 
+  // force pop up to appear when receving toggle input
   React.useEffect(() => {
     setVisible(true);
   }, [toggle]);
 
+  // clean up coordinate indicator when pop up not visible
   React.useEffect(() => {
     if (!visible) {
       C().mapMan.removeCircleHighlight();
@@ -141,6 +167,7 @@ export default function DynamicLayerInteractive({
     }
   }
 
+  // return a string [lat, lng] to display
   function getCurrentDisplayCoordinate() {
     if (typeof coordinates[0] !== "number") {
       if (coordinates[currentCoordinateIndex] === undefined) {
@@ -153,22 +180,34 @@ export default function DynamicLayerInteractive({
       return `[${coordinates[0].toFixed(3)}, ${coordinates[1].toFixed(3)}]`;
   }
 
+  // used for coordinate switch button
   function nextCoordinate() {
     setCurrentCoordinateIndex((prev) => (prev + 1) % coordinates.length);
   }
 
+  // location type change handle
   function onLocationTypeChange(event) {
     const newLocationType = event.target.value;
     setLocationTypeInput(newLocationType);
+    // update internal and color
     C().mapMan.locationTypeChange(newLocationType);
+    // set default uncertainty from loc type
     setUncertaintyInput(
       C().sourceMan.getUncertaintyFromLocationType(newLocationType),
     );
   }
 
+  // returns array of location type to display for select input
   function createSelectItems() {
     let items = [];
     const locationTypeList = C().sourceMan.getListLocationType();
+    // remove VERIPORT if not of type landing site
+    if (icon !== "landingSiteMarker") {
+      const index = locationTypeList.indexOf("VERTIPORT");
+      if (index > -1) {
+        locationTypeList.splice(index, 1);
+      } 
+    }
     for (var i = 0; i < locationTypeList.length; i++) {
       items.push(
         <MenuItem key={`select-item-key-${i}`} value={locationTypeList[i]}>
@@ -179,7 +218,7 @@ export default function DynamicLayerInteractive({
     return items;
   }
 
-  // create a grid with icon depending on the type of entity
+  /* Entity Main Content */
   const entityGrid = (
     <Grid2
       container
@@ -189,6 +228,7 @@ export default function DynamicLayerInteractive({
         fontSize: fontSize,
       }}
     >
+      {/* Icon and Name */}
       <Grid2 size={3}>
         <SvgIcon>{getIconJSX(icon)}</SvgIcon>
       </Grid2>
@@ -204,11 +244,12 @@ export default function DynamicLayerInteractive({
           {name}
         </div>
       </Grid2>
-      {/*horizontal line*/}
+      {/* Horizontal line */}
       <Grid2
         size={12}
         style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.73)" }}
       ></Grid2>
+      {/* Id Field */}
       <Grid2 size={3}>
         <div
           style={{
@@ -229,6 +270,7 @@ export default function DynamicLayerInteractive({
           {id}
         </div>
       </Grid2>
+      {/* Coordinate Field */}
       <Grid2 size={5}>
         <div
           style={{
@@ -272,6 +314,7 @@ export default function DynamicLayerInteractive({
           )}
         </div>
       </Grid2>
+      {/* Location Type Select Input */}
       <Grid2>
         <Box
           sx={{
@@ -307,6 +350,7 @@ export default function DynamicLayerInteractive({
           </FormControl>
         </Box>
       </Grid2>
+      {/* Uncertainty Field Input */}
       <Grid2>
         <Tooltip title="Uncertainty">
           <Box
@@ -353,6 +397,7 @@ export default function DynamicLayerInteractive({
 
   return (
     <div>
+      {/* Toggle entity to front or back interface */}
       <div
         className="leaflet-control"
         style={{
@@ -379,6 +424,7 @@ export default function DynamicLayerInteractive({
         </IconButton>
       </div>
 
+      {/* Top-Left Pop Up Interface */}
       {!hidden && visible ? (
         <ThemeProvider theme={darkTheme}>
           <Paper

@@ -117,6 +117,7 @@ export default class SidebarRight extends React.Component {
           m={0}
           style={{ maxWidth: "300", display: "flex", height: "100%" }}
         >
+          {/* Collapse button */}
           <Fab
             aria-label="add"
             onClick={this.toggleDrawer("right", false)}
@@ -131,7 +132,8 @@ export default class SidebarRight extends React.Component {
           >
             <ChevronRightIcon />
           </Fab>
-
+          
+          {/* Collections and Eye button (hide/display all layer) */}
           <div
             style={{
               marginTop: "64px",
@@ -165,7 +167,8 @@ export default class SidebarRight extends React.Component {
               </IconButton>
             </Grid>
           </div>
-
+          
+          {/* Render Item for each layer  */}
           {C().layerMan.layers.map((layer, index) => {
             const layerId = layer.id;
             return (
@@ -173,6 +176,7 @@ export default class SidebarRight extends React.Component {
             );
           })}
 
+          {/* Add Layer import button */}
           <Button
             style={{
               marginTop: "32px",
@@ -214,6 +218,7 @@ export default class SidebarRight extends React.Component {
           right: 12,
         }}
       >
+        {/* Float Button to expand sidebar */}
         <Fab
           id="sidebar-right-fab"
           aria-label="add"
@@ -226,6 +231,7 @@ export default class SidebarRight extends React.Component {
           <TuneIcon />
         </Fab>
 
+        {/* Sidebar Content */}
         <React.Fragment key={"right"}>
           <Drawer
             variant="persistent"
@@ -254,6 +260,9 @@ export default class SidebarRight extends React.Component {
   }
 }
 
+/*
+  Component model a layer item for sidebar right
+ */
 class SidebarRightItem extends React.Component {
   constructor(props) {
     super(props);
@@ -432,6 +441,7 @@ class SidebarRightItem extends React.Component {
           justifyContent="start"
           m={0}
         >
+          {/* Button to hide/show layer */}
           <Grid
             container
             spacing={0}
@@ -468,7 +478,7 @@ class SidebarRightItem extends React.Component {
                 }}
               ></Box>
             </IconButton>
-
+            {/* Layer Name Field */}
             <div
               style={{
                 marginTop: "0px",
@@ -545,7 +555,7 @@ class SidebarRightItem extends React.Component {
               )}
             </div>
           </Grid>
-
+          {/* Layer Control Panel */}
           <Grid
             container
             spacing={0}
@@ -555,6 +565,7 @@ class SidebarRightItem extends React.Component {
             m={0}
             style={{ marginLeft: "0px" }}
           >
+            {/* Move Layer Up Button */}
             <IconButton
               onClick={() => {
                 C().layerMan.moveLayerUp(layer.id);
@@ -564,7 +575,7 @@ class SidebarRightItem extends React.Component {
             >
               <ArrowUpIcon />
             </IconButton>
-
+            {/* Move Layer Down Button */}
             <IconButton
               onClick={() => {
                 C().layerMan.moveLayerDown(layer.id);
@@ -574,7 +585,7 @@ class SidebarRightItem extends React.Component {
             >
               <ArrowDownIcon />
             </IconButton>
-
+            {/* Move map to center Layer Button */}
             <IconButton
               onClick={() => {
                 C().layerMan.moveToLayerCenter(layer.id);
@@ -584,7 +595,7 @@ class SidebarRightItem extends React.Component {
             >
               <MyLocationIcon />
             </IconButton>
-
+            {/* Edit Layer Name Button */}
             <IconButton
               onClick={() => {
                 this.toggleEditName(layer);
@@ -594,7 +605,7 @@ class SidebarRightItem extends React.Component {
             >
               {layer.editName ? <DoneIcon /> : <EditIcon />}
             </IconButton>
-
+            {/* Expand/Collapse Color Menu Button */}
             <IconButton
               onClick={() => {
                 this.toggleColorMenu(layer);
@@ -608,7 +619,7 @@ class SidebarRightItem extends React.Component {
                 <PaletteOutlinedIcon />
               )}
             </IconButton>
-
+            {/* Expand/Collapse Render Mode/Filter Menu Button */}
             <IconButton
               onClick={() => {
                 this.toggleSettingsMenu(layer);
@@ -624,7 +635,7 @@ class SidebarRightItem extends React.Component {
             </IconButton>
           </Grid>
         </Grid>
-
+        {/* Color Menu Content */}
         {layer.colorMenuExpanded ? (
           <Grid
             container
@@ -641,6 +652,7 @@ class SidebarRightItem extends React.Component {
               alignItems="start"
               justifyContent="center"
             >
+              {/* Static color change Buttons */}
               <IconButton
                 onClick={() => {
                   this.commitHueSliderChanged(layer, 0);
@@ -763,7 +775,7 @@ class SidebarRightItem extends React.Component {
                 ></Box>
               </IconButton>
             </Grid>
-
+            {/* Color Slider */}
             <div
               style={{
                 width: "180px",
@@ -789,7 +801,7 @@ class SidebarRightItem extends React.Component {
                   width: "14px !important",
                 }}
               />
-
+              {/* Opacity Slider */}
               <div
                 style={{
                   marginTop: "12px",
@@ -820,7 +832,7 @@ class SidebarRightItem extends React.Component {
             </div>
           </Grid>
         ) : null}
-
+        {/* Render Mode/Filter Menu Content */}
         {layer.settingsMenuExpanded ? (
           <div
             style={{
@@ -838,6 +850,7 @@ class SidebarRightItem extends React.Component {
               justifyContent="start"
               style={{ marginTop: "16px" }}
             >
+              {/* Render Mode Select */}
               <FormControl sx={{ m: 1, minWidth: 200 }}>
                 <InputLabel
                   id="demo-simple-select-helper-label"
@@ -896,7 +909,7 @@ class SidebarRightItem extends React.Component {
                   <MenuItem value={RenderMode.PNGImage}>PNG Image</MenuItem>
                 </Select>
               </FormControl>
-
+              {/* Radius Slider for Rect/Circle render mode */}
               {layer.renderMode !== RenderMode.Voronoi &&
               layer.renderMode !== RenderMode.SVGImage &&
               layer.renderMode !== RenderMode.PNGImage ? (
@@ -996,7 +1009,7 @@ class SidebarRightItem extends React.Component {
                   />
                 </Grid>
               ) : null}
-
+              {/* Value Filter Slider */}
               <div
                 style={{
                   marginTop: "20px",
@@ -1035,6 +1048,7 @@ class SidebarRightItem extends React.Component {
                 justifyContent="center"
                 style={{ marginTop: "8px" }}
               >
+                {/* Min Value Filter Input */}
                 <TextField
                   id="outlined-basic"
                   label=""
@@ -1086,7 +1100,7 @@ class SidebarRightItem extends React.Component {
                     },
                   }}
                 />
-
+                {/* Max Value Filter Input */}
                 <TextField
                   id="outlined-basic"
                   label=""
@@ -1138,7 +1152,7 @@ class SidebarRightItem extends React.Component {
                   }}
                 />
               </Grid>
-
+              {/* Delete Layer Button */}
               <Button
                 onClick={() => {
                   this.onDeleteLayer(layer.id);
@@ -1159,6 +1173,7 @@ class SidebarRightItem extends React.Component {
                 Delete layer
                 <VisuallyHiddenInput type="file" />
               </Button>
+              {/* Export to Geojson Button */}
               <Button
                 onClick={() => {
                   this.onExportGeoJSON(layer.id);
@@ -1181,7 +1196,7 @@ class SidebarRightItem extends React.Component {
             </Grid>
           </div>
         ) : null}
-
+        {/* Vertical bar */}
         <div
           style={{
             width: "100%",

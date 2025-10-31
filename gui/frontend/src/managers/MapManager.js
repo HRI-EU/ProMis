@@ -44,6 +44,15 @@ const renderModeToRenderer = {
   PNG_IMAGE: PNGImageRender,
 };
 
+/**
+ * MapManager class
+ * - Manage the Leaflet map instance
+ * - Handle map initialization and toolbar
+ * - Provide methods to manipulate the map (zoom, move, render layers, etc.)
+ * - Handle dynamic layers and their interactions
+ * - Communicate with LayerManager for layer data
+ * - Convert map entities to data structures for backend communication
+ */
 class MapManager {
   pToSatFactor = 5; // the probability will be converted to saturation by multiplying this factor
 
@@ -51,19 +60,25 @@ class MapManager {
 
   constructor() {
     this.map = null;
-    this.initWeather = false;
     this.initToolbar = false;
+    // feature group to hold all dynamic layers (markers, lines, polygons)
     this.dynamicFeatureGroup = null;
 
+    // counter for naming markers
     this.nameNumber = 1;
+    // map to hold click event functions for each marker
     this._onClickFunction = new Map();
-    this.bBoxFeatureGroup = null;
+    // svg element for drawing highlight landscape settings when interacting with bottom bar
     this.svgElement = null;
+    // SVG overlay for highlight landscape settings
     this.svgOverlay = null;
+    // circle for highlighting coordinate point of info box chosen entity
     this.circleHighlight = null;
+    // entity that was double clicked to open info box
     this.dblclickedEntity = null;
   }
 
+  // common entry point to convert leaflet layer to data structure for backend update
   getDynamicLayer(layer) {
     if (layer.feature.properties["shape"] === "Line") {
       return this.getPolyline(layer);
@@ -74,6 +89,7 @@ class MapManager {
     }
   }
 
+  // convert leaflet marker layer to data structure for backend update
   getMarker(layer) {
     return {
       id: layer.feature.properties["id"],
@@ -87,7 +103,7 @@ class MapManager {
     };
   }
 
-  // get markers from map
+  // get list of all dynamic markers for backend update
   getMarkers() {
     // marker of type {name: string, latlng: [lat, lon], shape: string}
     let markers = [];
@@ -102,6 +118,7 @@ class MapManager {
     return markers;
   }
 
+  // convert leaflet polyline layer to data structure for backend update
   getPolyline(layer) {
     return {
       id: layer.feature.properties["id"],
@@ -113,6 +130,7 @@ class MapManager {
     };
   }
 
+  // get list of all polylines for backend update
   getPolylines() {
     let polylines = [];
     if (!this.dynamicFeatureGroup) {
@@ -126,6 +144,7 @@ class MapManager {
     return polylines;
   }
 
+  // convert leaflet polygon layer to data structure for backend update
   getPolygon(layer) {
     let holes = [];
     if (layer.getLatLngs().length > 1) {
@@ -145,6 +164,7 @@ class MapManager {
     };
   }
 
+  // get list of all polygons for backend update
   getPolygons() {
     let polygons = [];
     if (!this.dynamicFeatureGroup) {
@@ -169,7 +189,6 @@ class MapManager {
    */
   _initMap() {
     this._initToolbar();
-    //this._initWeatherLayer();
   }
 
   /**
@@ -214,18 +233,7 @@ class MapManager {
     this.map.on("pm:remove", function ({ shape, layer }) {
       if (layer.options.pane === "markerPane") {
         // update origin from source when the removed drone marker is the origin
-        if (layer.feature.properties["name"] === C().sourceMan.origin) {
-          // find the first marker and set it as the new origin
-          const markers = C().mapMan.listOriginMarkers();
-          if (markers.length > 0) {
-            C().sourceMan.updateOrigin(markers[0].feature.properties["name"]);
-          } else {
-            C().sourceMan.updateOrigin("");
-          }
-        } else {
-          // update bottombar
-          C().updateBottomBar();
-        }
+        C().updateBottomBar();
 
         // update the configuration data on the backend
         deleteDynamicLayerEntry(C().mapMan.getMarker(layer));
@@ -277,87 +285,8 @@ class MapManager {
     this.initToolbar = true;
   }
 
-  /**
-   * initialize the weather layer
-   */
-  _initWeatherLayer() {
-    if (!this.initWeather) {
-      var clouds = L.OWM.clouds({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var cloudscls = L.OWM.cloudsClassic({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var precipitation = L.OWM.precipitation({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var precipitationcls = L.OWM.precipitationClassic({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var rain = L.OWM.rain({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var raincls = L.OWM.rainClassic({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var snow = L.OWM.snow({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var pressure = L.OWM.pressure({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var pressurecntr = L.OWM.pressureContour({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var temp = L.OWM.temperature({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-      var wind = L.OWM.wind({
-        showLegend: false,
-        opacity: 0.5,
-        appId: "ab828bf1285303acbf4f7b0215119208",
-      });
-
-      var overlayMaps = {
-        Clouds: clouds,
-        "Clouds Classic": cloudscls,
-        Precipitation: precipitation,
-        "Precipitation Classic": precipitationcls,
-        Rain: rain,
-        "Rain Classic": raincls,
-        Snow: snow,
-        Pressure: pressure,
-        "Pressure Contour": pressurecntr,
-        Temperature: temp,
-        Wind: wind,
-      };
-      L.control
-        .layers(undefined, overlayMaps, { position: "bottomright" })
-        .addTo(this.map);
-      this.initWeather = true;
-    }
-  }
-
+  // init properties for created marker
+  // init dblclick event interfacing with infobox
   static _onCreatedMarker(shape, layer) {
     // update origin from source when the first drone marker is created
     const markerName = "Marker " + C().mapMan.nameNumber++;
@@ -404,6 +333,8 @@ class MapManager {
     updateDynamicLayerEntry(C().mapMan.getMarker(layer));
   }
 
+  // init properties for created line
+  // init dblclick event interfacing with infobox
   static _onCreatedLine(shape, layer) {
     // add properties
     const color = C()
@@ -421,6 +352,8 @@ class MapManager {
     updateDynamicLayerEntry(C().mapMan.getPolyline(layer));
   }
 
+  // init properties for created polygon
+  // init dblclick event interfacing with infobox
   static _onCreatedPolygon(shape, layer) {
     // add properties
     const color = C()
@@ -437,6 +370,7 @@ class MapManager {
     updateDynamicLayerEntry(C().mapMan.getPolygon(layer));
   }
 
+  // initialize common properties for created layer
   static _initLayerProperties(
     layer,
     name,
@@ -494,6 +428,9 @@ class MapManager {
     C().updateMapComponent(data);
   }
 
+  /**
+   * Convert leaflet layer to data structure for info box
+   */
   static _getInfoBoxDataFromLayer(layer) {
     const properties = layer.feature.properties;
     const icon = properties["shape"];
@@ -579,6 +516,9 @@ class MapManager {
     });
   }
 
+  /**
+   * Remove all markers from the layer
+   */
   removeMarkerFromLayer(layer) {
     if (layer.markerLayer) {
       this.map.removeLayer(layer.markerLayer);
@@ -586,6 +526,12 @@ class MapManager {
     }
   }
 
+  /**
+   * Render a specific layer on the map
+   * @param {*} layer : Layer to be rendered
+   * @param {*} topofLayers : Layers above the current layer to manage z-index
+   * @param {*} onTop : Boolean to indicate if the layer should be rendered on top
+   */
   renderLayer(layer, topofLayers, onTop = true) {
     // remove old rendered layer if existed
     this.removeMarkerFromLayer(layer);
@@ -666,6 +612,9 @@ class MapManager {
     });
   }
 
+  /**
+   * List all dynamic markers on the map
+   */
   listMarkers() {
     let markers = [];
     if (!this.dynamicFeatureGroup) {
@@ -676,6 +625,9 @@ class MapManager {
       .filter((layer) => layer.options.pane === "markerPane");
   }
 
+  /**
+   * List all origin markers on the map
+   */
   listOriginMarkers() {
     let markers = [];
     if (!this.dynamicFeatureGroup) {
@@ -689,29 +641,11 @@ class MapManager {
     });
   }
 
-  listDroneMarkers() {
-    let droneMarkers = [];
-    if (!this.dynamicFeatureGroup) {
-      return droneMarkers;
-    }
-    this.dynamicFeatureGroup.eachLayer((layer) => {
-      if (layer.feature.properties["shape"] === "droneMarker") {
-        droneMarkers.push(layer);
-      }
-    });
-    return droneMarkers;
-  }
-
-  latlonDroneFromMarkerName(markerName) {
-    let droneMarkers = this.listDroneMarkers();
-    for (let i = 0; i < droneMarkers.length; i++) {
-      if (droneMarkers[i].feature.properties["name"] === markerName) {
-        return droneMarkers[i].getLatLng();
-      }
-    }
-    return null;
-  }
-
+  /**
+   * Get the latitude and longitude of a marker by its name
+   * @param {*} markerName 
+   * @returns 
+   */
   latlonFromMarkerName(markerName) {
     let droneMarkers = this.listMarkers();
     for (let i = 0; i < droneMarkers.length; i++) {
@@ -722,6 +656,10 @@ class MapManager {
     return null;
   }
 
+  /**
+   * Recenter the map to the given latitude and longitude
+   * @param {*} latLong 
+   */
   recenterMap(latLong) {
     console.log("recenterMap: ", latLong);
     this.map.setView(latLong);
@@ -736,6 +674,10 @@ class MapManager {
     markers.forEach((marker) => this.importMarker(marker));
   }
 
+  /**
+   * Import a single marker from a marker object from the backend
+   * @param {*} marker 
+   */
   importMarker(marker) {
     const markerId = marker.id;
     const markerName = marker.name;
@@ -778,6 +720,8 @@ class MapManager {
     }
   }
 
+  // cleanup dynamic layers that have the same id as the layers in the given list
+  // used before importing external layers to avoid duplicates
   _cleanupDynamicLayer(layers) {
     if (!this.dynamicFeatureGroup) {
       return;
@@ -793,6 +737,7 @@ class MapManager {
     toBeRemove.forEach((layer) => this._removeDynamicLayer(layer));
   }
 
+  // filter out entities with duplicate ids, keep the first occurrence
   _filterUnique(entities) {
     let foundIds = [];
     let toBeDeletedIndex = [];
@@ -833,6 +778,8 @@ class MapManager {
     this.importPolygons(this._filterUnique(dynamicLayers.polygons));
   }
 
+  // import a single external entity (marker, polyline or polygon) from backend updates
+  // external entity is not editable and has different style
   importExternalEntity(dynamicEntity) {
     this._cleanupDynamicLayer([dynamicEntity]);
     if (dynamicEntity.shape !== undefined) {
@@ -856,6 +803,7 @@ class MapManager {
     polylines.forEach((polyline) => this.importPolyline(polyline));
   }
 
+  // import a single polyline from a polyline object from the backend
   importPolyline(polyline) {
     const polylineLayer = new L.polyline(polyline.latlngs, {
       pmIgnore: polyline.origin === LayerType.EXTERNAL ? true : false,
@@ -903,6 +851,7 @@ class MapManager {
     //console.log("polygon added!!")
   }
 
+  // import a single polygon from a polygon object from the backend
   importPolygon(polygon) {
     let polygonLatlngs = [];
     let polygonLatLngsFlat = [];
@@ -1104,6 +1053,8 @@ class MapManager {
     );
   }
 
+  // delete all markers with the given location type
+  // used by the LocationTypeSetting component when the location type is deleted
   deleteLocationType(locationType) {
     if (!this.dynamicFeatureGroup) {
       return;
@@ -1123,6 +1074,7 @@ class MapManager {
     );
   }
 
+  // calculate the bounding box based on the origin latlng and the width and height in meters
   _getBBox(originLatlng, width, height) {
     console.log("originLatlng: ", originLatlng);
     const origin = turf.point([originLatlng.lng, originLatlng.lat]);
@@ -1145,6 +1097,8 @@ class MapManager {
     return L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
   }
 
+  // highlight the boundary area on the map
+  // used by LandscapeSetting component to show the area covered by the landscape
   highlightBoundaryAlter(origin, dimensions, resolutions, supportResolutions) {
     // do nothing if origin is not selected or any of the dimension or resolution is not set
     if (origin === "") {
@@ -1225,6 +1179,7 @@ class MapManager {
     this.svgElement = svgElement;
   }
 
+  // remove the highlighted boundary area from the map
   unhighlightBoundaryAlter() {
     console.log("unhighlightBoundaryAlter");
     if (this.svgElement) {
@@ -1237,6 +1192,7 @@ class MapManager {
     }
   }
 
+  // bring dynamic layer to front or back
   toggleDynamicOnTop(onTop) {
     if (onTop) {
       this.dynamicFeatureGroup.bringToFront();
@@ -1245,6 +1201,7 @@ class MapManager {
     }
   }
 
+  // set a circle highlight on the map at the given coordinate
   setMapCircleHighlight(coordinate) {
     this.removeCircleHighlight();
     if (this.map !== null)
@@ -1254,12 +1211,14 @@ class MapManager {
       }).addTo(this.map);
   }
 
+  // remove the circle highlight from the map
   removeCircleHighlight() {
     if (this.circleHighlight !== null) {
       this.map.removeLayer(this.circleHighlight);
     }
   }
 
+  // update uncertainty of chosen entity though infobox
   uncertaintyChange(uncertainty) {
     if (this.dblclickedEntity !== null) {
       const oldUncertainty =
@@ -1271,6 +1230,7 @@ class MapManager {
     }
   }
 
+  // update location type of chosen entity and change its color
   locationTypeChange(locationType) {
     if (this.dblclickedEntity !== null) {
       const oldLocationType =
@@ -1291,7 +1251,7 @@ class MapManager {
             color: color,
           });
         } else {
-          // update the icon of the markers
+          // update the icon of the markers (color)
           let markerShape = this.dblclickedEntity.feature.properties["shape"];
           this.dblclickedEntity.setIcon(MapManager.icons[markerShape](color));
         }
@@ -1301,10 +1261,33 @@ class MapManager {
     }
   }
 
+  // update info box data for the currently double clicked entity
+  // used when the location type or uncertainty is changed from the LocationTypeSetting component
   updateInfoBox() {
     if (this.dblclickedEntity != null) {
       let data = MapManager._getInfoBoxDataFromLayer(this.dblclickedEntity);
       C().updateMapComponent(data, 1);
+    }
+  }
+
+  // delete external entity from the map
+  // used when an external entity is deleted from the backend
+  // called from mapComponent's websocket handler
+  delete_external_entity(id) {
+    if (!this.dynamicFeatureGroup) {
+      return;
+    }
+    let layer = null;
+    this.dynamicFeatureGroup.eachLayer((lyr) => {
+      if (lyr.feature.properties["id"] === id) {
+        layer = lyr;
+      }
+    });
+    if (layer === null) {
+      return;
+    }
+    if (layer.feature.properties["origin"] === LayerType.EXTERNAL) {
+      this._removeDynamicLayer(layer);
     }
   }
 }

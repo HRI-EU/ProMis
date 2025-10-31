@@ -39,6 +39,7 @@ export default function LandscapeSetting({
 
   const inputSize = 100;
 
+  // create origin select items from existing origin markers
   function createOriginSelectItems() {
     let items = [];
     const markers = C().mapMan.listOriginMarkers();
@@ -51,6 +52,8 @@ export default function LandscapeSetting({
     }
     return items;
   }
+
+  // create interpolation select items
   function createInterpolationItems() {
     let items = ["linear", "nearest", "gaussian_process"];
     return items.map((item, index) => {
@@ -83,6 +86,7 @@ export default function LandscapeSetting({
       m={1}
       style={{ marginLeft: "38px", width: "90%" }}
     >
+      {/* First Row: Origin, Dimensions, Sample Size */}
       <Grid
         container
         size={12}
@@ -91,6 +95,7 @@ export default function LandscapeSetting({
         alignItems="center"
         spacing={2}
       >
+        {/* Origin Selection Input */}
         <Grid container size={4}>
           <FormControl
             sx={{ minWidth: 125 }}
@@ -108,7 +113,7 @@ export default function LandscapeSetting({
             </Select>
           </FormControl>
         </Grid>
-
+        {/* Dimensions Input */}
         <Grid
           container
           direction="row"
@@ -118,6 +123,7 @@ export default function LandscapeSetting({
           size={5}
         >
           <Grid>
+            {/* Width Input */}
             <TextField
               type="number"
               size="small"
@@ -161,6 +167,7 @@ export default function LandscapeSetting({
             x
           </div>
           <Grid>
+            {/* Height Input */}
             <TextField
               type="number"
               size="small"
@@ -197,6 +204,7 @@ export default function LandscapeSetting({
           </Grid>
         </Grid>
 
+        {/* Sample Size Input */}
         <Grid size={3} container>
           <TextField
             type="number"
@@ -214,6 +222,7 @@ export default function LandscapeSetting({
           />
         </Grid>
       </Grid>
+      {/* Second Row: Resolutions, Support Resolutions and Interpolation */}
       <Grid
         container
         size={12}
@@ -223,6 +232,7 @@ export default function LandscapeSetting({
         alignItems="center"
         spacing={2}
       >
+        {/* Resolutions Input */}
         <Grid alignItems={"center"} size={4} sx={{ display: "flex" }}>
           <TextField
             type="number"
@@ -299,7 +309,7 @@ export default function LandscapeSetting({
             }}
           />
         </Grid>
-
+        {/* Support Resolutions Input */}
         <Grid
           container
           direction="row"
@@ -383,7 +393,7 @@ export default function LandscapeSetting({
             }}
           />
         </Grid>
-
+        {/* Interpolation Method Selection */}
         <Grid size={3} container>
           <FormControl sx={{ minWidth: 125 }} size="small">
             <InputLabel style={{ color: "rgba(255, 255, 255, 0.7)" }}>

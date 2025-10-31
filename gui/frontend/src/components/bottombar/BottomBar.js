@@ -40,6 +40,18 @@ const darkTheme = createTheme({
   },
 });
 
+/*
+  Component for the bootom bar:
+    - include states for:
+      - drawer like state (top, left, bottom, right)
+      - update for external update
+      - landscapeSetting for setting tab
+      - toogled state for toggling between tab
+      - running state for displaying (loading map data, star map and inference state)
+    - Main responsibility:
+      - Setup child component (LandscapeSetting, LocationTypeSettingTab, SourceCodeInterface)
+      - Setting up run call to backend
+ */
 export default class BottomBar extends React.Component {
   constructor() {
     super();
@@ -69,7 +81,7 @@ export default class BottomBar extends React.Component {
 
   inputSize = 100;
 
-  // function to update the UI
+  // function to update the UI through core call
   updateUI = () => {
     this.setState({ update: this.state.update + 1 });
     // check origin
@@ -88,6 +100,7 @@ export default class BottomBar extends React.Component {
     //console.log("updateUI()! " + this.state.update);
   };
 
+  // function to toggle the drawer
   toggleDrawer = (anchor, open) => (event) => {
     if (
       event.type === "keydown" &&
@@ -189,11 +202,9 @@ export default class BottomBar extends React.Component {
     } catch (error) {
       console.error(error.message);
     }
-
-    // only for testing purposes
-    //this.setState({ runningState: (this.state.runningState + 1) % 4 });
   };
 
+  // function to toggle running parameters tab
   toggleRunningParams = () => {
     // if the location type setting is toggled, close it
     if (this.state.locationTabsToggled) {
@@ -207,6 +218,7 @@ export default class BottomBar extends React.Component {
     this.setState({ runningParamsToggled: !this.state.runningParamsToggled });
   };
 
+  // function to toggle source code tab
   toggleSourceCode = () => {
     // if the location type setting is toggled, close it
     if (this.state.locationTabsToggled) {
@@ -220,6 +232,7 @@ export default class BottomBar extends React.Component {
     this.setState({ sourceCodeToggled: !this.state.sourceCodeToggled });
   };
 
+  // function to toggle location type tab
   toggleLocationTabs = () => {
     // if the running parameters is toggled, close it
     if (this.state.runningParamsToggled) {
@@ -233,6 +246,7 @@ export default class BottomBar extends React.Component {
     this.setState({ locationTabsToggled: !this.state.locationTabsToggled });
   };
 
+  // function to get running icons based on state
   getRunningIcons = (state) => {
     if (state > 3 || state < 0) {
       throw new Error("Invalid state");
@@ -245,6 +259,7 @@ export default class BottomBar extends React.Component {
     return icons[state];
   };
 
+  // function to get running labels based on state
   getRunningLabels = (state) => {
     if (state > 3 || state < 0) {
       throw new Error("Invalid state");
@@ -258,6 +273,7 @@ export default class BottomBar extends React.Component {
     return labels[state];
   };
 
+  // function to handle landscape setting edit, passed to LandscapeSetting component
   landscapeEdit = (landscapeSetting) => {
     this.setState({
       landscapeSetting: {
@@ -390,7 +406,7 @@ export default class BottomBar extends React.Component {
               collapsedSize={0}
               orientation="horizontal"
             >
-              <Alert
+              <Alert // alert for success or error after running
                 severity={C().sourceMan.success ? "success" : "error"}
                 style={{
                   minWidth: "80px",
@@ -421,7 +437,7 @@ export default class BottomBar extends React.Component {
             </Collapse>
 
             <ThemeProvider theme={darkTheme}>
-              <LoadingButton
+              <LoadingButton // run button
                 loading={this.state.runningState !== 0}
                 loadingPosition="start"
                 startIcon={this.getRunningIcons(this.state.runningState)}

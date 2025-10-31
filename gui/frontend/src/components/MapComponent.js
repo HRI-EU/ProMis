@@ -21,7 +21,16 @@ import BottomBar from "./bottombar/BottomBar.js";
 import DynamicLayerInteractive from "./DynamicLayerInteractive.js";
 
 //import WeatherInfoBox from "./WeatherInfoBox.js";
-
+/*
+  Main Components for the app:
+    - Initialize other Components (SidebarRight/-Left, BottomBar, DynamicLayerInteractive)
+    - Main responsibility:
+      - Setup other component
+      - Setup Leaflet map instance
+      - Setup Core instance (./managers/Core.js)
+      - Establish websocket connection with backend to fetch updates
+      - Fetch saved layer, location type table and geo-entity
+ */
 function MapComponent() {
   var map = null;
 
@@ -55,6 +64,11 @@ function MapComponent() {
 
   let didInit = false;
 
+  /*
+    Setup leaflet map instance, core/managers instance, 
+    fetch saved configuration (layers, geo-entity and location type list),
+    setup websocket
+   */
   useEffect(() => {
     if (didInit) return;
 
@@ -87,11 +101,11 @@ function MapComponent() {
     }
 
     didInit = true;
-  }, []); // Empty dependency array ensures the effect runs once after the initial render
+  }, []); 
 
   // This function is called by the MapManager to trigger a state change of info box
   // Ensure toggle is toggled (when type = 0), type is set when we want to change display entity without forcing info box to appear
-  // and hidden is set to false (to ensure info box alway appear especially when close info box and choosing the same entity)
+  // and hidden is set to false (to ensure info box alway appear but its main functionality is to ensure infobox stays hidden upon app first render)
   function changeState(entity, type = 0) {
     if (type !== 0) {
       setInfoBoxState((prevEntity) => {
@@ -176,18 +190,30 @@ function MapComponent() {
       if (e.data == "ping") {
         return;
       }
-      const flterMessage = JSON.parse(e.data);
-      const message = JSON.parse(flterMessage);
-      if (message.filter !== undefined) {
-        // handle location type tab
-        const location_type_entry = message;
-        // iterate over locationTypes and change location_type field to locationType
-        location_type_entry.locationType = location_type_entry.location_type;
-        delete location_type_entry.location_type;
-        C().sourceMan.locationTypes.push(location_type_entry);
-      } else {
-        // handle entity change
-        C().mapMan.importExternalEntity(message);
+      try {
+        // try to parse the message
+        const filterMessage = JSON.parse(e.data);
+        const message = JSON.parse(filterMessage);
+        // if the message is not an object, it means the message is an id of to be deleted entity
+        if (typeof message !== "object") {
+          C().mapMan.delete_external_entity(e.data);
+          return;
+        }
+        // check if the message has filter field then it is a location type update
+        if (message.filter !== undefined) {
+          // handle location type tab
+          const location_type_entry = message;
+          // iterate over locationTypes and change location_type field to locationType
+          location_type_entry.locationType = location_type_entry.location_type;
+          delete location_type_entry.location_type;
+          C().sourceMan.locationTypes.push(location_type_entry);
+        } else {
+          // handle entity change
+          C().mapMan.importExternalEntity(message);
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+        return;
       }
     });
   }

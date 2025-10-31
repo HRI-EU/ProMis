@@ -20,6 +20,14 @@ import { SliderPicker } from "react-color";
 import React from "react";
 import PropTypes from "prop-types";
 
+/**
+ * TabPanel component for rendering tab content.
+ * @param {*} props 
+ * props.children - The content to be displayed within the tab panel.
+ * props.value - The current selected tab index.
+ * props.other - Additional properties to be spread onto the div.
+ * @returns JSX.Element
+ */
 function TabPanel(props) {
   const { children, value, other } = props;
   return (
@@ -52,17 +60,36 @@ TabPanel.propTypes = {
   other: PropTypes.object,
 };
 
+/**
+ * LocationTypeSettingTabs component for managing location type settings.
+ * Main features:
+ * - Display tabs for each location type.
+ * - Allow adding, editing, deleting location types.
+ * - Enable choosing location types on the map.
+ * @returns JSX.Element
+ */
 export default function LocationTypeSettingTabs() {
+  // tab state for selected tab index corresponding to location type array in source manager
   const [tabState, setTabState] = React.useState(0);
+  // edit mode state for toggling between view and edit mode
   const [editMode, setEditMode] = React.useState(false);
+  // choose mode state for toggling location type selection on the map
   const [chooseMode, setChooseMode] = React.useState(false);
+  // highlight state for indicating invalid input during editing
   const [highlight, setHighlight] = React.useState(false);
 
+  // following state for managing current editable location type fields
+  // color state for managing the color of the location type
   const [color, setColor] = React.useState("#0000FF");
+  // locationType state for managing the name of the location type
   const [locationType, setLocationType] = React.useState("");
+  // filter state for managing the osm-filter string of the location type
   const [filter, setFilter] = React.useState("");
+  // uncertainty state for managing the uncertainty value of the location type
   const [uncertainty, setUncertainty] = React.useState(10);
 
+  // cleanup on unmount: remove any map click handlers and clean location type data
+  // to prevent empty or inconsistent location type entries
   React.useEffect(() => {
     return () => {
       C().mapMan.removeLocationTypeOnClick();
@@ -70,6 +97,7 @@ export default function LocationTypeSettingTabs() {
     };
   }, []);
 
+  // create location type items based on location types in source manager
   function createTabItems() {
     let items = [];
     const locTypes = C().sourceMan.locationTypes;
@@ -92,12 +120,14 @@ export default function LocationTypeSettingTabs() {
     return items;
   }
 
+  // delete the currently selected location type tab
   function onDelete() {
     C().sourceMan.deleteLocationTypeIndex(tabState);
     setTabState(tabState - 1);
     C().mapMan.updateInfoBox();
   }
 
+  // check if the tab at index i is a default location type tab
   function isDefaultTab(i) {
     const defaultLocationType = ["UNKNOWN", "ORIGIN", "VERTIPORT"];
     return defaultLocationType.includes(
@@ -105,6 +135,7 @@ export default function LocationTypeSettingTabs() {
     );
   }
 
+  // reset editable fields to the values of the location type at the given index
   function resetEditableField(index) {
     setLocationType(C().sourceMan.locationTypes[index].locationType);
     setFilter(C().sourceMan.locationTypes[index].filter);
@@ -112,6 +143,8 @@ export default function LocationTypeSettingTabs() {
     setUncertainty(C().sourceMan.locationTypes[index].uncertainty);
   }
 
+  // pure function to check if the current location type can be saved
+  // checks for non-empty and uniqueness among other location types
   function saveable(locationType, locationTypesExcludeSelf) {
     return !(
       locationType === "" ||
@@ -121,12 +154,14 @@ export default function LocationTypeSettingTabs() {
     );
   }
 
+  // handle saving edits to the current location type tab
   function onEdit() {
     if (!editMode) {
       resetEditableField(tabState);
       setEditMode(true);
       return;
     }
+    // saving edits
     const tabEntry = C().sourceMan.locationTypes[tabState];
     const oldLocationType = tabEntry.locationType;
     const oldColor = tabEntry.color;
@@ -135,6 +170,7 @@ export default function LocationTypeSettingTabs() {
       (type) => type.id !== tabEntry.id,
     );
 
+    // validate location type before saving
     if (!saveable(locationType, locationTypesExcludeSelf)) {
       setHighlight(true);
       setTimeout(() => {
@@ -143,6 +179,7 @@ export default function LocationTypeSettingTabs() {
       return false;
     }
 
+    // apply changes to map and source manager
     if (oldLocationType !== locationType) {
       C().mapMan.updateLocationType(locationType, oldLocationType);
       if (oldLocationType !== "") {
@@ -171,6 +208,7 @@ export default function LocationTypeSettingTabs() {
     return true;
   }
 
+  // add a new temporary location type tab and switch to edit mode
   function onAddTab() {
     const index = C().sourceMan.locationTypes.length;
     C().sourceMan.addTempLocationType();
@@ -179,6 +217,7 @@ export default function LocationTypeSettingTabs() {
     setEditMode(true);
   }
 
+  // handle choosing location type on the map
   function onChoose() {
     if (chooseMode) {
       C().mapMan.removeLocationTypeOnClick();
@@ -202,13 +241,16 @@ export default function LocationTypeSettingTabs() {
     setChooseMode(true);
   }
 
+  // create tab panels based on location types in source manager
   function createTabPanels() {
     const i = tabState;
     const locTypes = C().sourceMan.locationTypes;
     return i > -1 ? (
       <TabPanel value={tabState} key={`tab-panel-key-${i}`}>
         <Grid2 size={12} container justifyContent="flex-start">
+          {/* Action Buttons */}
           {!editMode && !chooseMode ? (
+            // Add Tab Button
             <Grid2>
               <IconButton
                 variant="outlined"
@@ -223,6 +265,7 @@ export default function LocationTypeSettingTabs() {
             </Grid2>
           ) : null}
           {chooseMode ? null : (
+            // Edit Button
             <Grid2>
               <IconButton
                 variant="outlined"
@@ -237,6 +280,7 @@ export default function LocationTypeSettingTabs() {
             </Grid2>
           )}
           {editMode ? null : (
+            // Choose Button
             <Grid2>
               <IconButton
                 variant="outlined"
@@ -251,6 +295,7 @@ export default function LocationTypeSettingTabs() {
             </Grid2>
           )}
           {isDefaultTab(i) || editMode || chooseMode ? null : (
+            // Delete Button
             <Grid2>
               <IconButton
                 variant="outlined"
@@ -265,7 +310,8 @@ export default function LocationTypeSettingTabs() {
             </Grid2>
           )}
         </Grid2>
-        <Grid2
+        {/* Tab Content */}
+        <Grid2 // Location Type Field
           container
           id="location-type-field"
           sx={{
@@ -297,7 +343,7 @@ export default function LocationTypeSettingTabs() {
           </Grid2>
         </Grid2>
         <Grid2
-          container
+          container // Filter Field
           id="Filter-field"
           sx={{
             color: "white",
@@ -328,7 +374,7 @@ export default function LocationTypeSettingTabs() {
             )}
           </Grid2>
         </Grid2>
-        <Grid2
+        <Grid2 // Color Field
           container
           id="color-field"
           sx={{
@@ -378,7 +424,7 @@ export default function LocationTypeSettingTabs() {
           </Grid2>
         </Grid2>
         <Grid2
-          container
+          container // Uncertainty Field
           id="Uncertainty-field"
           sx={{
             color: "white",

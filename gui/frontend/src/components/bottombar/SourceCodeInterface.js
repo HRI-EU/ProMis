@@ -15,6 +15,13 @@ import FileUploadIcon from "@mui/icons-material/FileUploadOutlined";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
+/*
+  SourceCodeInterface Component
+  - Display the source code editor using Petrel
+  - Allow importing source code from a .pl file
+  - Allow expanding/collapsing the editor view
+  - Allow syntax highlighting for Prolog code
+ */
 export default function SourceCodeInterface({ highlightSourceElement }) {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const hiddenFileInput = React.useRef(null);
@@ -89,6 +96,7 @@ export default function SourceCodeInterface({ highlightSourceElement }) {
           marginTop: "2px",
         }}
       >
+        {/* Import Source Button */}
         <Chip
           icon={<FileUploadIcon style={{ color: "#ffffff" }} />}
           onClick={toggleFile}
@@ -107,6 +115,7 @@ export default function SourceCodeInterface({ highlightSourceElement }) {
           ref={hiddenFileInput}
           style={{ display: "none" }} // Make the file input element invisible
         />
+        {/* Expand/Collapse Button */}
         <Chip
           icon={
             isExpanded ? (
@@ -126,6 +135,7 @@ export default function SourceCodeInterface({ highlightSourceElement }) {
           }}
         />
       </Grid>
+      {/* Source Code Editor */}
       <div
         id="editorWrapper"
         className={highlightSourceElement ? "errorSignal" : ""}

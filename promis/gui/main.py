@@ -15,6 +15,8 @@ import asyncio
 import os
 import re
 from uuid import uuid4
+import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from geojson_pydantic import Feature
 from numpy import eye
 from pydantic import ValidationError
+import uvicorn
 
 from promis import ProMis, StaRMap
 from promis.geo import (
@@ -47,7 +50,21 @@ resources_path_dev = os.path.join(os.path.dirname(__file__), "..", "..")
 
 manager = ConnectionManager()
 
-app = FastAPI()
+# Configure basic logging
+logger = logging.getLogger('uvicorn.info')
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    BOLD = '\033[1m'
+    RESET = '\033[0m'
+    
+    config = uvicorn.Config(app=app)
+
+    logger.info(f"Please go to: {BOLD}http://localhost:{config.port}/gui{RESET} on your favorite browser to access the gui")
+    logger.info(f"The endpoint docs for the backend is available at: {BOLD}http://localhost:{config.port}/docs{RESET}")
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     "http://localhost:3000",
@@ -68,6 +85,7 @@ if os.path.isdir(frontend_path):
     app.mount("/gui", StaticFiles(directory=frontend_path, html=True), name="static")
 else:
     app.mount("/gui", StaticFiles(directory=frontend_path_dev, html=True), name="static")
+
 
 def path_of_cache_or_config(filename:str):
     config_dir_path = os.path.join(program_storage_path, "config")
@@ -237,7 +255,7 @@ def create_hash_starmap(req: RunRequest, dynamic_layer: DynamicLayer, hash_val: 
 
     return create_hash(repr(req_dict))
 
-@app.post("/loadmapdata")
+@app.post("/loadmapdata", include_in_schema=False)
 def load_map_data(req: RunRequest):
     mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     width, height = req.dimensions
@@ -271,7 +289,7 @@ def load_map_data(req: RunRequest):
 
     return hash_val
 
-@app.post("/starmap/{hash_val}")
+@app.post("/starmap/{hash_val}", include_in_schema=False)
 def calculate_star_map(req: RunRequest, hash_val: int):
     origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
@@ -384,7 +402,7 @@ def calculate_star_map(req: RunRequest, hash_val: int):
 
     return star_map_hash_val
 
-@app.post("/inference/{hash_val}")
+@app.post("/inference/{hash_val}", include_in_schema=False)
 def inference(req: RunRequest, hash_val: int):
     # load the cache info
     #try:
@@ -418,13 +436,13 @@ def inference(req: RunRequest, hash_val: int):
     return  [[row["latitude"], row["longitude"], row["v0"]] for _, row in polar_pml.data.iterrows()]
 
 
-@app.post("/update_total_layer_config")
+@app.post("/update_total_layer_config", include_in_schema=False)
 def update_total_layer_config(layer_config: LayerConfig):
     path = path_of_cache_or_config("config.json")
     with open(path, 'w', encoding='utf-8') as f:
         f.write(layer_config.model_dump_json(indent=2))
 
-@app.post("/update_layer_config_entry")
+@app.post("/update_layer_config_entry", include_in_schema=False)
 def update_layer_config_entry(layer: Layer):
     layer_config = _get_config()
     already_existed = False
@@ -442,7 +460,7 @@ def update_layer_config_entry(layer: Layer):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(layer_config.model_dump_json(indent=2))
 
-@app.post("/delate_layer_config_entry/{layer_pos}")
+@app.post("/delate_layer_config_entry/{layer_pos}", include_in_schema=False)
 def delete_layer_config_entry(layer_pos: int):
     layer_config = _get_config()
     layer_config.remove(layer_pos)
@@ -450,13 +468,13 @@ def delete_layer_config_entry(layer_pos: int):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(layer_config.model_dump_json(indent=2))
 
-@app.post("/update_total_dynamic_layer")
+@app.post("/update_total_dynamic_layer", include_in_schema=False)
 def update_total_dynamic_layer(dynamic_layer: DynamicLayer):
     path = path_of_cache_or_config("dynamic_layer.json")
     with open(path, 'w', encoding='utf-8') as f:
         f.write(dynamic_layer.model_dump_json(indent=2))
 
-@app.post("/update_dynamic_layer_entry")
+@app.post("/update_dynamic_layer_entry", include_in_schema=False)
 def update_dynamic_layer_entry(entry: Marker | Line | Polygon):
     dynamic_layer = _get_dynamic_layer()
     dynamic_layer.update_or_add_entry(entry)
@@ -464,7 +482,7 @@ def update_dynamic_layer_entry(entry: Marker | Line | Polygon):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(dynamic_layer.model_dump_json(indent=2))
 
-@app.post("/delete_dynamic_layer_entry")
+@app.post("/delete_dynamic_layer_entry", include_in_schema=False)
 def delete_dynamic_layer_entry(entry: Marker | Line | Polygon):
     dynamic_layer = _get_dynamic_layer()
     dynamic_layer.delete_entry(entry)
@@ -472,13 +490,13 @@ def delete_dynamic_layer_entry(entry: Marker | Line | Polygon):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(dynamic_layer.model_dump_json(indent=2))
 
-@app.post("/update_total_location_type_table")
+@app.post("/update_total_location_type_table", include_in_schema=False)
 def update_total_location_type_table(location_type_table: LocationTypeTable):
     path = path_of_cache_or_config("location_type_table.json")
     with open(path, 'w', encoding='utf-8') as f:
         f.write(location_type_table.model_dump_json(indent=2))
 
-@app.post("/update_location_type_entry")
+@app.post("/update_location_type_entry", include_in_schema=False)
 def update_location_type_entry(location_type_entry: LocationTypeEntry):
     location_type_table = _get_location_type_table()
     already_existed = False
@@ -496,7 +514,7 @@ def update_location_type_entry(location_type_entry: LocationTypeEntry):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(location_type_table.model_dump_json(indent=2))
 
-@app.post('/delete_location_type_id/{id}')
+@app.post('/delete_location_type_id/{id}', include_in_schema=False)
 def delete_location_type_with_id(id: int):
     location_type_table = _get_location_type_table()
 
@@ -506,7 +524,7 @@ def delete_location_type_with_id(id: int):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(new_location_type_table.model_dump_json(indent=2))
 
-@app.get("/app_config")
+@app.get("/app_config", include_in_schema=False)
 def get_config() -> tuple[LayerConfig, DynamicLayer, LocationTypeTable]:
     config = _get_config()
     dynamic_layer = _get_dynamic_layer()
@@ -587,7 +605,15 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            await websocket.send_text("ping")
-            await asyncio.sleep(5)
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+@app.post("/delete_geo_entity/{id}")
+async def delete_geo_entity(id: int):
+    dynamic_layer = _get_dynamic_layer()
+    dynamic_layer.delete_entry_id(id)
+    path = path_of_cache_or_config("dynamic_layer.json")
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(dynamic_layer.model_dump_json(indent=2))
+    await manager.broadcast_delete_signal(id)

@@ -19,8 +19,10 @@ Here, you can either import ProMis code from disk using the `Import Source` butt
 You may further configure your run by selecting an origin, height, width (in meters) and a resolution of the mission landscape. 
 Afterwards, you can click the `Run` button and wait for the mission landscape to show on the map.
 
-The following shows an example of entering the simple model `landscape(X) :- distance(X, building) > 10; distance(X, primary_road) < 5.`:
+The following shows an example of entering the simple model `landscape(X) :- distance(X, building) > 10; distance(X, primary) < 5.`:
 
 .. image:: ../../images/gui/gui_example.png
+
+For a quick-start guide, visit :doc:`GUI Quick Start<gui_quick_start>`
 
 For more detailed information, consult the GUI's own `README <https://github.com/HRI-EU/ProMis/blob/main/gui/README.md>`_.

@@ -5,6 +5,11 @@ import "./CSVFileReader.css"; // Import the CSS file for styling
 import PropTypes from "prop-types";
 import { useRef } from "react";
 
+
+/*
+  This is a helper component to handle CSV File Reader on sidebar right.
+  @props: onFileLoaded(data: number[][], fileinfo)
+*/
 const CSVFileReader = ({ onFileLoaded }) => {
   const componentRef = useRef(null);
   const handleFileLoaded = (data, fileInfo) => {

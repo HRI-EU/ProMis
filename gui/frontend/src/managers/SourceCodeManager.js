@@ -66,13 +66,17 @@ landscape(X) :-
     permits(X), can_return(X).
 `;
 
+/**
+ * SourceCodeManager
+ * Manages the source code, location types, and related functionalities.
+ * Provides methods to set/get source code, manage location types,
+ * and interact with the backend for running source code.
+ */
 class SourceCodeManager {
   constructor() {
     this.success = true;
     this.closed = true;
-    this.origin = "";
     this.locationTypes = defaultLocationTypes;
-    this.interpolation = "linear";
     this.source = defaultSourceCode;
   }
 
@@ -84,6 +88,7 @@ class SourceCodeManager {
     return this.source;
   }
 
+  // get uncertainty value from location type
   getUncertaintyFromLocationType(locationType) {
     const matchedRow = this.locationTypes.find((row) => {
       return row.locationType === locationType;
@@ -95,6 +100,7 @@ class SourceCodeManager {
     }
   }
 
+  // get color value from location type
   getColorFromLocationType(locationType) {
     const matchedRow = this.locationTypes.find((row) => {
       return row.locationType === locationType;
@@ -105,10 +111,12 @@ class SourceCodeManager {
     return new Error("No Color found from this location type");
   }
 
+  // get list of location type names
   getListLocationType() {
     return this.locationTypes.map((entry) => entry.locationType);
   }
 
+  // get default location types rows
   getDefaultLocationTypesRows() {
     const defaultLocationType = defaultLocationTypes.map(
       (loc_type) => loc_type.locationType,
@@ -118,6 +126,7 @@ class SourceCodeManager {
     });
   }
 
+  // construct the request body for backend running API calls
   getRequestBody({
     origin,
     sourceCode,
@@ -158,6 +167,7 @@ class SourceCodeManager {
     return body;
   }
 
+  // common call to backend API for loading map data, star map setup and inference.
   async intermediateCalls(
     {
       origin,
@@ -235,27 +245,19 @@ class SourceCodeManager {
     }
   }
 
+  // close the alert box
   closeAlert() {
     this.closed = true;
     C().updateBottomBar();
   }
 
-  updateOrigin(origin) {
-    this.origin = origin;
-    C().updateBottomBar();
-  }
-
-  updateInterpolation(interpolation) {
-    this.interpolation = interpolation;
-    C().updateBottomBar();
-  }
-
+  // update complete list of location types
   updateLocationTypes(locationTypes) {
     this.locationTypes = locationTypes;
     updateConfigLocationTypes(locationTypes);
-    // TODOS: update polygons and polylines and marker appropriately
   }
 
+  // delete a location type by index
   deleteLocationTypeIndex(index) {
     deleteConfigLocationTypeEntry(this.locationTypes[index].id);
     C().mapMan.deleteLocationType(this.locationTypes[index].locationType);
@@ -263,6 +265,8 @@ class SourceCodeManager {
     this.locationTypes.splice(index, 1);
   }
 
+  // add a temporary location type entry
+  // used in the LocationTypeSetting component
   addTempLocationType() {
     this.locationTypes.push({
       id: randomId(),
@@ -273,12 +277,14 @@ class SourceCodeManager {
     });
   }
 
+  // remove location types with empty location type names
   cleanLocationType() {
     this.locationTypes = this.locationTypes.filter(
       (loc_type) => loc_type.locationType !== "",
     );
   }
 
+  // edit a location type entry
   editLocationType(locationType, index) {
     this.locationTypes[index].locationType = locationType.locationType;
     this.locationTypes[index].filter = locationType.filter;
