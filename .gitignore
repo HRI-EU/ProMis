@@ -11,6 +11,10 @@
 # Node.js package lock
 package-lock.json
 
+# GUI installation files in ProMis subpackage
+promis/gui/data
+promis/gui/frontend
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
