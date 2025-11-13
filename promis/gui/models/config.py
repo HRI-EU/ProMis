@@ -109,6 +109,18 @@ class DynamicLayer(BaseModel):
                 if entry in self.polygons:
                     self.polygons.remove(entry)
 
+    def delete_entry_id(self, id: int):
+        """Delete an entry with the corresponding id.
+
+        Args:
+            id: id of the layer
+        """
+        to_be_processed = self.markers + self.polylines + self.polygons
+        for entry in to_be_processed:
+            if int(entry.id) == id:
+                self.markers.remove(entry)
+                return
+
 
 class LocationTypeTable(RootModel):
     """A table model for managing LocationTypeEntry objects.

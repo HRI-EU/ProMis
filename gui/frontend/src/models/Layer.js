@@ -107,10 +107,10 @@ export default class Layer {
         row.forEach((header, index) => {
           if (header === "latitude") {
             latitudeIndex = index;
-          } else if (header === "longitude"){
+          } else if (header === "longitude") {
             longitudeIndex = index;
           }
-        })
+        });
         return;
       }
       if (
@@ -118,9 +118,12 @@ export default class Layer {
         Layer.validLongitude(parseFloat(row[longitudeIndex]))
       ) {
         markers.push({
-          position: [parseFloat(row[latitudeIndex]), parseFloat(row[longitudeIndex])],
+          position: [
+            parseFloat(row[latitudeIndex]),
+            parseFloat(row[longitudeIndex]),
+          ],
           probability: parseFloat(row[2]),
-          radius: radius
+          radius: radius,
         });
         //Find min max values of markers
         var val = parseFloat(row[2]);
@@ -217,7 +220,9 @@ export default class Layer {
     }
     // width counter
     // check to compare lat or long
-    const calcWidth = Math.abs(markers[1].position[0] - markers[0].position[0]) < Math.abs(markers[1].position[1] - markers[0].position[1]);
+    const calcWidth =
+      Math.abs(markers[1].position[0] - markers[0].position[0]) <
+      Math.abs(markers[1].position[1] - markers[0].position[1]);
     let width = 1;
     // compare each pair of markers
     // calculate the dLat and dLng
@@ -232,7 +237,9 @@ export default class Layer {
       if (cond) {
         width++;
       } else {
-        return calcWidth ? [width, Math.floor(len / width)] : [Math.floor(len / width), width];
+        return calcWidth
+          ? [width, Math.floor(len / width)]
+          : [Math.floor(len / width), width];
       }
     }
     return calcWidth ? [width, 1] : [1, width];

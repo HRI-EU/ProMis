@@ -1,29 +1,34 @@
 import { C } from "./Core.js";
-import { updateConfigLocationTypes, randomId, updateConfigLocationTypeEntry, deleteConfigLocationTypeEntry } from "../utils/Utility.js";
+import {
+  updateConfigLocationTypes,
+  randomId,
+  updateConfigLocationTypeEntry,
+  deleteConfigLocationTypeEntry,
+} from "../utils/Utility.js";
 import Color from "../models/Color.js";
 
 const defaultLocationTypes = [
   {
-    "id": 2075396262,
-    "locationType": "UNKNOWN",
-    "filter": "",
-    "color": "#0000FF",
-    "uncertainty": 10
+    id: 2075396262,
+    locationType: "UNKNOWN",
+    filter: "",
+    color: "#0000FF",
+    uncertainty: 10,
   },
   {
-    "id": 1328715238,
-    "locationType": "ORIGIN",
-    "filter": "",
-    "color": "#0000FF",
-    "uncertainty": 10
+    id: 1328715238,
+    locationType: "ORIGIN",
+    filter: "",
+    color: "#0000FF",
+    uncertainty: 10,
   },
   {
-    "id": 3525042322,
-    "locationType": "VERTIPORT",
-    "filter": "",
-    "color": "#0000FF",
-    "uncertainty": 10
-  }
+    id: 3525042322,
+    locationType: "VERTIPORT",
+    filter: "",
+    color: "#0000FF",
+    uncertainty: 10,
+  },
 ];
 
 const defaultSourceCode = `% UAV properties
@@ -61,13 +66,17 @@ landscape(X) :-
     permits(X), can_return(X).
 `;
 
+/**
+ * SourceCodeManager
+ * Manages the source code, location types, and related functionalities.
+ * Provides methods to set/get source code, manage location types,
+ * and interact with the backend for running source code.
+ */
 class SourceCodeManager {
   constructor() {
     this.success = true;
     this.closed = true;
-    this.origin = "";
     this.locationTypes = defaultLocationTypes;
-    this.interpolation = "linear";
     this.source = defaultSourceCode;
   }
 
@@ -79,21 +88,22 @@ class SourceCodeManager {
     return this.source;
   }
 
+  // get uncertainty value from location type
   getUncertaintyFromLocationType(locationType) {
-    const matchedRow =  this.locationTypes.find((row) => {
-      return row.locationType === locationType
+    const matchedRow = this.locationTypes.find((row) => {
+      return row.locationType === locationType;
     });
     if (matchedRow !== undefined) {
       return matchedRow.uncertainty;
-    }
-    else {
+    } else {
       return 0;
     }
   }
 
+  // get color value from location type
   getColorFromLocationType(locationType) {
-    const matchedRow =  this.locationTypes.find((row) => {
-      return row.locationType === locationType
+    const matchedRow = this.locationTypes.find((row) => {
+      return row.locationType === locationType;
     });
     if (matchedRow !== undefined) {
       return matchedRow.color;
@@ -101,18 +111,22 @@ class SourceCodeManager {
     return new Error("No Color found from this location type");
   }
 
+  // get list of location type names
   getListLocationType() {
     return this.locationTypes.map((entry) => entry.locationType);
   }
 
+  // get default location types rows
   getDefaultLocationTypesRows() {
-    const defaultLocationType = defaultLocationTypes.map((loc_type) => loc_type.locationType);
+    const defaultLocationType = defaultLocationTypes.map(
+      (loc_type) => loc_type.locationType,
+    );
     return this.locationTypes.filter((row) => {
       return defaultLocationType.includes(row.locationType);
-    })
+    });
   }
 
-
+  // construct the request body for backend running API calls
   getRequestBody({
     origin,
     sourceCode,
@@ -120,10 +134,12 @@ class SourceCodeManager {
     resolutions,
     supportResolutions,
     sampleSize,
-    interpolation
+    interpolation,
   }) {
     // sort the location types by location type
-    const sortedTypes = [...this.locationTypes].sort((a, b) => (a.locationType > b.locationType) ? 1 : -1);
+    const sortedTypes = [...this.locationTypes].sort((a, b) =>
+      a.locationType > b.locationType ? 1 : -1,
+    );
 
     // process location types to the form that the backend expects
     let locationTypes = {};
@@ -146,22 +162,27 @@ class SourceCodeManager {
       location_types: locationTypes,
       support_resolutions: supportResolutions,
       sample_size: sampleSize,
-      interpolation: interpolation
+      interpolation: interpolation,
     };
     return body;
   }
 
-  async intermediateCalls({
-    origin,
-    sourceCode,
-    dimensions,
-    resolutions,
-    supportResolutions,
-    sampleSize,
-    interpolation
-  }, endpoint, hashValue=-1) {
+  // common call to backend API for loading map data, star map setup and inference.
+  async intermediateCalls(
+    {
+      origin,
+      sourceCode,
+      dimensions,
+      resolutions,
+      supportResolutions,
+      sampleSize,
+      interpolation,
+    },
+    endpoint,
+    hashValue = -1,
+  ) {
     // close alert if open
-    if (!this.closed){
+    if (!this.closed) {
       this.closed = true;
     }
 
@@ -172,11 +193,14 @@ class SourceCodeManager {
       resolutions,
       supportResolutions,
       sampleSize,
-      interpolation
+      interpolation,
     };
     const body = this.getRequestBody(bodyParams);
     //Run the source code
-    const url = "http://localhost:8000/" + endpoint + (hashValue === -1 ? "" : "/" + hashValue);
+    const url =
+      "http://localhost:8000/" +
+      endpoint +
+      (hashValue === -1 ? "" : "/" + hashValue);
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -186,10 +210,17 @@ class SourceCodeManager {
         },
       });
       if (!response.ok) {
-        console.log(body)
+        console.log(body);
         const result = await response.json();
-        throw new Error("error during calling:" + response.url + "\nreport error: " + response.status + "\n"
-            + "result:" + "\n" + JSON.stringify(result)
+        throw new Error(
+          "error during calling:" +
+            response.url +
+            "\nreport error: " +
+            response.status +
+            "\n" +
+            "result:" +
+            "\n" +
+            JSON.stringify(result),
         );
       }
       if (endpoint !== "inference") {
@@ -199,15 +230,14 @@ class SourceCodeManager {
       if (endpoint === "inference") {
         const data = await response.json();
         let currentTime = new Date();
-        let localesTime = currentTime.toLocaleString('en-GB');
+        let localesTime = currentTime.toLocaleString("en-GB");
         C().layerMan.importLayerFromSourceCode(data, { name: localesTime });
         this.success = true;
         this.closed = false;
         C().toggleDrawerSidebarRight();
         C().updateBottomBar();
       }
-    }
-    catch (error) {
+    } catch (error) {
       this.success = false;
       this.closed = false;
       C().updateBottomBar();
@@ -215,27 +245,19 @@ class SourceCodeManager {
     }
   }
 
+  // close the alert box
   closeAlert() {
     this.closed = true;
     C().updateBottomBar();
   }
 
-  updateOrigin(origin) {
-    this.origin = origin;
-    C().updateBottomBar();
-  }
-  
-  updateInterpolation(interpolation) {
-    this.interpolation = interpolation;
-    C().updateBottomBar();
-  }
-
+  // update complete list of location types
   updateLocationTypes(locationTypes) {
     this.locationTypes = locationTypes;
     updateConfigLocationTypes(locationTypes);
-    // TODOS: update polygons and polylines and marker appropriately
   }
 
+  // delete a location type by index
   deleteLocationTypeIndex(index) {
     deleteConfigLocationTypeEntry(this.locationTypes[index].id);
     C().mapMan.deleteLocationType(this.locationTypes[index].locationType);
@@ -243,20 +265,26 @@ class SourceCodeManager {
     this.locationTypes.splice(index, 1);
   }
 
+  // add a temporary location type entry
+  // used in the LocationTypeSetting component
   addTempLocationType() {
     this.locationTypes.push({
       id: randomId(),
       locationType: "",
       filter: "",
       color: Color.randomHex(),
-      uncertainty: 10
-    })
+      uncertainty: 10,
+    });
   }
 
+  // remove location types with empty location type names
   cleanLocationType() {
-    this.locationTypes = this.locationTypes.filter((loc_type) => loc_type.locationType !== "")
+    this.locationTypes = this.locationTypes.filter(
+      (loc_type) => loc_type.locationType !== "",
+    );
   }
 
+  // edit a location type entry
   editLocationType(locationType, index) {
     this.locationTypes[index].locationType = locationType.locationType;
     this.locationTypes[index].filter = locationType.filter;

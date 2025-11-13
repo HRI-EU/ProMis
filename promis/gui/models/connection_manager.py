@@ -29,6 +29,12 @@ class ConnectionManager:
         except WebSocketDisconnect:
             self.active_connections.remove(websocket)
 
+    async def send_delete_signal(self, id: int, websocket: WebSocket):
+        try:
+            await websocket.send_text(str(id))
+        except WebSocketDisconnect:
+            self.active_connections.remove(websocket)
+
     async def broadcast_entity(self, entity: Marker | Line | Polygon):
         for connection in self.active_connections:
             await self.send_personal_entity(entity, connection)
@@ -36,3 +42,7 @@ class ConnectionManager:
     async def broadcast_loc_type(self, loc_type: LocationTypeEntry):
         for connection in self.active_connections:
             await self.send_personal_loc_type(loc_type, connection)
+
+    async def broadcast_delete_signal(self, id: int):
+        for connection in self.active_connections:
+            await self.send_delete_signal(id, connection)

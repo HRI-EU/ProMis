@@ -1,7 +1,12 @@
 import Layer from "../models/Layer.js";
 import { C } from "./Core.js";
 import { RenderMode } from "./MapManager.js";
-import { updateTotalConfig, updateLayerConfig, deleteLayerConfig, randomId } from "../utils/Utility.js";
+import {
+  updateTotalConfig,
+  updateLayerConfig,
+  deleteLayerConfig,
+  randomId,
+} from "../utils/Utility.js";
 
 class LayerManager {
   constructor() {
@@ -54,11 +59,18 @@ class LayerManager {
 
   importLayerFromSourceCode(data, fileInfo) {
     const uniqueId = randomId();
-    const layer = Layer.parseLayer(uniqueId, data, 180.0, fileInfo.name, 5, true);
+    const layer = Layer.parseLayer(
+      uniqueId,
+      data,
+      180.0,
+      fileInfo.name,
+      5,
+      true,
+    );
     this.layers.splice(0, 0, layer);
     this.hideAllLayers = false;
     C().updateSidebarRight();
-    const otherLayers = []
+    const otherLayers = [];
     C().mapMan.renderLayer(layer, otherLayers);
     updateTotalConfig(this.layers);
   }
@@ -98,7 +110,10 @@ class LayerManager {
     if (visible) {
       this.hideAllLayers = false;
     }
-    if (!visible && this.layers.every((layer) => (layer.id === layerId) || !layer.visible)) {
+    if (
+      !visible &&
+      this.layers.every((layer) => layer.id === layerId || !layer.visible)
+    ) {
       this.hideAllLayers = true;
     }
     var pos = LayerManager.findLayerPos(this.layers, layerId);
@@ -137,20 +152,19 @@ class LayerManager {
   changeLayerColor(layer, hue) {
     layer.hue = hue;
     C().updateSidebarRight();
-    if (layer.visible){
+    if (layer.visible) {
       C().mapMan.updateLayerColor(layer);
     }
   }
 
   //Change layer opacity
-  changeLayerOpacity(layer, opacity, commited=true) {
+  changeLayerOpacity(layer, opacity, commited = true) {
     layer.opacity = opacity;
     C().updateSidebarRight();
-    if (layer.visible){
+    if (layer.visible) {
       C().mapMan.updateLayerColor(layer);
     }
-    if (commited) 
-      updateLayerConfig(layer);
+    if (commited) updateLayerConfig(layer);
   }
 
   //Change layer render mode
@@ -298,7 +312,7 @@ class LayerManager {
     return layers.findIndex((layer) => layer.id === layerId);
   }
 
-  static layersCutFromPos(layers, pos){
+  static layersCutFromPos(layers, pos) {
     return layers.slice(0, pos);
   }
 }

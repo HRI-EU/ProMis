@@ -21,12 +21,20 @@ import BottomBar from "./bottombar/BottomBar.js";
 import DynamicLayerInteractive from "./DynamicLayerInteractive.js";
 
 //import WeatherInfoBox from "./WeatherInfoBox.js";
-
+/*
+  Main Components for the app:
+    - Initialize other Components (SidebarRight/-Left, BottomBar, DynamicLayerInteractive)
+    - Main responsibility:
+      - Setup other component
+      - Setup Leaflet map instance
+      - Setup Core instance (./managers/Core.js)
+      - Establish websocket connection with backend to fetch updates
+      - Fetch saved layer, location type table and geo-entity
+ */
 function MapComponent() {
   var map = null;
 
   const defaultCenter = [49.877, 8.653];
-
 
   /*
     represent a dynamic layer entity info
@@ -51,14 +59,18 @@ function MapComponent() {
     uncertainty: 10,
     toggle: false,
     hidden: true,
-    disabled: false
+    disabled: false,
   });
 
   let didInit = false;
 
+  /*
+    Setup leaflet map instance, core/managers instance, 
+    fetch saved configuration (layers, geo-entity and location type list),
+    setup websocket
+   */
   useEffect(() => {
-    if (didInit)
-      return;
+    if (didInit) return;
 
     map = L.map("map", {
       preferCanvas: true,
@@ -67,10 +79,10 @@ function MapComponent() {
       zoomSnap: 0.2,
       maxZoom: 20,
     });
-    
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxNativeZoom: 19,
       maxZoom: 20,
     }).addTo(map);
@@ -89,34 +101,25 @@ function MapComponent() {
     }
 
     didInit = true;
-  }, []); // Empty dependency array ensures the effect runs once after the initial render
-
+  }, []); 
 
   // This function is called by the MapManager to trigger a state change of info box
   // Ensure toggle is toggled (when type = 0), type is set when we want to change display entity without forcing info box to appear
-  // and hidden is set to false (to ensure info box alway appear especially when close info box and choosing the same entity)
-  function changeState(entity, type=0) {
-    if (type!==0) {
+  // and hidden is set to false (to ensure info box alway appear but its main functionality is to ensure infobox stays hidden upon app first render)
+  function changeState(entity, type = 0) {
+    if (type !== 0) {
       setInfoBoxState((prevEntity) => {
-        return {...entity, 
-          toggle: prevEntity.toggle,
-          hidden: false
-        }
+        return { ...entity, toggle: prevEntity.toggle, hidden: false };
       });
     } else {
       setInfoBoxState((prevEntity) => {
-        return {...entity, 
-          toggle: !prevEntity.toggle,
-          hidden: false
-        }
+        return { ...entity, toggle: !prevEntity.toggle, hidden: false };
       });
     }
   }
 
-
   //This function is called within a MapContainer. It will pass the map reference to the MapManager
   function MapHook() {
-
     C().mapMan.setMap(map);
     // Load the configuration data from the backend
     getConfig().then((configs) => {
@@ -135,19 +138,23 @@ function MapComponent() {
               // check if the property name is in snake_case
               if (prop.includes("_")) {
                 // change the property name to camelCase
-                const newProp = prop.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+                const newProp = prop.replace(/_([a-z])/g, (g) =>
+                  g[1].toUpperCase(),
+                );
                 layer[newProp] = layer[prop];
                 delete layer[prop];
               }
             }
           }
         }
-        
 
         C().layerMan.importAllLayers(layer_config);
       }
       if (location_type_table !== null) {
-        if (location_type_table === undefined || location_type_table.length === 0) {
+        if (
+          location_type_table === undefined ||
+          location_type_table.length === 0
+        ) {
           return null;
         }
         // iterate over locationTypes and change location_type field to locationType
@@ -160,7 +167,9 @@ function MapComponent() {
 
         C().sourceMan.locationTypes = location_type_table;
         C().autoComplete.flush();
-        C().autoComplete.push_list(location_type_table.map((loc_type) => loc_type.locationType));
+        C().autoComplete.push_list(
+          location_type_table.map((loc_type) => loc_type.locationType),
+        );
       }
       if (dynamic_layer !== null) {
         const markers = dynamic_layer.markers;
@@ -171,31 +180,42 @@ function MapComponent() {
         C().mapMan.importPolygons(polygons);
       }
     });
-    
+
     return null;
   }
 
   function webSocketConnect() {
-    const websocket = establishWebsocket()
+    const websocket = establishWebsocket();
     websocket.addEventListener("message", (e) => {
       if (e.data == "ping") {
         return;
       }
-      const flterMessage = JSON.parse(e.data);
-      const message = JSON.parse(flterMessage);
-      if (message.filter !== undefined) {
-        // handle location type tab
-        const location_type_entry = message
-        // iterate over locationTypes and change location_type field to locationType
-        location_type_entry.locationType = location_type_entry.location_type;
-        delete location_type_entry.location_type;
-        C().sourceMan.locationTypes.push(location_type_entry)
+      try {
+        // try to parse the message
+        const filterMessage = JSON.parse(e.data);
+        const message = JSON.parse(filterMessage);
+        // if the message is not an object, it means the message is an id of to be deleted entity
+        if (typeof message !== "object") {
+          C().mapMan.delete_external_entity(e.data);
+          return;
+        }
+        // check if the message has filter field then it is a location type update
+        if (message.filter !== undefined) {
+          // handle location type tab
+          const location_type_entry = message;
+          // iterate over locationTypes and change location_type field to locationType
+          location_type_entry.locationType = location_type_entry.location_type;
+          delete location_type_entry.location_type;
+          C().sourceMan.locationTypes.push(location_type_entry);
+        } else {
+          // handle entity change
+          C().mapMan.importExternalEntity(message);
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error);
+        return;
       }
-      else {
-        // handle entity change
-        C().mapMan.importExternalEntity(message);
-      }
-    })
+    });
   }
 
   return (
@@ -208,19 +228,12 @@ function MapComponent() {
 
       <BottomBar />
 
-      <div
-        id="map"
-        style={{ height: "100vh", width: "100%" }}
-      >
-      </div>
+      <div id="map" style={{ height: "100vh", width: "100%" }}></div>
 
       <SidebarRight />
       {/* <WeatherInfoBox /> */}
-      
-      <DynamicLayerInteractive 
-        {...infoBoxState}
-      />
 
+      <DynamicLayerInteractive {...infoBoxState} />
     </Container>
   );
 }
