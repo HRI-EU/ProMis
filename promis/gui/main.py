@@ -276,7 +276,7 @@ def load_map_data(req: RunRequest):
         with open(path, 'rb'):
             uam = PolarMap.load(path)
             has_cache = True
-            print("found cache map data in loadmapdata")
+            print(f"Found cached map data in file with id uam_{hash_val}")
     except FileNotFoundError:
         dir_path = os.path.join(program_storage_path, "cache")
         os.makedirs(dir_path, exist_ok=True)
@@ -315,88 +315,91 @@ def calculate_star_map(req: RunRequest, hash_val: int):
 
     star_map_hash_val = create_hash_starmap(req, dynamic_layer, hash_val)
 
-    # load the cache info
-    #try:
-    #    with open(f"./cache/starmap_{star_map_hash_val}.pickle", 'rb') as f:
-    #        print("found cache star map in starmap")
-    #except FileNotFoundError:
-    # create polar map
+    path = path_of_cache_or_config(f"starmap_{star_map_hash_val}.pickle")
 
-    # apply uncertainty to all osm fetched map feature
-    loc_type_table = _get_location_type_table()
-    loc_to_uncertainty = dict()
-    for entry in loc_type_table:
-        if entry.std_dev != 0:
-            loc_to_uncertainty[entry.location_type] = (entry.std_dev**2) * eye(2)
+    try:
+        # try to load the cached StaRMap info
+        with open(path, 'rb') as f:
+            print(f"Found cached StaR Map in file with id starmap_{star_map_hash_val}")
+            star_map = StaRMap.load(path)
 
-    carte_map = polar_map.to_cartesian()
-    carte_map.apply_covariance(loc_to_uncertainty)
+    except FileNotFoundError:
+        # create polar map
+        # apply uncertainty to all osm fetched map feature
+        loc_type_table = _get_location_type_table()
+        loc_to_uncertainty = dict()
+        for entry in loc_type_table:
+            if entry.std_dev != 0:
+                loc_to_uncertainty[entry.location_type] = (entry.std_dev**2) * eye(2)
 
-    polar_map = carte_map.to_polar()
+        carte_map = polar_map.to_cartesian()
+        carte_map.apply_covariance(loc_to_uncertainty)
 
-    # create all markers, lines and polygons to uam
-    for marker in markers:
-        if marker.location_type == "":
-            continue
+        polar_map = carte_map.to_polar()
 
-        polar_marker = PolarLocation(marker.latlng[1],
-                                        marker.latlng[0],
-                                        location_type=marker.location_type)
-        if marker.std_dev != 0:
-            cartesian_marker = polar_marker.to_cartesian(origin)
-            cartesian_marker.covariance = (marker.std_dev**2) * eye(2)
-            polar_marker = cartesian_marker.to_polar(origin)
+        # create all markers, lines and polygons to uam
+        for marker in markers:
+            if marker.location_type == "":
+                continue
 
-        polar_map.features.append(polar_marker)
+            polar_marker = PolarLocation(marker.latlng[1],
+                                            marker.latlng[0],
+                                            location_type=marker.location_type)
+            if marker.std_dev != 0:
+                cartesian_marker = polar_marker.to_cartesian(origin)
+                cartesian_marker.covariance = (marker.std_dev**2) * eye(2)
+                polar_marker = cartesian_marker.to_polar(origin)
 
-    for polyline in polylines:
-        if polyline.location_type == "":
-            continue
-        locations = []
-        for location in polyline.latlngs:
-            locations.append(PolarLocation(location[1], location[0]))
+            polar_map.features.append(polar_marker)
 
-        polyline_feature = PolarPolyLine(locations, location_type=polyline.location_type)
+        for polyline in polylines:
+            if polyline.location_type == "":
+                continue
+            locations = []
+            for location in polyline.latlngs:
+                locations.append(PolarLocation(location[1], location[0]))
 
-        if polyline.std_dev != 0:
-            cartesian_polyline = polyline_feature.to_cartesian(origin)
-            cartesian_polyline.covariance = (polyline.std_dev**2) * eye(2)
-            polyline_feature = cartesian_polyline.to_polar(origin)
+            polyline_feature = PolarPolyLine(locations, location_type=polyline.location_type)
 
-        polar_map.features.append(polyline_feature)
+            if polyline.std_dev != 0:
+                cartesian_polyline = polyline_feature.to_cartesian(origin)
+                cartesian_polyline.covariance = (polyline.std_dev**2) * eye(2)
+                polyline_feature = cartesian_polyline.to_polar(origin)
 
-    for polygon in polygons:
-        if polygon.location_type == "":
-            continue
-        locations = []
-        for location in polygon.latlngs:
-            locations.append(PolarLocation(location[1], location[0]))
+            polar_map.features.append(polyline_feature)
 
-        polygon_feature = PolarPolygon(locations, location_type=polygon.location_type)
+        for polygon in polygons:
+            if polygon.location_type == "":
+                continue
+            locations = []
+            for location in polygon.latlngs:
+                locations.append(PolarLocation(location[1], location[0]))
 
-        if polygon.std_dev != 0:
-            cartesian_polygon = polygon_feature.to_cartesian(origin)
-            cartesian_polygon.covariance = (polygon.std_dev**2) * eye(2)
-            polygon_feature = cartesian_polygon.to_polar(origin)
+            polygon_feature = PolarPolygon(locations, location_type=polygon.location_type)
 
-        polar_map.features.append(polygon_feature)
+            if polygon.std_dev != 0:
+                cartesian_polygon = polygon_feature.to_cartesian(origin)
+                cartesian_polygon.covariance = (polygon.std_dev**2) * eye(2)
+                polygon_feature = cartesian_polygon.to_polar(origin)
+
+            polar_map.features.append(polygon_feature)
 
 
-    uam = polar_map.to_cartesian()
+        uam = polar_map.to_cartesian()
 
-    # Setting up the probabilistic spatial relations from the UAM
-    star_map = StaRMap(uam)
+        # Setting up the probabilistic spatial relations from the UAM
+        star_map = StaRMap(uam)
 
-    # Initializing the StaR Map on a raster of points evenly spaced out across the mission area,
-    # sampling 25 random variants of the UAM for estimating the spatial relation parameters
-    support_resolutions = req.support_resolutions
-    evaluation_points = CartesianRasterBand(origin, support_resolutions, width, height)
+        # Initializing the StaR Map on a raster of points evenly spaced out across the mission area,
+        # sampling 25 random variants of the UAM for estimating the spatial relation parameters
+        support_resolutions = req.support_resolutions
+        evaluation_points = CartesianRasterBand(origin, support_resolutions, width, height)
 
-    star_map.initialize(evaluation_points, sample_size, logic)
+        star_map.initialize(evaluation_points, sample_size, logic)
 
-    # origin, width, height, num_iteration, num_improvement
+        # origin, width, height, num_iteration, num_improvement
 
-    #star_map.save(f"./cache/starmap_{star_map_hash_val}.pickle")
+        star_map.save(path)
 
     app.star_map = star_map
 
@@ -408,7 +411,7 @@ def inference(req: RunRequest, hash_val: int):
     #try:
     #    with open(f"./cache/starmap_{hashVal}.pickle", 'rb') as f:
     #        star_map = StaRMap.load(f"./cache/starmap_{hashVal}.pickle")
-    #        print("found cache star map in inference")
+    #        print(f"Found cached StaR Map in file with id starmap_{star_map_hash_val} in inference step")
     #except FileNotFoundError:
     #    raise HTTPException(status_code=404, detail="No star map found on this request.")
 
