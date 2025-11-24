@@ -402,8 +402,8 @@ def calculate_star_map(req: RunRequest, hash_val: int):
 
     return star_map_hash_val
 
-@app.post("/inference/{hash_val}", include_in_schema=False)
-def inference(req: RunRequest, hash_val: int):
+@app.post("/inference/{hash_val}")
+def inference(req: RunRequest, hash_val: int, cache_latest_pml=True):
     # load the cache info
     #try:
     #    with open(f"./cache/starmap_{hashVal}.pickle", 'rb') as f:
@@ -431,6 +431,10 @@ def inference(req: RunRequest, hash_val: int):
     promis.solve(landscape, logic=program, n_jobs=4, batch_size=1)
 
     landscape = landscape.into(CartesianRasterBand(origin, target_resolutions, width, height), interpolation)
+
+    if cache_latest_pml:
+        path = path_of_cache_or_config("pml_latest.pickle")
+        landscape.save(path)
 
     polar_pml = landscape.to_polar()
     return  [[row["latitude"], row["longitude"], row["v0"]] for _, row in polar_pml.data.iterrows()]
