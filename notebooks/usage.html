@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Usage &mdash; ProMis 2.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
 
@@ -51,7 +51,8 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Installing-Dependencies">Installing Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Imports">Imports</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Uncertainty-Annotated-Maps">Uncertainty Annotated Maps</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Statistical-Relational-Maps">Statistical Relational Maps</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#Probabilistic-Mission-Design">Probabilistic Mission Design</a></li>
@@ -87,14 +88,40 @@
              
   <section id="Usage">
 <h1>Usage<a class="headerlink" href="#Usage" title="Link to this heading"></a></h1>
-<section id="Dependencies">
-<h2>Dependencies<a class="headerlink" href="#Dependencies" title="Link to this heading"></a></h2>
-<p>We start by importing some of ProMis’ core packages and third party dependencies.</p>
+<section id="Installing-Dependencies">
+<h2>Installing Dependencies<a class="headerlink" href="#Installing-Dependencies" title="Link to this heading"></a></h2>
+<p>If we are in Colab, we start by installing some dependencies. If not, please follow <a class="reference external" href="https://hri-eu.github.io/ProMis/installation.html">the installation instructions</a>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Probabilistic Mission Design and Statistical Relational Maps</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">is_running_in_colab</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">google.colab</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<span class="k">if</span> <span class="n">is_running_in_colab</span><span class="p">():</span>
+  <span class="o">!</span>sudo<span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span>-qq
+  <span class="o">!</span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-yqq<span class="w"> </span>python3-gdal<span class="w"> </span>libgdal-dev
+  <span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>-q<span class="w"> </span>promis
+  <span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>-q<span class="w"> </span>git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
+<br/></pre></div>
+</div>
+</div>
+</section>
+<section id="Imports">
+<h2>Imports<a class="headerlink" href="#Imports" title="Link to this heading"></a></h2>
+<p>Next, we import some of ProMis’ core packages and third party dependencies.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="c1"># Probabilistic Mission Design and Statistical Relational Maps</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProMis</span><span class="p">,</span> <span class="n">StaRMap</span>
 <span class="c1"># Geographic data handling</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianRasterBand</span><span class="p">,</span> <span class="n">CartesianCollection</span>
@@ -105,6 +132,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">eye</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">os.path</span><span class="w"> </span><span class="kn">import</span> <span class="n">exists</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The directory will later hold various files, like the StaRMap</span>
+<span class="n">Path</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -309,7 +345,7 @@
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_usage_16_0.png" src="../_images/notebooks_usage_16_0.png" />
+<img alt="../_images/notebooks_usage_19_0.png" src="../_images/notebooks_usage_19_0.png" />
 </div>
 </div>
 <p>While this already allows us some reasoning with ProMis on what the agent may or may not be allowed to do, we should improve the spatial resolution of our relations before continuing. We can do so by applying StaR Maps adaptive sampling functionality, which will sample each relation based on an acquisition function. Currently, local entropy and Gaussian Process uncertainty together with a distance based score are provided.</p>
@@ -350,7 +386,7 @@
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_usage_18_0.png" src="../_images/notebooks_usage_18_0.png" />
+<img alt="../_images/notebooks_usage_21_0.png" src="../_images/notebooks_usage_21_0.png" />
 </div>
 </div>
 </section>
@@ -421,7 +457,7 @@
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_usage_22_0.png" src="../_images/notebooks_usage_22_0.png" />
+<img alt="../_images/notebooks_usage_25_0.png" src="../_images/notebooks_usage_25_0.png" />
 </div>
 </div>
 </section>
