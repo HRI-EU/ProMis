@@ -25,7 +25,7 @@ For instance, the following shows ProMis being applied in a diverse set of scena
 
 To install ProMis, please follow the instructions [here](https://hri-eu.github.io/ProMis/installation.html).
 For an in-depth walkthrough on applying ProMis in your own applications, you can check our [usage guide](https://hri-eu.github.io/ProMis/notebooks/usage.html).
-An [interactive version](https://github.com/HRI-EU/ProMis/blob/main/examples/usage.ipynb) of the usage guide is also available in this repository. 
+An [interactive version](https://colab.research.google.com/github/HRI-EU/ProMis/blob/main/examples/usage.ipynb) of the usage guide is also available. 
 
 # Cite
 
