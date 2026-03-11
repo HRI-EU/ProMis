@@ -693,6 +693,12 @@ class HybridInterpolator:
 
     def __call__(self, coordinates: NDArray) -> NDArray:
         result = self.linear(coordinates)
-        nan_values = isnan(result).reshape(len(result))
-        result[nan_values] = self.nearest(coordinates[nan_values])
+        nan_values = isnan(result)
+        if result.ndim > 1:
+            nan_values = nan_values.any(axis=1)
+
+        # For points with NaN values (outside convex hull), fall back to nearest neighbor
+        if nan_values.any():
+            result[nan_values] = self.nearest(coordinates[nan_values])
+
         return result
