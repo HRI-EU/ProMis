@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.geo.collection &mdash; ProMis 2.0.0 documentation</title>
+  <title>promis.geo.collection &mdash; ProMis 2.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../../_static/documentation_options.js?v=20623aea"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -847,8 +847,14 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
-        <span class="n">nan_values</span> <span class="o">=</span> <span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
-        <span class="n">result</span><span class="p">[</span><span class="n">nan_values</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">nan_values</span><span class="p">])</span>
+        <span class="n">nan_values</span> <span class="o">=</span> <span class="n">isnan</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">nan_values</span> <span class="o">=</span> <span class="n">nan_values</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># For points with NaN values (outside convex hull), fall back to nearest neighbor</span>
+        <span class="k">if</span> <span class="n">nan_values</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">nan_values</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">nan_values</span><span class="p">])</span>
+
         <span class="k">return</span> <span class="n">result</span>
 </pre></div>
 
