@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API &mdash; ProMis 2.1.0 documentation</title>
+  <title>API &mdash; ProMis 3.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=20623aea"></script>
+      <script src="_static/documentation_options.js?v=acc74ff5"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -91,6 +91,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.geo.CartesianMap"><code class="docutils literal notranslate"><span class="pre">CartesianMap</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#promis.geo.CartesianMap.send_to_gui"><code class="docutils literal notranslate"><span class="pre">CartesianMap.send_to_gui()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#promis.geo.CartesianMap.to_polar"><code class="docutils literal notranslate"><span class="pre">CartesianMap.to_polar()</span></code></a></li>
 </ul>
 </li>
@@ -696,19 +697,20 @@ east and north coordinates respectively</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.geo.CartesianLocation.send_to_gui">
-<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'http://localhost:8000/add_geojson'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/location.html#CartesianLocation.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianLocation.send_to_gui" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/location.html#CartesianLocation.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianLocation.send_to_gui" title="Link to this definition"></a></dt>
 <dd><p>Send an HTTP POST-request to the GUI backend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>url</strong> – url of the backend</p></li>
+<li><p><strong>ip</strong> – the IP address of the backend</p></li>
+<li><p><strong>port</strong> – the port of the backend</p></li>
 <li><p><strong>timeout</strong> – request timeout in second</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0.dev1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0.dev1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
@@ -744,6 +746,11 @@ east and north coordinates respectively</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.geo.CartesianMap.send_to_gui">
+<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/map.html#CartesianMap.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianMap.send_to_gui" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.geo.CartesianMap.to_polar">
 <span class="sig-name descname"><span class="pre">to_polar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.PolarMap" title="promis.geo.map.PolarMap"><span class="pre">PolarMap</span></a></span></span><a class="reference internal" href="_modules/promis/geo/map.html#CartesianMap.to_polar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianMap.to_polar" title="Link to this definition"></a></dt>
@@ -810,19 +817,20 @@ is represented by a pair of <code class="docutils literal notranslate"><span cla
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.geo.CartesianPolyLine.send_to_gui">
-<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'http://localhost:8000/add_geojson'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/polyline.html#CartesianPolyLine.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolyLine.send_to_gui" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/polyline.html#CartesianPolyLine.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolyLine.send_to_gui" title="Link to this definition"></a></dt>
 <dd><p>Send an HTTP POST-request to the GUI backend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>url</strong> – url of the backend</p></li>
+<li><p><strong>ip</strong> – the IP address of the backend</p></li>
+<li><p><strong>port</strong> – the port of the backend</p></li>
 <li><p><strong>timeout</strong> – request timeout in second</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0.dev1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0.dev1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
@@ -934,7 +942,7 @@ into a polar one</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.geo.CartesianPolygon.make_centered_box">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">make_centered_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianLocation" title="promis.geo.location.CartesianLocation"><span class="pre">CartesianLocation</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CartesianLocation(east=0.0,</span> <span class="pre">north=0.0,</span> <span class="pre">identifier=4118029059320471852)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.CartesianPolygon" title="promis.geo.polygon.CartesianPolygon"><span class="pre">CartesianPolygon</span></a></span></span><a class="reference internal" href="_modules/promis/geo/polygon.html#CartesianPolygon.make_centered_box"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolygon.make_centered_box" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">make_centered_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianLocation" title="promis.geo.location.CartesianLocation"><span class="pre">CartesianLocation</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CartesianLocation(east=0.0,</span> <span class="pre">north=0.0,</span> <span class="pre">identifier=4273627609548628596)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.CartesianPolygon" title="promis.geo.polygon.CartesianPolygon"><span class="pre">CartesianPolygon</span></a></span></span><a class="reference internal" href="_modules/promis/geo/polygon.html#CartesianPolygon.make_centered_box"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolygon.make_centered_box" title="Link to this definition"></a></dt>
 <dd><p>Generates a box centered around a given offset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -966,19 +974,20 @@ into a polar one</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.geo.CartesianPolygon.send_to_gui">
-<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'http://localhost:8000/add_geojson'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/polygon.html#CartesianPolygon.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolygon.send_to_gui" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/polygon.html#CartesianPolygon.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolygon.send_to_gui" title="Link to this definition"></a></dt>
 <dd><p>Send an HTTP POST-request to the GUI backend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>url</strong> – url of the backend</p></li>
+<li><p><strong>ip</strong> – the IP address of the backend</p></li>
+<li><p><strong>port</strong> – the port of the backend</p></li>
 <li><p><strong>timeout</strong> – request timeout in second</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0.dev1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0.dev1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
@@ -1314,19 +1323,20 @@ Supported methods are “entropy” and “gaussian_process”.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.geo.Geospatial.send_to_gui">
-<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'http://localhost:8000/add_geojson'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/geospatial.html#Geospatial.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.Geospatial.send_to_gui" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/geospatial.html#Geospatial.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.Geospatial.send_to_gui" title="Link to this definition"></a></dt>
 <dd><p>Send an HTTP POST-request to the GUI backend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>url</strong> – url of the backend</p></li>
+<li><p><strong>ip</strong> – the IP address of the backend</p></li>
+<li><p><strong>port</strong> – the port of the backend</p></li>
 <li><p><strong>timeout</strong> – request timeout in second</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0.dev1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0.dev1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
@@ -1714,19 +1724,20 @@ creation is relatively time consuming.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.geo.PolarMap.send_to_gui">
-<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'http://localhost:8000/add_geojson_map'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/map.html#PolarMap.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.PolarMap.send_to_gui" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">send_to_gui</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'localhost'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/geo/map.html#PolarMap.send_to_gui"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.PolarMap.send_to_gui" title="Link to this definition"></a></dt>
 <dd><p>Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>url</strong> – url of the backend</p></li>
+<li><p><strong>ip</strong> – the IP address of the backend</p></li>
+<li><p><strong>port</strong> – the port of the backend</p></li>
 <li><p><strong>timeout</strong> – request timeout in second</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0.dev1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0.dev1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
