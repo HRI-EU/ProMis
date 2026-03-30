@@ -219,26 +219,30 @@ class PolarMap(Map):
 
         return CartesianMap(self.origin, cartesian_features)
 
-    def send_to_gui(self, url: str = "http://localhost:8000/add_geojson_map", timeout: int = 10):
+    def send_to_gui(self, ip: str = "localhost", port: int = 8000, timeout: float = 10.0):
         """Send an HTTP POST-request to the GUI backend to add all feature in the map to gui.
 
         Args:
-            url: url of the backend
+            ip: the IP address of the backend
+            port: the port of the backend
             timeout: request timeout in second
 
         Raise:
             :class:`~requests.HTTPError`: When the HTTP request returned an unsuccessful status code
             :class:`~requests.ConnectionError`: If the request fails due to connection issues
         """
+
         if self.features is None:
             return
+        
         data = "["
         for feature in self.features:
             data += feature.to_geo_json()
             data += ","
         data = data[:-1]
         data += "]"
-        r = post(url=url, data=data, timeout=timeout)
+        
+        r = post(url=f"http://{ip}:{port}/add_geojson_map", data=data, timeout=timeout)
         r.raise_for_status()
 
 
@@ -269,3 +273,6 @@ class CartesianMap(Map):
         polar_features = [feature.to_polar(self.origin) for feature in self.features]
 
         return PolarMap(self.origin, polar_features)
+
+    def send_to_gui(self, ip: str, port: int, timeout: float):
+        raise NotImplementedError("Cartesian Map does not have geospatial feature to send to gui!")

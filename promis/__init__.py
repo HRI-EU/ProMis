@@ -14,7 +14,7 @@ from promis.promis import ProMis
 from promis.star_map import StaRMap
 
 __all__ = ["ProMis", "StaRMap", "ConstitutionalController", "DoubtDensity"]
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 __author__ = "Simon Kohaut"
 
 

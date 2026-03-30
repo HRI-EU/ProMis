@@ -54,9 +54,18 @@ export function randomId() {
   return array[0];
 }
 
+export function backendUrl(path) {
+  return `${window.location.protocol}//${window.location.host}${path}`;
+}
+
+function wsUrl(path) {
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${wsProtocol}//${window.location.host}${path}`;
+}
+
 // function to get configuration json data from backend
 export async function getConfig() {
-  const url = "http://localhost:8000/app_config";
+  const url = backendUrl("/app_config");
   // fetch configuration data from backend, convert to json, handle errors
   let config = null;
   try {
@@ -121,7 +130,7 @@ function layerToBody(layer) {
 
 // function to update the configuration data on the backend
 export async function updateLayerConfig(layer) {
-  const url = "http://localhost:8000/update_layer_config_entry";
+  const url = backendUrl("/update_layer_config_entry");
 
   // prepare layer for serialization
   const markerLayer = layer.markerLayer;
@@ -155,7 +164,7 @@ export async function updateLayerConfig(layer) {
 
 // function to delete the configuration data on the backend
 export async function deleteLayerConfig(layerPos) {
-  const url = "http://localhost:8000/delate_layer_config_entry";
+  const url = backendUrl("/delate_layer_config_entry");
 
   // add layer position as path parameter
   const urlWithPos = url + "/" + layerPos;
@@ -179,7 +188,7 @@ export async function deleteLayerConfig(layerPos) {
 
 // function to update the configuration data on the backend
 export async function updateTotalConfig(layers) {
-  const url = "http://localhost:8000/update_total_layer_config";
+  const url = backendUrl("/update_total_layer_config");
 
   // prepare layers for serialization
   const markerLayers = layers.map((layer) => layer.markerLayer);
@@ -218,7 +227,7 @@ export async function updateTotalConfig(layers) {
 }
 
 export async function updateDynamicLayerEntry(entry) {
-  const url = "http://localhost:8000/update_dynamic_layer_entry";
+  const url = backendUrl("/update_dynamic_layer_entry");
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -237,7 +246,7 @@ export async function updateDynamicLayerEntry(entry) {
 }
 
 export async function deleteDynamicLayerEntry(entry) {
-  const url = "http://localhost:8000/delete_dynamic_layer_entry";
+  const url = backendUrl("/delete_dynamic_layer_entry");
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -256,7 +265,7 @@ export async function deleteDynamicLayerEntry(entry) {
 }
 
 export async function updateConfigDynamicLayers(markers, polylines, polygons) {
-  const url = "http://localhost:8000/update_total_dynamic_layer";
+  const url = backendUrl("/update_total_dynamic_layer");
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -275,7 +284,7 @@ export async function updateConfigDynamicLayers(markers, polylines, polygons) {
 }
 
 export async function updateConfigLocationTypes(locationTypes) {
-  const url = "http://localhost:8000/update_total_location_type_table";
+  const url = backendUrl("/update_total_location_type_table");
   //console.log(locationTypes);
   const locationTypesCpy = structuredClone(locationTypes);
   // iterate over locationTypes and change locationType field to location_type
@@ -303,7 +312,7 @@ export async function updateConfigLocationTypes(locationTypes) {
 }
 
 export async function updateConfigLocationTypeEntry(locationType) {
-  const url = "http://localhost:8000/update_location_type_entry";
+  const url = backendUrl("/update_location_type_entry");
   //console.log(locationTypes);
   const locationTypeCpy = structuredClone(locationType);
   // iterate over locationTypes and change locationType field to location_type
@@ -329,7 +338,7 @@ export async function updateConfigLocationTypeEntry(locationType) {
 }
 
 export async function deleteConfigLocationTypeEntry(id) {
-  const url = `http://localhost:8000/delete_location_type_id/${id}`;
+  const url = backendUrl(`/delete_location_type_id/${id}`);
 
   try {
     const response = await fetch(url, {
@@ -348,7 +357,7 @@ export async function deleteConfigLocationTypeEntry(id) {
 }
 
 export async function checkExternalUpdate() {
-  const url = "http://localhost:8000/external_update";
+  const url = backendUrl("/external_update");
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -363,7 +372,7 @@ export async function checkExternalUpdate() {
 }
 
 export function establishWebsocket() {
-  const url = "ws://localhost:8000/ws";
+  const url = wsUrl("/ws");
   const websocket = new WebSocket(url);
   return websocket;
 }

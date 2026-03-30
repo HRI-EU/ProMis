@@ -316,7 +316,7 @@ class CartesianPolyLine(PolyLine):
     def distance(self, other: Any) -> float:
         return self.geometry.distance(other.geometry)
 
-    def send_to_gui(self, url = "http://localhost:8000/add_geojson", timeout = 1):
+    def send_to_gui(self, ip: str, port: int, timeout: float):
         raise NotImplementedError("Cartesian PolyLine does not have geospatial feature to send to gui!")
 
     def __repr__(self) -> str:

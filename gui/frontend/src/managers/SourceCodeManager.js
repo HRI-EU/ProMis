@@ -4,6 +4,7 @@ import {
   randomId,
   updateConfigLocationTypeEntry,
   deleteConfigLocationTypeEntry,
+  backendUrl,
 } from "../utils/Utility.js";
 import Color from "../models/Color.js";
 
@@ -197,10 +198,9 @@ class SourceCodeManager {
     };
     const body = this.getRequestBody(bodyParams);
     //Run the source code
-    const url =
-      "http://localhost:8000/" +
-      endpoint +
-      (hashValue === -1 ? "" : "/" + hashValue);
+    const url = backendUrl(
+      "/" + endpoint + (hashValue === -1 ? "" : "/" + hashValue),
+    );
     try {
       const response = await fetch(url, {
         method: "POST",

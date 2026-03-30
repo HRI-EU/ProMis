@@ -24,8 +24,6 @@ from fastapi.staticfiles import StaticFiles
 from geojson_pydantic import Feature
 from numpy import eye
 from pydantic import ValidationError
-import uvicorn
-
 from promis import ProMis, StaRMap
 from promis.geo import (
     CartesianRasterBand,
@@ -57,11 +55,12 @@ logger = logging.getLogger('uvicorn.info')
 async def lifespan(app: FastAPI):
     BOLD = '\033[1m'
     RESET = '\033[0m'
-    
-    config = uvicorn.Config(app=app)
 
-    logger.info(f"Please go to: {BOLD}http://localhost:{config.port}/gui{RESET} on your favorite browser to access the gui")
-    logger.info(f"The endpoint docs for the backend is available at: {BOLD}http://localhost:{config.port}/docs{RESET}")
+    host = getattr(app.state, "host", "0.0.0.0")
+    port = getattr(app.state, "port", 8000)
+
+    logger.info(f"Please go to: {BOLD}http://{host}:{port}/gui{RESET} on your favorite browser to access the gui")
+    logger.info(f"The endpoint docs for the backend is available at: {BOLD}http://{host}:{port}/docs{RESET}")
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -424,7 +423,6 @@ def inference(req: RunRequest, hash_val: int):
 
     # raster before
     landscape = CartesianRasterBand(origin, support_resolution, width, height)
-
 
     # Solve mission constraints using StaRMap parameters and multiprocessing
     promis = ProMis(star_map)

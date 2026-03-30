@@ -124,11 +124,12 @@ class Geospatial(ABC):
             ),
         )
 
-    def send_to_gui(self, url: str ="http://localhost:8000/add_geojson", timeout: int = 1):
+    def send_to_gui(self, ip: str = "localhost", port: int = 8000, timeout: float = 1.0):
         """Send an HTTP POST-request to the GUI backend.
 
         Args:
-            url: url of the backend
+            ip: the IP address of the backend
+            port: the port of the backend
             timeout: request timeout in second
 
         Raise:
@@ -137,7 +138,7 @@ class Geospatial(ABC):
         """
 
         data = self.to_geo_json()
-        r = post(url=url, data=data, timeout=timeout)
+        r = post(url=f"http://{ip}:{port}/add_geojson", data=data, timeout=timeout)
         r.raise_for_status()
 
     @property
