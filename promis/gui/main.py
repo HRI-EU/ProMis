@@ -22,7 +22,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from geojson_pydantic import Feature
-from numpy import eye
+from numpy import array as np_array, eye
 from pydantic import ValidationError
 from promis import ProMis, StaRMap
 from promis.geo import (
@@ -100,13 +100,9 @@ def path_of_cache_or_config(filename:str):
             return os.path.join(cache_dir_path, filename)
 
 def find_necessary_type(source: str) -> set[str]:
-    spatial_relation = r"(distance|over)"
-
-    p = re.compile(spatial_relation +  r"(\(\s*[A-Z],\s*)([\w]*)(\))")
-
-    maches = p.findall(source)
-    location_types = [match[2] for match in maches]
-    return set(location_types)
+    # Matches Resin source declarations: relation(location_type) <- source(...)
+    matches = re.findall(r'(\w+)\((\w+)\)\s*<-\s*source\(', source)
+    return {location_type for relation, location_type in matches if relation in ("distance", "over", "depth")}
 
 def create_hash(text:str):
   hash=0
@@ -419,19 +415,26 @@ def inference(req: RunRequest, hash_val: int):
     width, height = dimensions
     support_resolution = req.support_resolutions
     target_resolutions = req.resolutions
-    interpolation = req.interpolation # for into methods
+    interpolation = req.interpolation
 
-    # raster before
-    landscape = CartesianRasterBand(origin, support_resolution, width, height)
+    evaluation = CartesianRasterBand(origin, support_resolution, width, height)
+    dimension = support_resolution[0] * support_resolution[1]
 
-    # Solve mission constraints using StaRMap parameters and multiprocessing
-    promis = ProMis(star_map)
-    promis.solve(landscape, logic=program, n_jobs=4, batch_size=1)
+    try:
+        promis = ProMis(star_map, program, dimension)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    promis.initialize(evaluation)
+    landscape = promis.update()
+
+    if landscape is None:
+        raise HTTPException(status_code=500, detail="Reactive circuit produced no output.")
 
     landscape = landscape.into(CartesianRasterBand(origin, target_resolutions, width, height), interpolation)
 
     polar_pml = landscape.to_polar()
-    return  [[row["latitude"], row["longitude"], row["v0"]] for _, row in polar_pml.data.iterrows()]
+    return [[row["latitude"], row["longitude"], row["v0"]] for _, row in polar_pml.data.iterrows()]
 
 
 @app.post("/update_total_layer_config", include_in_schema=False)

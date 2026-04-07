@@ -9,6 +9,7 @@
 #
 
 # Standard Library
+import time
 from collections import defaultdict
 from collections.abc import Callable, Iterable
 from copy import deepcopy
@@ -18,7 +19,7 @@ from traceback import format_exception
 from warnings import warn
 
 # Third Party
-from numpy import array
+from numpy import array, maximum, sqrt
 from numpy.typing import NDArray
 
 # ProMis
@@ -43,6 +44,7 @@ class StaRMap:
     ) -> None:
         self.uam = uam
         self.relations: dict[str, dict[str, Relation]] = {"over": {}, "distance": {}, "depth": {}}
+        self._promis = None
 
     def initialize(self, evaluation_points: CartesianCollection, number_of_random_maps: int, logic: str):
         """Setup the StaRMap for a given set of support points, number of samples and logic.
@@ -129,6 +131,75 @@ class StaRMap:
         with open(path, "wb") as file:
             dump(self, file)
 
+    def link(self, promis) -> None:
+        """Link this StaRMap to a ProMis instance.
+
+        Once linked, :meth:`update` can recompute a spatial relation and write
+        the result directly into the Resin reactive circuit without any manual
+        interpolation or writer calls.
+
+        Args:
+            promis: The :class:`~promis.promis.ProMis` instance to link to.
+        """
+
+        self._promis = promis
+
+    def update(
+        self,
+        relation_type: str,
+        location_type: str,
+        sample_points: CartesianCollection,
+        number_of_random_maps: int,
+        interpolation_method: str = "hybrid",
+    ) -> None:
+        """Recompute a spatial relation and write the result to the linked Resin circuit.
+
+        This combines :meth:`sample`, parameter interpolation to the evaluation
+        grid, and the Resin writer call into one step.  Call :meth:`link` and
+        :meth:`~promis.promis.ProMis.initialize` before using this method.
+
+        Args:
+            relation_type: The relation to recompute, e.g. ``"distance"``.
+            location_type: The location type to relate to, e.g. ``"vessel"``.
+            sample_points: Points at which to compute the spatial relation
+                (typically perturbed positions of the dynamic features).
+            number_of_random_maps: Number of random map samples used to
+                estimate the relation parameters.
+            interpolation_method: Interpolation method used to map the newly
+                computed relation parameters to the evaluation grid.
+
+        Raises:
+            RuntimeError: If :meth:`link` or
+                :meth:`~promis.promis.ProMis.initialize` have not been called.
+        """
+
+        if self._promis is None:
+            raise RuntimeError(
+                "StaRMap must be linked to a ProMis instance via link() before calling update()."
+            )
+        if self._promis._evaluation_points is None:
+            raise RuntimeError(
+                "ProMis.initialize() must be called before StaRMap.update()."
+            )
+
+        # Recompute the relation at the provided sample points
+        self.sample(sample_points, number_of_random_maps, what={relation_type: [location_type]})
+
+        # Interpolate to the evaluation grid stored by ProMis
+        relation = self.get(relation_type, location_type)
+        coords = self._promis._evaluation_points.coordinates()
+        params = relation.parameters.get_interpolator(interpolation_method)(coords)
+
+        # Write to the appropriate Resin channel
+        writer = self._promis.get_writer(relation_type, location_type)
+        relation_obj = self.relations[relation_type][location_type]
+        if isinstance(relation_obj, Over):
+            writer.write(params[:, 0].ravel().tolist(), time.monotonic())
+        else:
+            means = params[:, 0].ravel().tolist()
+            stds = sqrt(maximum(params[:, 1], 1e-6)).ravel().tolist()
+            writer.write("normal", [means, stds], time.monotonic())
+
     def get(self, relation: str, location_type: str) -> Relation:
         """Get the computed data for a relation to a location type.
 
@@ -142,38 +213,24 @@ class StaRMap:
 
         return deepcopy(self.relations[relation][location_type])
 
-    def get_all(self, logic: str | None = None) -> dict[str, dict[str, Relation]]:
-        """Get all or a subset of relations for each location type.
-
-        If a logic program is provided, only the relations mentioned in it are returned.
-        Otherwise, all computed relations are returned.
-
-        Args:
-            logic: An optional logic program to filter the relations.
+    def get_all(self) -> dict[str, dict[str, Relation]]:
+        """Get all computed relations.
 
         Returns:
-            A nested dictionary of all requested relations, mapping relation type to
+            A nested dictionary of all computed relations, mapping relation type to
             location type to the `Relation` object.
         """
-
-        if logic is not None:
-            return deepcopy(
-                {
-                    relation_type: {
-                        location_type: self.relations[relation_type][location_type]
-                        for location_type in location_types
-                    }
-                    for relation_type, location_types in self._get_mentioned_relations(logic).items()
-                }
-            )
 
         return deepcopy(self.relations)
 
     def _get_mentioned_relations(self, logic: str) -> dict[str, set[str]]:
-        """Get all relations mentioned in a logic program.
+        """Get all relations mentioned as sources in a Resin program.
+
+        Parses ``relation(location_type) <- source(...).`` declarations and returns
+        only those whose relation type is known to this StaRMap.
 
         Args:
-            logic: The logic program.
+            logic: The Resin program string.
 
         Returns:
             A dictionary mapping relation types to a set of location types mentioned
@@ -182,32 +239,13 @@ class StaRMap:
 
         relations: dict[str, set[str]] = defaultdict(set)
 
-        for name, arity in self.relation_arities.items():
-            # Assume the ternary relation "between(X, anchorage, port)".
-            # Then, this pattern matches ", anchorage, port", i.e., what X relates to.
-            relates_to = ",".join([r"\s*((?:'\w*')|(?:\w+))\s*"] * (arity - 1))
-            if relates_to:
-                # Prepend comma to first element if not empty
-                relates_to = "," + relates_to
+        for match in finditer(r'(\w+)\((\w+)\)\s*<-\s*source\(', logic):
+            relation_type = match.group(1)
+            location_type = match.group(2)
+            if relation_type in self.relation_types:
+                relations[relation_type].add(location_type)
 
-            # Matches something like "distance(X, land)"
-            full_pattern = rf"({name})\(X{relates_to}\)"
-
-            for match in finditer(full_pattern, logic):
-                match arity:
-                    case 1:
-                        raise Exception(
-                            "Arity 1 is not supported because it always needs a location type"
-                        )
-                    case 2:
-                        location_type = match.group(2)
-                        if location_type[0] in "'\"":  # Remove quotes
-                            location_type = location_type[1:-1]
-                        relations[name].add(location_type)
-                    case _:
-                        raise Exception(f"Only arity 2 is supported, but got {arity}")
-
-        return relations
+        return dict(relations)
 
     def adaptive_sample(
         self,

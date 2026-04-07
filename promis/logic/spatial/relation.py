@@ -70,30 +70,6 @@ class Relation(ABC):
         with open(path, "wb") as file:
             dump(self, file)
 
-    def save_as_plp(self, path: str | Path) -> None:
-        """Save the relation as a text file containing distributional clauses.
-
-        Args:
-            path: The path to the file, including its name and file extension.
-        """
-
-        with open(path, "w") as plp_file:
-            plp_file.write("".join(self.to_distributional_clauses()))
-
-    def to_distributional_clauses(self) -> list[str]:
-        """Express the Relation as distributional clause.
-
-        A distributional clause is a string representation of a probabilistic fact,
-        suitable for use in a probabilistic logic program.
-
-        Returns:
-            A list of distributional clauses, one for each point in the `parameters` collection.
-        """
-
-        return [
-            self.index_to_distributional_clause(index) for index in range(len(self.parameters.data))
-        ]
-
     @staticmethod
     @abstractmethod
     def empty_map_parameters() -> list[float]:
@@ -101,17 +77,6 @@ class Relation(ABC):
 
         These parameters are used as a fallback when no map features are present to compute
         the relation from.
-        """
-
-    @abstractmethod
-    def index_to_distributional_clause(self, index: int) -> str:
-        """Express a single index of this Relation as a distributional clause.
-
-        Args:
-            index: The index of the point within the `parameters` collection.
-
-        Returns:
-            A string representing the distributional clause for the specified entry.
         """
 
     @staticmethod
@@ -220,7 +185,6 @@ class ScalarRelation(Relation):
     Args:
         parameters: A collection of points, where each has values for `[mean, variance]`.
         location_type: The name of the locations this distance relates to.
-        problog_name: The name to be used for this relation in Problog clauses.
         enforced_min_variance: The minimum variance to enforce for the distribution. Values below
             this will be clipped.
     """
@@ -229,12 +193,10 @@ class ScalarRelation(Relation):
         self,
         parameters: CartesianCollection,
         location_type: str | None,
-        problog_name: str,
         enforced_min_variance: float | None = 0.001,
     ) -> None:
         super().__init__(parameters, location_type)
 
-        self.problog_name = problog_name
         self.parameters.data["v1"] = clip(self.parameters.data["v1"], enforced_min_variance, None)
         self.enforced_min_variance = enforced_min_variance
 
@@ -289,25 +251,3 @@ class ScalarRelation(Relation):
 
         return probabilities
 
-    def index_to_distributional_clause(self, index: int) -> str:
-        """Express a single index of this Relation as a distributional clause.
-
-        Formats the clause as `name(x_INDEX, location_type) ~ normal(MEAN, STD).`
-        or `name(x_INDEX) ~ normal(MEAN, STD).` if `location_type` is None.
-
-        Args:
-            index: The index of the point within the `parameters` collection.
-
-        Returns:
-            A string representing the distributional clause for the specified entry.
-        """
-        if self.location_type is None:
-            relation = f"{self.problog_name}(x_{index})"
-        else:
-            relation = f"{self.problog_name}(x_{index}, {self.location_type})"
-
-        mean = self.parameters.data['v0'][index]
-        std = sqrt(self.parameters.data['v1'][index])
-        distribution = f"normal({mean}, {std})"
-
-        return f"{relation} ~ {distribution}.\n"

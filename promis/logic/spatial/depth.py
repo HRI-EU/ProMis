@@ -37,7 +37,7 @@ class Depth(ScalarRelation):
     """
 
     def __init__(self, parameters: CartesianCollection, location_type: str) -> None:
-        super().__init__(parameters, location_type, problog_name="depth")
+        super().__init__(parameters, location_type)
 
         if location_type != "water":
             warn(f"Depth relation is usually only used for water locations, not {location_type}")
