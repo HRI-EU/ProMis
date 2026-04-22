@@ -141,10 +141,6 @@ def get_ais(
     df["BaseDateTime"] = pd.to_datetime(df["BaseDateTime"])
     df.sort_values(["BaseDateTime"], inplace=True)
 
-    df.loc[df["VesselType"].isna(), "VesselType"] = 0  # Zero means unknown
-
-    df["VesselType"] = df["VesselType"].astype(int)
-
     return df
 
 
@@ -184,7 +180,9 @@ if __name__ == "__main__":
     # Inference settings
     origin, dimensions, bbox = get_environment()
     resolution = (200, 200)
+    hd_resolution = (600, 600)
     raster = CartesianRasterBand(origin, resolution, dimensions[0], dimensions[1])
+    hd_raster = CartesianRasterBand(origin, hd_resolution, dimensions[0], dimensions[1])
     print(f"Reactive Mission Landscape on {dimensions[0]:.2f}m x {dimensions[1]:.2f}m")
 
     # Simulated vertiports to spawn UAS from
@@ -192,6 +190,7 @@ if __name__ == "__main__":
         CartesianLocation(-2000, -2000, location_type="vertiport"),
         CartesianLocation( 2000,  -500, location_type="vertiport"),
         CartesianLocation(    0,  2000, location_type="vertiport"),
+        CartesianLocation(    0,     0, location_type="vertiport"),
     ]
 
     print("Setup ProMis ...")
@@ -199,6 +198,7 @@ if __name__ == "__main__":
     # Local features such as roads, hospitals, ... to relate to
     uam = get_uam(data_path / "streaming_uam.pkl", origin, dimensions, recompute=False)
     uam.features.extend(vertiports)
+
     # Spatial relations
     star_map = get_starmap(data_path / "streaming_star_map.pkl", uam=uam, evaluation_points=raster, recompute=False)
     # AIS data from NOAA
@@ -219,34 +219,14 @@ if __name__ == "__main__":
     rc.lift_leaf(vessel_index)
     rc.lift_leaf(vessel_index + 1)
 
-    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(12, 7))
+    lscatter = plt.scatter([], [], c=[], marker='s', edgecolors='none', s=1.0, cmap="coolwarm_r", vmin=0.0, vmax=1.0)
 
-    for a in ax:
-        a.set_box_aspect(1)
+    plt.xlabel("Easting / m")
+    plt.ylabel("Northing / m")
+    plt.xlim(-dimensions[0] / 2.0, dimensions[0] / 2.0)
+    plt.ylim(-dimensions[1] / 2.0, dimensions[1] / 2.0)
 
-    fline = []
-    fline.append(ax[1].plot([], [], "-", label=fr"$\lambda$ Drones")[0])
-    fline.append(ax[1].plot([], [], "-", label=fr"$\lambda$ Vessels")[0])
-    fline.append(ax[1].plot([], [], "-", label=fr"$\lambda$ OpenStreetMap")[0])
-
-    rc_vline = ax[0].plot([], [], "-", label=f"Reactive Runtime")[0]
-    promis_hline = ax[0].axhline(42.0, 0, 120, color="orange", label=f"Baseline")
-    lscatter = ax[2].scatter([], [], c=[], marker='s', edgecolors='none', s=1.0, cmap="coolwarm_r", vmin=0.0, vmax=1.0)
-
-    ax[0].set_xlabel("Time / s")
-    ax[0].set_ylabel("Inference Time / s")
-    ax[0].set_yscale("log")
-    ax[0].legend(loc="upper right")
-    ax[1].set_xlabel("Time / s")
-    ax[1].set_ylabel("Frequency / Hz")
-    ax[1].set_ylim(-0.1, 2.5)
-    ax[1].legend(loc="upper right")
-    ax[2].set_xlabel("Easting / m")
-    ax[2].set_ylabel("Northing / m")
-    ax[2].set_xlim(-dimensions[0] / 2.0, dimensions[0] / 2.0)
-    ax[2].set_ylim(-dimensions[1] / 2.0, dimensions[1] / 2.0)
-
-    fig.canvas.draw()
+    plt.gcf().canvas.draw()
     plt.ion()
     plt.tight_layout()
     plt.show()
@@ -276,8 +256,6 @@ if __name__ == "__main__":
     dynamic_star_map.link(promis)
 
     # Simulation setup
-    results_data = []
-    results_file = data_path / "results.csv"
     ais_start_time = ais.iloc[0]["BaseDateTime"]
     simulation_start_time = time.monotonic()
     ais_index = 0
@@ -294,10 +272,10 @@ if __name__ == "__main__":
         )
 
     # Run simulation
+    iteration = 0
+    current_sim_time_offset = 0.0
     try:
-        iteration = 0
-        current_sim_time_offset = 0.0
-        while current_sim_time_offset <= 600.0:
+        while ais_index < len(ais) - 1:
             loop_start_time = time.monotonic()
             current_sim_time_offset = loop_start_time - simulation_start_time
 
@@ -373,51 +351,20 @@ if __name__ == "__main__":
             elapsed = time.monotonic() - start
             rc_runtime_history.append(elapsed + vessel_elapsed + uas_elapsed)
 
-            frequencies = promis.get_frequencies()
-            frequency_history[0].append(frequencies[drone_index])
-            frequency_history[1].append(frequencies[vessel_index])
-            frequency_history[2].append(frequencies[0])
-            fline[0].set_data(times, frequency_history[0])
-            fline[1].set_data(times, frequency_history[1])
-            fline[2].set_data(times, frequency_history[2])
-            rc_vline.set_data(times, rc_runtime_history)
-
             if landscape is not None:
-                lscatter.set_offsets(coords)
-                lscatter.set_array(landscape.data["v0"])
+                lscatter.set_offsets(hd_raster.coordinates())
+                lscatter.set_array(landscape.into(hd_raster).data["v0"])
 
-            ax[0].relim()
-            ax[0].autoscale_view()
-            ax[1].relim()
-            ax[1].autoscale_view()
+            plt.gcf().canvas.draw_idle()
 
-            fig.canvas.draw_idle()
-
-            results_data.append({
-                "runtime": rc_runtime_history[-1],
-                "uas_frequency": frequency_history[0][-1],
-                "vessel_frequency": frequency_history[1][-1],
-                "time": iteration / SIMULATION_FREQUENCY,
-            })
+            # Loop Rate Control
             iteration += 1
-
-            # --- Loop Rate Control ---
             loop_end_time = time.monotonic()
             elapsed_loop_time = loop_end_time - loop_start_time
             sleep_time = dt - elapsed_loop_time
 
             if sleep_time > 0:
-                fig.canvas.start_event_loop(sleep_time)
-
-            if ais_index >= len(ais) - 1:
-                exit()
+                plt.gcf().canvas.start_event_loop(sleep_time)
 
     except KeyboardInterrupt:
         pass
-
-    if results_data:
-        results_df = pd.DataFrame(results_data)
-        is_new_file = not results_file.exists() or results_file.stat().st_size == 0
-        results_df.to_csv(
-            results_file, mode="a", header=is_new_file, index=False
-        )

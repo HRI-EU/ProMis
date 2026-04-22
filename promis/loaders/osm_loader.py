@@ -17,8 +17,8 @@ from time import sleep
 # Third Party
 import osmium
 from overpy import Overpass, Relation, exception
-from shapely.geometry import LineString
-from shapely.ops import linemerge, polygonize
+from shapely.geometry import LineString, box
+from shapely.ops import linemerge, polygonize, unary_union
 
 # ProMis
 from promis.geo import CartesianLocation, PolarLocation, PolarPolygon, PolarPolyLine
@@ -245,14 +245,20 @@ class _OsmFileHandler(osmium.SimpleHandler):
     Requires ``apply_file(..., locations=True)`` so that node coordinates are
     resolved by osmium at the C++ level before ``way()`` is called.
 
-    Ways whose geometry intersects the bounding box are stored with their
-    pre-resolved ``(lat, lon)`` coordinates, eliminating a separate node lookup
-    step.  Relations are kept only when at least one of their ``way`` members is
-    already present in ``self.ways``.
+    Ways are collected in two tiers:
+    - **inner bbox** (strict bounds): used for standalone polyline/polygon features.
+    - **outer bbox** (expanded by ``_EXPAND`` degrees): used for relation member way
+      resolution, recovering data that is partially outside the bbox.
+
+    Relations are kept whenever at least one of their ``way`` members landed in the
+    outer bbox.
     """
 
     # Maps the single-char type codes used by osmium to OSM element type strings.
     _TYPE_MAP = {"n": "node", "w": "way", "r": "relation"}
+
+    # Extra degrees added on each side of the strict bbox for way collection.
+    _EXPAND = 0.15
 
     def __init__(self, south: float, west: float, north: float, east: float):
         super().__init__()
@@ -260,25 +266,34 @@ class _OsmFileHandler(osmium.SimpleHandler):
         self._west = west
         self._north = north
         self._east = east
+        exp = self._EXPAND
+        self._esouth = south - exp
+        self._ewest  = west  - exp
+        self._enorth = north + exp
+        self._eeast  = east  + exp
         self.ways: dict[int, dict] = {}
         self.relations: dict[int, dict] = {}
 
     def way(self, w) -> None:
         coords = []
-        in_bbox = False
+        in_inner = False
+        in_outer = False
         for node in w.nodes:
             if not node.location.valid():
                 continue
             lat, lon = node.location.lat, node.location.lon
             coords.append((lat, lon))
-            if not in_bbox and self._south <= lat <= self._north and self._west <= lon <= self._east:
-                in_bbox = True
+            if not in_inner and self._south <= lat <= self._north and self._west <= lon <= self._east:
+                in_inner = True
+            if not in_outer and self._esouth <= lat <= self._enorth and self._ewest <= lon <= self._eeast:
+                in_outer = True
 
-        if in_bbox and len(coords) >= 2:
+        if in_outer and len(coords) >= 2:
             self.ways[w.id] = {
                 "coords": coords,
                 "nd_refs": [node.ref for node in w.nodes],
                 "tags": {tag.k: tag.v for tag in w.tags},
+                "in_bbox": in_inner,
             }
 
     def relation(self, r) -> None:
@@ -295,6 +310,35 @@ class _OsmFileHandler(osmium.SimpleHandler):
             ],
             "tags": {tag.k: tag.v for tag in r.tags},
         }
+
+
+class _MissingWaysHandler(osmium.SimpleHandler):
+    """Second-pass handler that fetches specific ways by ID.
+
+    Used to retrieve way members of relations whose geometry extends outside
+    the bounding box and were therefore skipped by :class:`_OsmFileHandler`.
+    """
+
+    def __init__(self, needed_refs: set[int]):
+        super().__init__()
+        self._needed = needed_refs
+        self.ways: dict[int, dict] = {}
+
+    def way(self, w) -> None:
+        if w.id not in self._needed:
+            return
+        coords = []
+        for node in w.nodes:
+            if not node.location.valid():
+                continue
+            coords.append((node.location.lat, node.location.lon))
+        if len(coords) >= 2:
+            self.ways[w.id] = {
+                "coords": coords,
+                "nd_refs": [node.ref for node in w.nodes],
+                "tags": {tag.k: tag.v for tag in w.tags},
+                "in_bbox": False,
+            }
 
 
 class LocalOsmLoader(SpatialLoader):
@@ -359,6 +403,21 @@ class LocalOsmLoader(SpatialLoader):
         """
         handler = _OsmFileHandler(south, west, north, east)
         handler.apply_file(str(self.path), locations=True)
+
+        missing_refs: set[int] = set()
+        for relation in handler.relations.values():
+            for member in relation["members"]:
+                if member["type"] == "way" and member["ref"] not in handler.ways:
+                    missing_refs.add(member["ref"])
+
+        if missing_refs:
+            missing_handler = _MissingWaysHandler(missing_refs)
+            missing_handler.apply_file(str(self.path), locations=True)
+            handler.ways.update(missing_handler.ways)
+            log.info(
+                "Loaded %d additional out-of-bbox ways for relations",
+                len(missing_handler.ways),
+            )
 
         log.info(
             "Loaded %d ways, %d relations from %s (bbox: %.4f,%.4f – %.4f,%.4f)",
@@ -438,6 +497,8 @@ class LocalOsmLoader(SpatialLoader):
             location_type: Location type to assign to the created geometries.
         """
         for way in self._ways.values():
+            if not way["in_bbox"]:
+                continue
             if not self._matches_filter(way["tags"], osm_filter):
                 continue
 
@@ -505,7 +566,28 @@ class LocalOsmLoader(SpatialLoader):
                     lines.append(LineString([(c.east, c.north) for c in cartesian]))
             return lines
 
-        outer_polygons = list(polygonize(linemerge(members_to_linestrings(outer_members))))
+        outer_lines = members_to_linestrings(outer_members)
+        outer_polygons = list(polygonize(linemerge(outer_lines)))
+
+        if not outer_polygons and outer_lines:
+            # The outer ring has gaps — some ring-closure ways are beyond the PBF's
+            # coverage.  Stitch the available segments against the Cartesian bbox
+            # boundary so the ring can close.
+            half_w = self.dimensions[0] / 2
+            half_h = self.dimensions[1] / 2
+            cart_bbox = box(-half_w, -half_h, half_w, half_h)
+            combined = unary_union([linemerge(outer_lines), cart_bbox.boundary])
+            min_area = cart_bbox.area * 0.005
+            outer_polygons = [
+                p for p in polygonize(combined)
+                if min_area < p.area < cart_bbox.area * 0.5
+            ]
+            if outer_polygons:
+                log.debug(
+                    "Closed incomplete outer ring via bbox boundary fallback (%d polygon(s))",
+                    len(outer_polygons),
+                )
+
         inner_polygons = list(polygonize(linemerge(members_to_linestrings(inner_members))))
 
         final_polygons = []
