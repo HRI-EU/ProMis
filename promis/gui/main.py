@@ -24,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from geojson_pydantic import Feature
 from numpy import eye
 from pydantic import ValidationError
-from promis import ProMis, StaRMap
+from promis.promis import ProMis, StaRMap
 from promis.geo import (
     CartesianRasterBand,
     PolarLocation,
