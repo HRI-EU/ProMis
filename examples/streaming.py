@@ -259,9 +259,6 @@ if __name__ == "__main__":
     ais_start_time = ais.iloc[0]["BaseDateTime"]
     simulation_start_time = time.monotonic()
     ais_index = 0
-    frequency_history = [[], [], []]
-    rc_runtime_history = []
-    times = []
 
     def get_random_dest():
         return np.array(
@@ -293,16 +290,10 @@ if __name__ == "__main__":
                 dynamic_uam.features = list(dynamic_features.values())
                 vessel_locations = CartesianCollection(origin)
                 if dynamic_uam.features:
-                    start = time.monotonic()
                     vessel_locations.append_with_default(
                         np.vstack([normal([l.x, l.y], 150.0, [50, 2]) for l in dynamic_uam.features]), 0.0
                     )
                     dynamic_star_map.update("distance", "vessel", vessel_locations, 25)
-                    vessel_elapsed = time.monotonic() - start
-                else:
-                    vessel_elapsed = 0.0
-            else:
-                vessel_elapsed = 0.0
 
             # UAS update
             while len(drones) < NUM_DRONES:
@@ -336,20 +327,13 @@ if __name__ == "__main__":
                 CartesianLocation(d["position"][0], d["position"][1], location_type="uas") for d in drones
             ]
 
-            start = time.monotonic()
             uas_locations = CartesianCollection(origin)
             uas_locations.append_with_default(
                 np.vstack([normal([d["position"][0], d["position"][1]], 150.0, [50, 2]) for d in drones]), 0.0
             )
             dynamic_star_map.update("distance", "uas", uas_locations, 25)
-            uas_elapsed = time.monotonic() - start
 
-            times.append(current_sim_time_offset)
-
-            start = time.monotonic()
             landscape = promis.update()
-            elapsed = time.monotonic() - start
-            rc_runtime_history.append(elapsed + vessel_elapsed + uas_elapsed)
 
             if landscape is not None:
                 lscatter.set_offsets(hd_raster.coordinates())
@@ -365,6 +349,8 @@ if __name__ == "__main__":
 
             if sleep_time > 0:
                 plt.gcf().canvas.start_event_loop(sleep_time)
+            else:
+                plt.gcf().canvas.flush_events()
 
     except KeyboardInterrupt:
         pass
