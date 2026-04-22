@@ -12,7 +12,7 @@ These datasets are sourced from third parties and are subject to their respectiv
 Any modifications made to this data are also licensed under the Open Database License (ODbL).
 
 ## 2. AIS Vessel Tracking Data
-* **File(s):** `ais_*.csv`
+* **File(s):** `AIS_*.csv`
 * **Source:** [NOAA Office for Coastal Management](https://coast.noaa.gov/htdata/CMSP/AISDataHandler/2024/index.html)
 * **License:** Public Domain / U.S. Government Work
 * **Attribution:** Data provided by NOAA (National Oceanic and Atmospheric Administration).

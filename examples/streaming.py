@@ -1,25 +1,20 @@
-import matplotlib.animation as animation
-# Probabilistic Mission Design and Statistical Relational Maps
-from promis import ProMis, StaRMap
-# Geographic data handling
-from promis.geo import PolarLocation, CartesianMap, CartesianLocation, CartesianRasterBand, CartesianCollection
-# Data loading from OpenStreetMap
-from promis.loaders import OsmLoader
-
-# Third Party dependencies we will need
-import numpy as np
-import pandas as pd
-import json
-from numpy import eye, vstack, mean, column_stack, ones
-from numpy.random import choice, normal
-import matplotlib.pyplot as plt
-from os.path import exists
+# Standard Library
 from pathlib import Path
 import time
-from datetime import datetime
-from tqdm import tqdm
-import seaborn as sns
 
+# Third Party
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from numpy import eye, mean
+from numpy.random import normal
+
+# ProMis
+from promis import ProMis, StaRMap
+from promis.geo import PolarLocation, CartesianMap, CartesianLocation, CartesianRasterBand, CartesianCollection
+from promis.loaders import LocalOsmLoader
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Plotting setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 plt.rcParams.update({
     "font.family": "serif",
     "font.serif": ["Times New Roman"],
@@ -62,6 +57,7 @@ def show_star_map(star_map, dimensions):
     set_style(axes, dimensions[0], dimensions[1])
 
 
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Environment setup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 def get_environment():
     # Bounding box centered at Central Park in NY City
     # 40.782628599814906, -73.96559374658658
@@ -91,11 +87,11 @@ def get_uam(uam_path, origin=None, dimensions=None, recompute=False):
 
     else:
         feature_description = {
-            "park": "['leisure' = 'park']",
-            "water": "['natural'='water']",
-            "hospital": "['amenity' = 'hospital']",
-            "primary": "['highway' = 'primary']",
-            "secondary": "['highway' = 'secondary']",
+            "park": "[leisure=park]",
+            "water": "[natural=water]",
+            "hospital": "[amenity=hospital]",
+            "primary": "[highway=primary]",
+            "secondary": "[highway=secondary]",
         }
 
         covariance = {
@@ -106,7 +102,8 @@ def get_uam(uam_path, origin=None, dimensions=None, recompute=False):
             "hospital": 5 * eye(2),
         }
 
-        uam = OsmLoader(origin, dimensions, feature_description, timeout=10.0).to_cartesian_map()
+        pbf_path = Path(__file__).parent / "data" / "NewYork.osm.pbf"
+        uam = LocalOsmLoader(pbf_path, origin, dimensions, feature_description).to_cartesian_map()
         uam.apply_covariance(covariance)
 
         uam.save(uam_path)
@@ -128,10 +125,10 @@ def get_starmap(star_map_path, evaluation_points, uam=None, recompute=False):
 
 
 def get_ais(
-    path: str | Path, vessel_types_path: str | Path, bbox: None | tuple[tuple[float, float], tuple[float, float]]
+    path: str | Path, bbox: None | tuple[tuple[float, float], tuple[float, float]]
 ) -> pd.DataFrame:
     # Get all ships within mission area
-    df = pd.read_csv(path)
+    df = pd.read_pickle(path)
     if bbox is not None:
         df = df[
             (df["LAT"] > bbox[0][0])
@@ -148,16 +145,11 @@ def get_ais(
 
     df["VesselType"] = df["VesselType"].astype(int)
 
-    vessel_types = json.loads(vessel_types_path.read_text())
-    df["VesselTypeName"] = df["VesselType"].astype(str).map(vessel_types)
-    df["IsAnchoring"] = df["Status"] == 1
-
     return df
 
 
-
-# Resin program: thresholds live in clause bodies so Resin handles CDF
-# evaluation element-wise across the full value-space vector.
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Reasoning ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
+# Movement constraints for UAVs flying over NY City
 resin_program = """
 over(park) <- source("/star_map/over/park", Probability).
 over(water) <- source("/star_map/over/water", Probability).
@@ -183,44 +175,49 @@ landscape -> target("/reactive_mission_landscape").
 
 
 if __name__ == "__main__":
+    # Simulation parameters
     NUM_DRONES = 10
     DRONE_SPEED = 30.0  # m/s
     SIMULATION_FREQUENCY = 2.0  # Hz
     dt = 1.0 / SIMULATION_FREQUENCY
 
+    # Inference settings
     origin, dimensions, bbox = get_environment()
-    print(dimensions)
     resolution = (200, 200)
     raster = CartesianRasterBand(origin, resolution, dimensions[0], dimensions[1])
-    print(fr"Reactive Mission Landscape on {dimensions[0]:.2f}m $\times$ {dimensions[1]:.2f}m")
+    print(f"Reactive Mission Landscape on {dimensions[0]:.2f}m x {dimensions[1]:.2f}m")
 
-    data_path = Path(".") / "data"
-    print("Get UAM ...")
-    uam = get_uam(data_path / "uam.pkl", origin, dimensions, recompute=False)
-
+    # Simulated vertiports to spawn UAS from
     vertiports = [
         CartesianLocation(-2000, -2000, location_type="vertiport"),
         CartesianLocation( 2000,  -500, location_type="vertiport"),
         CartesianLocation(    0,  2000, location_type="vertiport"),
     ]
+
+    print("Setup ProMis ...")
+    data_path = Path(__file__).parent / "data"
+    # Local features such as roads, hospitals, ... to relate to
+    uam = get_uam(data_path / "streaming_uam.pkl", origin, dimensions, recompute=False)
     uam.features.extend(vertiports)
-    print("Get StarMap ...")
-    star_map = get_starmap(data_path / "star_map.pkl", uam=uam, evaluation_points=raster, recompute=False)
-    print("Get AIS ...")
-    ais = get_ais(data_path / "ais-2024-02-24.csv", data_path / "vessel_types_simplified.json", bbox=bbox)
+    # Spatial relations
+    star_map = get_starmap(data_path / "streaming_star_map.pkl", uam=uam, evaluation_points=raster, recompute=False)
+    # AIS data from NOAA
+    ais = get_ais(data_path / "AIS_2024_02_24.pkl", bbox=bbox)
+    # ProMis itself
+    promis = ProMis(star_map, resin_program, resolution[0] * resolution[1], False)
 
-    DIMENSION = resolution[0] * resolution[1]
-    promis = ProMis(star_map, resin_program, DIMENSION, False)
-    rc = promis.get_reactive_circuit()
-    rc.to_combined_svg(str(data_path / "initial_rc.svg"))
-
-    # Leaf names for density sources are the canonical comparison atom names,
-    # e.g. "distance_uas_gt_100" for `distance(uas) > 100`.
+    # We adapt the Reactive Circuit (internal inference engine) for the scenario by hand
+    # Alternatively, run inference for some time and rc.adapt() instead for automatic restructuring
+    rc = promis.get_reactive_circuit()    
+    # Specific leaf names depend on comparison operators
     names = promis.get_names()
     drone_index = names.index("distance_uas_gt_100")
     vessel_index = names.index("distance_vessel_gt_100")
-
-    rc.to_combined_svg(str(data_path / "adapted_rc.svg"))
+    # We know that these two are in a higher frequency band than the rest
+    rc.lift_leaf(drone_index)
+    rc.lift_leaf(drone_index + 1)
+    rc.lift_leaf(vessel_index)
+    rc.lift_leaf(vessel_index + 1)
 
     fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(12, 7))
 
@@ -268,6 +265,7 @@ if __name__ == "__main__":
     promis.get_writer("distance", "vessel").write("normal", [[FAR_MEAN] * n, [FAR_STD] * n], time.monotonic())
     promis.get_writer("distance", "uas").write("normal",    [[FAR_MEAN] * n, [FAR_STD] * n], time.monotonic())
 
+    # Ensures that all data was transferred
     time.sleep(0.00001)
 
     print(f"Starting simulation for {len(ais)} messages...")
@@ -277,25 +275,12 @@ if __name__ == "__main__":
     dynamic_star_map = StaRMap(dynamic_uam)
     dynamic_star_map.link(promis)
 
-    # --- Simulation timing ---
-    run = 9
+    # Simulation setup
     results_data = []
     results_file = data_path / "results.csv"
-    if results_file.exists() and results_file.stat().st_size > 0:
-        try:
-            existing_df = pd.read_csv(results_file)
-            if not existing_df.empty and "run" in existing_df.columns:
-                run = int(existing_df["run"].max() + 1)
-        except (pd.errors.EmptyDataError, KeyError, ValueError):
-            pass  # Keep run = 0
-
-    offset = int(np.random.random() * 60 * 60 * 23) # Random start between 0am and 23h
-    ais_start_time = ais.iloc[0]["BaseDateTime"]
-    ais = ais[ais["BaseDateTime"] >= ais_start_time + pd.Timedelta(seconds=offset)]
     ais_start_time = ais.iloc[0]["BaseDateTime"]
     simulation_start_time = time.monotonic()
     ais_index = 0
-
     frequency_history = [[], [], []]
     rc_runtime_history = []
     times = []
@@ -308,6 +293,7 @@ if __name__ == "__main__":
             ]
         )
 
+    # Run simulation
     try:
         iteration = 0
         current_sim_time_offset = 0.0
@@ -315,7 +301,7 @@ if __name__ == "__main__":
             loop_start_time = time.monotonic()
             current_sim_time_offset = loop_start_time - simulation_start_time
 
-            # --- AIS Data Update ---
+            # AIS update
             ais_updated = False
             while ais.iloc[ais_index + 1]["BaseDateTime"] <= ais_start_time + pd.Timedelta(seconds=current_sim_time_offset):
                 ais_index += 1
@@ -340,7 +326,7 @@ if __name__ == "__main__":
             else:
                 vessel_elapsed = 0.0
 
-            # --- Drone Simulation ---
+            # UAS update
             while len(drones) < NUM_DRONES:
                 start_vertiport = np.random.choice(vertiports)
                 drone = {
@@ -382,11 +368,6 @@ if __name__ == "__main__":
 
             times.append(current_sim_time_offset)
 
-            # Adapt the circuit once the frequency estimates have stabilised
-            if iteration == int(10 * SIMULATION_FREQUENCY):
-                promis.adapt(0.1, 3)
-                rc.to_combined_svg(str(data_path / "adapted_rc.svg"))
-
             start = time.monotonic()
             landscape = promis.update()
             elapsed = time.monotonic() - start
@@ -413,7 +394,6 @@ if __name__ == "__main__":
             fig.canvas.draw_idle()
 
             results_data.append({
-                "run": run,
                 "runtime": rc_runtime_history[-1],
                 "uas_frequency": frequency_history[0][-1],
                 "vessel_frequency": frequency_history[1][-1],

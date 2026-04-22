@@ -84,7 +84,7 @@ class OsmLoader(SpatialLoader):
                 osm_filters = [osm_filters]
 
             for osm_filter in osm_filters:
-                print(f"Loading {location_type} with filter {osm_filter}")
+                log.info(f"Loading {location_type} with filter {osm_filter}")
                 self._load_ways(osm_filter, location_type, bounding_box)
                 self._load_relations(osm_filter, location_type, bounding_box)
 
@@ -383,7 +383,7 @@ class LocalOsmLoader(SpatialLoader):
                 osm_filters = [osm_filters]
 
             for osm_filter in osm_filters:
-                print(f"Loading {location_type} with filter {osm_filter}")
+                log.info(f"Loading {location_type} with filter {osm_filter}")
                 self._load_ways(osm_filter, location_type)
                 self._load_relations(osm_filter, location_type)
 
