@@ -57,13 +57,14 @@ setuptools.setup(
         "geopy",
         "shapely",
         "overpy",
+        "osmium",
         "geojson_pydantic",
         # probabilistic modelling
         "nflows",
         "torch",
         "gpytorch",
         # reactive probabilistic inference
-        "resin",
+        "pyresin",
         # plotting and visualization
         "fastapi[standard]",
         "graphviz",
