@@ -34,7 +34,7 @@ class Distance(ScalarRelation):
     """
 
     def __init__(self, parameters: CartesianCollection, location_type: str) -> None:
-        super().__init__(parameters, location_type, problog_name="distance")
+        super().__init__(parameters, location_type)
 
     @staticmethod
     def compute_relation(

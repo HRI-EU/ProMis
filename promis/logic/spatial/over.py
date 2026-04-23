@@ -24,22 +24,6 @@ class Over(Relation):
     specific type on the map. The probability is derived from a set of sample maps.
     """
 
-    def index_to_distributional_clause(self, index: int) -> str:
-        """Express a single index of this Relation as a distributional clause.
-
-        The clause is formatted as `PROBABILITY::over(x_INDEX, location_type).`, where the
-        probability is the mean probability of the point being over a feature across the
-        sample maps.
-
-        Args:
-            index: The index of the point within the `parameters` collection.
-
-        Returns:
-            A string representing the distributional clause for the specified entry.
-        """
-
-        return f"{self.parameters.data['v0'][index]}::over(x_{index}, {self.location_type}).\n"
-
     @staticmethod
     def compute_relation(
         location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap

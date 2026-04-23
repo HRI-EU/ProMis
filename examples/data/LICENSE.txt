@@ -1,0 +1,22 @@
+# Data Licensing and Attribution
+
+This directory contains sample datasets used for demonstration purposes. 
+These datasets are sourced from third parties and are subject to their respective licenses.
+
+## 1. OpenStreetMap Data
+* **File(s):** `*.osm.pbf`
+* **Source:** [OpenStreetMap](https://www.openstreetmap.org)
+* **License:** [ODbL 1.0](https://opendatacommons.org/licenses/odbl/)
+* **Attribution:** © OpenStreetMap contributors
+
+Any modifications made to this data are also licensed under the Open Database License (ODbL).
+
+## 2. AIS Vessel Tracking Data
+* **File(s):** `AIS_*.csv`
+* **Source:** [NOAA Office for Coastal Management](https://coast.noaa.gov/htdata/CMSP/AISDataHandler/2024/index.html)
+* **License:** Public Domain / U.S. Government Work
+* **Attribution:** Data provided by NOAA (National Oceanic and Atmospheric Administration).
+
+## Disclaimers
+* **No Warranty:** This data is provided "as-is" without warranty of any kind. 
+* **Not for Navigation:** The AIS and mapping data provided here are for example and visualization purposes only. They are NOT intended for navigation or safety-of-life applications.

@@ -19,12 +19,10 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && loca
 # Git and pip setup
 ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
-# Install separate pip dependencies
-RUN pip install pyro-ppl graphviz
-RUN pip install --upgrade --force-reinstall --no-deps --no-binary :all: pysdd
+# Install optional debug/dev tools and dependencies
+RUN pip install graphviz
 
 # Get clone of repository and install with a reasoning backend
 RUN git clone https://github.com/HRI-EU/ProMis.git
 WORKDIR /ProMis
 RUN pip install '.[doc,dev,nautical]'
-RUN pip install git+https://github.com/simon-kohaut/problog.git@dcproblog_develop
