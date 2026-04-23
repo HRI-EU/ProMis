@@ -59,8 +59,11 @@ class ProMis:
             )
         self._target_name = target_match.group(1)
 
-        # Parse source declarations: atom -> (relation_type, location_type, source_type)
-        self._sources = self._parse_sources(logic)
+        # Parse source declarations from paths: atom -> (relation_type, location_type, source_type)
+        self._sources = {
+            f"{rel}({loc})": (rel, loc, src)
+            for rel, loc, src in StaRMap._parse_sources(logic)
+        }
 
         # Compile Resin and obtain the reactive circuit
         self._resin = Resin.compile(logic, dimension, verbose)
@@ -183,25 +186,3 @@ class ProMis:
         """Return the current update frequencies of the reactive circuit leaves."""
 
         return self._resin.get_frequencies()
-
-    @staticmethod
-    def _parse_sources(logic: str) -> dict[str, tuple[str, str, str]]:
-        """Parse ``atom <- source(path, Type).`` declarations from a Resin program.
-
-        Args:
-            logic: The Resin program string.
-
-        Returns:
-            A dictionary mapping each atom string (e.g. ``"over(park)"``) to a
-            triple ``(relation_type, location_type, source_type)``.
-        """
-
-        sources: dict[str, tuple[str, str, str]] = {}
-        pattern = r'(\w+)\((\w+)\)\s*<-\s*source\([^,]+,\s*(Probability|Density)\s*\)'
-        for match in re.finditer(pattern, logic):
-            relation_type = match.group(1)
-            location_type = match.group(2)
-            source_type = match.group(3)
-            atom = f"{relation_type}({location_type})"
-            sources[atom] = (relation_type, location_type, source_type)
-        return sources

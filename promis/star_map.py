@@ -55,9 +55,11 @@ class StaRMap:
             logic: The set of constraints deciding which relations are computed.
         """
 
-        self.sample(
-            evaluation_points, number_of_random_maps, self._get_mentioned_relations(logic)
-        )
+        what: dict[str, set[str]] = defaultdict(set)
+        for relation_type, location_type, _ in self._parse_sources(logic):
+            if relation_type in self.relation_types:
+                what[relation_type].add(location_type)
+        self.sample(evaluation_points, number_of_random_maps, dict(what))
 
     @staticmethod
     def relation_name_to_class(relation: str) -> Relation:
@@ -223,29 +225,31 @@ class StaRMap:
 
         return deepcopy(self.relations)
 
-    def _get_mentioned_relations(self, logic: str) -> dict[str, set[str]]:
-        """Get all relations mentioned as sources in a Resin program.
+    @staticmethod
+    def _parse_sources(logic: str) -> list[tuple[str, str, str]]:
+        """Parse ``source(path, Type)`` declarations from a Resin program.
 
-        Parses ``relation(location_type) <- source(...).`` declarations and returns
-        only those whose relation type is known to this StaRMap.
+        Extracts relation type and location type from the path (last two segments)
+        rather than from the left-hand side atom.  For example::
+
+            source("/star_map/over/park", Probability)
+
+        yields ``("over", "park", "Probability")``.
 
         Args:
             logic: The Resin program string.
 
         Returns:
-            A dictionary mapping relation types to a set of location types mentioned
-            in the program.
+            A list of ``(relation_type, location_type, source_type)`` triples.
         """
 
-        relations: dict[str, set[str]] = defaultdict(set)
-
-        for match in finditer(r'(\w+)\((\w+)\)\s*<-\s*source\(', logic):
-            relation_type = match.group(1)
-            location_type = match.group(2)
-            if relation_type in self.relation_types:
-                relations[relation_type].add(location_type)
-
-        return dict(relations)
+        result = []
+        for match in finditer(r'source\("(/[^"]*)",\s*(Probability|Density)\s*\)', logic):
+            parts = match.group(1).strip('/').split('/')
+            source_type = match.group(2)
+            if len(parts) >= 2:
+                result.append((parts[-2], parts[-1], source_type))
+        return result
 
     def adaptive_sample(
         self,
