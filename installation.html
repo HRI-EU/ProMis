@@ -109,9 +109,11 @@ brew<span class="w"> </span>install<span class="w"> </span>gdal
 <h2>Standard Installation<a class="headerlink" href="#standard-installation" title="Link to this heading"></a></h2>
 <p>This is the recommended method for most users. It installs the latest stable version of ProMis from PyPI.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>promis
+
+<span class="c1"># Also enables using the Web GUI</span>
+promis_gui<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
 </pre></div>
 </div>
-<p>This also directly enables using the Web GUI without further steps by running <cite>promis_gui –host 0.0.0.0 –port 8000</cite>.</p>
 <p>If you plan to work with nautical charts, install the necessary extras.
 Make sure you have installed GDAL first (see Prerequisites).</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;promis[nautical]&quot;</span>
