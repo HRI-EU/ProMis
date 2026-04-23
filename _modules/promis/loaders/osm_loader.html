@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.loaders.osm_loader &mdash; ProMis 3.0.0 documentation</title>
+  <title>promis.loaders.osm_loader &mdash; ProMis 4.0.0.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../_static/documentation_options.js?v=0b1a429d"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,7 +74,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.loaders.osm_loader</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;A loader for fetching spatial data from OpenStreetMaps (OSM) via the Overpass API.&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Loaders for fetching spatial data from OpenStreetMaps (OSM).&quot;&quot;&quot;</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -86,12 +86,15 @@
 
 <span class="c1"># Standard Library</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep</span>
 
 <span class="c1"># Third Party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">osmium</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">overpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Overpass</span><span class="p">,</span> <span class="n">Relation</span><span class="p">,</span> <span class="n">exception</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapely.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">LineString</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapely.ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">linemerge</span><span class="p">,</span> <span class="n">polygonize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">LineString</span><span class="p">,</span> <span class="n">box</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely.ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">linemerge</span><span class="p">,</span> <span class="n">polygonize</span><span class="p">,</span> <span class="n">unary_union</span>
 
 <span class="c1"># ProMis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">PolarPolygon</span><span class="p">,</span> <span class="n">PolarPolyLine</span>
@@ -161,7 +164,7 @@
                 <span class="n">osm_filters</span> <span class="o">=</span> <span class="p">[</span><span class="n">osm_filters</span><span class="p">]</span>
 
             <span class="k">for</span> <span class="n">osm_filter</span> <span class="ow">in</span> <span class="n">osm_filters</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading </span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s2"> with filter </span><span class="si">{</span><span class="n">osm_filter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading </span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s2"> with filter </span><span class="si">{</span><span class="n">osm_filter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_load_ways</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">bounding_box</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_load_relations</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">bounding_box</span><span class="p">)</span></div>
 
@@ -318,6 +321,382 @@
 
         <span class="k">return</span> <span class="n">final_polygons</span></div>
 </div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_OsmFileHandler</span><span class="p">(</span><span class="n">osmium</span><span class="o">.</span><span class="n">SimpleHandler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Internal osmium handler that collects ways and relations within a bounding box.</span>
+
+<span class="sd">    Requires ``apply_file(..., locations=True)`` so that node coordinates are</span>
+<span class="sd">    resolved by osmium at the C++ level before ``way()`` is called.</span>
+
+<span class="sd">    Ways are collected in two tiers:</span>
+<span class="sd">    - **inner bbox** (strict bounds): used for standalone polyline/polygon features.</span>
+<span class="sd">    - **outer bbox** (expanded by ``_EXPAND`` degrees): used for relation member way</span>
+<span class="sd">      resolution, recovering data that is partially outside the bbox.</span>
+
+<span class="sd">    Relations are kept whenever at least one of their ``way`` members landed in the</span>
+<span class="sd">    outer bbox.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Maps the single-char type codes used by osmium to OSM element type strings.</span>
+    <span class="n">_TYPE_MAP</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;n&quot;</span><span class="p">:</span> <span class="s2">&quot;node&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="s2">&quot;way&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="s2">&quot;relation&quot;</span><span class="p">}</span>
+
+    <span class="c1"># Extra degrees added on each side of the strict bbox for way collection.</span>
+    <span class="n">_EXPAND</span> <span class="o">=</span> <span class="mf">0.15</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">south</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">west</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">north</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">east</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_south</span> <span class="o">=</span> <span class="n">south</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_west</span> <span class="o">=</span> <span class="n">west</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_north</span> <span class="o">=</span> <span class="n">north</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_east</span> <span class="o">=</span> <span class="n">east</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_EXPAND</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_esouth</span> <span class="o">=</span> <span class="n">south</span> <span class="o">-</span> <span class="n">exp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ewest</span>  <span class="o">=</span> <span class="n">west</span>  <span class="o">-</span> <span class="n">exp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enorth</span> <span class="o">=</span> <span class="n">north</span> <span class="o">+</span> <span class="n">exp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eeast</span>  <span class="o">=</span> <span class="n">east</span>  <span class="o">+</span> <span class="n">exp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ways</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">way</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">in_inner</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">in_outer</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">w</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">valid</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">lon</span>
+            <span class="n">coords</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">in_inner</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_south</span> <span class="o">&lt;=</span> <span class="n">lat</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_north</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_west</span> <span class="o">&lt;=</span> <span class="n">lon</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_east</span><span class="p">:</span>
+                <span class="n">in_inner</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">in_outer</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_esouth</span> <span class="o">&lt;=</span> <span class="n">lat</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enorth</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ewest</span> <span class="o">&lt;=</span> <span class="n">lon</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eeast</span><span class="p">:</span>
+                <span class="n">in_outer</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">in_outer</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ways</span><span class="p">[</span><span class="n">w</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;coords&quot;</span><span class="p">:</span> <span class="n">coords</span><span class="p">,</span>
+                <span class="s2">&quot;nd_refs&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">ref</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">w</span><span class="o">.</span><span class="n">nodes</span><span class="p">],</span>
+                <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">tag</span><span class="o">.</span><span class="n">k</span><span class="p">:</span> <span class="n">tag</span><span class="o">.</span><span class="n">v</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">w</span><span class="o">.</span><span class="n">tags</span><span class="p">},</span>
+                <span class="s2">&quot;in_bbox&quot;</span><span class="p">:</span> <span class="n">in_inner</span><span class="p">,</span>
+            <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;w&quot;</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">ref</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ways</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">members</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;members&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TYPE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">type</span><span class="p">),</span>
+                    <span class="s2">&quot;ref&quot;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">role</span><span class="p">,</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">members</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">tag</span><span class="o">.</span><span class="n">k</span><span class="p">:</span> <span class="n">tag</span><span class="o">.</span><span class="n">v</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">tags</span><span class="p">},</span>
+        <span class="p">}</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_MissingWaysHandler</span><span class="p">(</span><span class="n">osmium</span><span class="o">.</span><span class="n">SimpleHandler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Second-pass handler that fetches specific ways by ID.</span>
+
+<span class="sd">    Used to retrieve way members of relations whose geometry extends outside</span>
+<span class="sd">    the bounding box and were therefore skipped by :class:`_OsmFileHandler`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">needed_refs</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_needed</span> <span class="o">=</span> <span class="n">needed_refs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ways</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">way</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_needed</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">w</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">valid</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">coords</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">node</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">location</span><span class="o">.</span><span class="n">lon</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ways</span><span class="p">[</span><span class="n">w</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;coords&quot;</span><span class="p">:</span> <span class="n">coords</span><span class="p">,</span>
+                <span class="s2">&quot;nd_refs&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">ref</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">w</span><span class="o">.</span><span class="n">nodes</span><span class="p">],</span>
+                <span class="s2">&quot;tags&quot;</span><span class="p">:</span> <span class="p">{</span><span class="n">tag</span><span class="o">.</span><span class="n">k</span><span class="p">:</span> <span class="n">tag</span><span class="o">.</span><span class="n">v</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">w</span><span class="o">.</span><span class="n">tags</span><span class="p">},</span>
+                <span class="s2">&quot;in_bbox&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+
+
+<div class="viewcode-block" id="LocalOsmLoader">
+<a class="viewcode-back" href="../../../api.html#promis.loaders.LocalOsmLoader">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LocalOsmLoader</span><span class="p">(</span><span class="n">SpatialLoader</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A loader for spatial data from a local OSM file.</span>
+
+<span class="sd">    Reads ``.osm.pbf`` files (and any other format supported by osmium, such as</span>
+<span class="sd">    ``.osm`` and ``.osm.bz2``) and applies the same ``feature_description``</span>
+<span class="sd">    interface as :class:`OsmLoader`, so the two loaders are interchangeable from</span>
+<span class="sd">    the caller&#39;s perspective.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        If a `feature_description` is provided during initialization, data loading via the</span>
+<span class="sd">        `load` method is triggered immediately. If it is not provided, you must call</span>
+<span class="sd">        `load()` manually with a feature description to populate the loader with data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path: Path to a local OSM file (``.osm.pbf``, ``.osm``, ``.osm.bz2``, …).</span>
+<span class="sd">        origin: The polar coordinates of the map&#39;s center.</span>
+<span class="sd">        dimensions: The (width, height) of the map in meters.</span>
+<span class="sd">        feature_description: A mapping from a location type (e.g., ``&quot;buildings&quot;``) to</span>
+<span class="sd">            an Overpass-style filter string (e.g., ``&quot;[building]&quot;``). If provided, data</span>
+<span class="sd">            is loaded upon initialization. Defaults to ``None``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Matches one bracketed Overpass-style condition, e.g. [key], [!key],</span>
+    <span class="c1"># [key=value], [key!=value], [key~regex], [key!~regex].</span>
+    <span class="c1"># Groups: (leading_negation, key, operator, value)</span>
+    <span class="n">_CONDITION_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+        <span class="sa">r</span><span class="s1">&#39;\[(!?)&quot;?([^&quot;=!~\]\s]+?)&quot;?(?:([!~]?=|!?~)&quot;?([^&quot;\]]*?)&quot;?)?\]&#39;</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span>
+        <span class="n">dimensions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">feature_description</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">)</span>
+        <span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_polar_bounding_box</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ways</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_osm_file</span><span class="p">(</span><span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">feature_description</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">feature_description</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parse_osm_file</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">south</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">west</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">north</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">east</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse the OSM file, retaining only elements that intersect the bounding box.</span>
+
+<span class="sd">        Passes ``locations=True`` to osmium so that node coordinates are resolved</span>
+<span class="sd">        inside the C++ layer before ``way()`` is invoked.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A pair ``(ways, relations)`` where each value is a dict mapping the OSM</span>
+<span class="sd">            integer ID to a dict of element attributes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="n">_OsmFileHandler</span><span class="p">(</span><span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span><span class="p">)</span>
+        <span class="n">handler</span><span class="o">.</span><span class="n">apply_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">),</span> <span class="n">locations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">missing_refs</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">relation</span> <span class="ow">in</span> <span class="n">handler</span><span class="o">.</span><span class="n">relations</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">relation</span><span class="p">[</span><span class="s2">&quot;members&quot;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">member</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;way&quot;</span> <span class="ow">and</span> <span class="n">member</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">handler</span><span class="o">.</span><span class="n">ways</span><span class="p">:</span>
+                    <span class="n">missing_refs</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">member</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">missing_refs</span><span class="p">:</span>
+            <span class="n">missing_handler</span> <span class="o">=</span> <span class="n">_MissingWaysHandler</span><span class="p">(</span><span class="n">missing_refs</span><span class="p">)</span>
+            <span class="n">missing_handler</span><span class="o">.</span><span class="n">apply_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">),</span> <span class="n">locations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">handler</span><span class="o">.</span><span class="n">ways</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">missing_handler</span><span class="o">.</span><span class="n">ways</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Loaded </span><span class="si">%d</span><span class="s2"> additional out-of-bbox ways for relations&quot;</span><span class="p">,</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">missing_handler</span><span class="o">.</span><span class="n">ways</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Loaded </span><span class="si">%d</span><span class="s2"> ways, </span><span class="si">%d</span><span class="s2"> relations from </span><span class="si">%s</span><span class="s2"> (bbox: </span><span class="si">%.4f</span><span class="s2">,</span><span class="si">%.4f</span><span class="s2"> – </span><span class="si">%.4f</span><span class="s2">,</span><span class="si">%.4f</span><span class="s2">)&quot;</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">handler</span><span class="o">.</span><span class="n">ways</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">handler</span><span class="o">.</span><span class="n">relations</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">south</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">north</span><span class="p">,</span> <span class="n">east</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">handler</span><span class="o">.</span><span class="n">ways</span><span class="p">,</span> <span class="n">handler</span><span class="o">.</span><span class="n">relations</span>
+
+<div class="viewcode-block" id="LocalOsmLoader.load">
+<a class="viewcode-back" href="../../../api.html#promis.loaders.LocalOsmLoader.load">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_description</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load features from the local file that match the given filter descriptions.</span>
+
+<span class="sd">        - **Ways** are converted to `PolarPolyLine` (if open) or `PolarPolygon` (if closed).</span>
+<span class="sd">        - **Relations** are converted to `PolarPolygon`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            feature_description: A mapping from a location type (e.g., ``&quot;buildings&quot;``) to</span>
+<span class="sd">                an Overpass-style filter string or list of filter strings</span>
+<span class="sd">                (e.g., ``&quot;[building]&quot;``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">osm_filters</span> <span class="ow">in</span> <span class="n">feature_description</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">osm_filters</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">osm_filters</span> <span class="o">=</span> <span class="p">[</span><span class="n">osm_filters</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">osm_filter</span> <span class="ow">in</span> <span class="n">osm_filters</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading </span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s2"> with filter </span><span class="si">{</span><span class="n">osm_filter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_load_ways</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_load_relations</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_matches_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">osm_filter</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether a tag dict satisfies an Overpass-style filter string.</span>
+
+<span class="sd">        Supports ``[key]``, ``[!key]``, ``[key=val]``, ``[key!=val]``,</span>
+<span class="sd">        ``[key~regex]``, and ``[key!~regex]`` conditions.  Multiple conditions</span>
+<span class="sd">        in a single filter string are AND-ed together.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tags: OSM tag dict for a node, way, or relation.</span>
+<span class="sd">            osm_filter: Overpass-style filter string such as ``&quot;[highway=primary]&quot;``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ``True`` if all conditions in the filter are satisfied.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CONDITION_PATTERN</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">osm_filter</span><span class="p">):</span>
+            <span class="n">negate</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="k">if</span> <span class="n">op</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">has_key</span> <span class="o">=</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">tags</span>
+                <span class="k">if</span> <span class="n">negate</span> <span class="ow">and</span> <span class="n">has_key</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">negate</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">has_key</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;=&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;!=&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;~&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;!~&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_way_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">way</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a way&#39;s pre-resolved ``coords`` list to PolarLocations.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="n">lon</span><span class="p">)</span> <span class="k">for</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="ow">in</span> <span class="n">way</span><span class="p">[</span><span class="s2">&quot;coords&quot;</span><span class="p">]]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_ways</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">osm_filter</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter ways by ``osm_filter`` and append them as polylines or polygons.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            osm_filter: Overpass-style filter string to select ways.</span>
+<span class="sd">            location_type: Location type to assign to the created geometries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">way</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ways</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">way</span><span class="p">[</span><span class="s2">&quot;in_bbox&quot;</span><span class="p">]:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matches_filter</span><span class="p">(</span><span class="n">way</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">],</span> <span class="n">osm_filter</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_way_nodes</span><span class="p">(</span><span class="n">way</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">refs</span> <span class="o">=</span> <span class="n">way</span><span class="p">[</span><span class="s2">&quot;nd_refs&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">refs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">refs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PolarPolygon</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="n">location_type</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PolarPolyLine</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="n">location_type</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_relations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">osm_filter</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter relations by ``osm_filter`` and append them as polygons.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            osm_filter: Overpass-style filter string to select relations.</span>
+<span class="sd">            location_type: Location type to assign to the created geometries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">rel_id</span><span class="p">,</span> <span class="n">relation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relations</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matches_filter</span><span class="p">(</span><span class="n">relation</span><span class="p">[</span><span class="s2">&quot;tags&quot;</span><span class="p">],</span> <span class="n">osm_filter</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">polygons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relation_to_polygons</span><span class="p">(</span><span class="n">relation</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="n">location_type</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">polygons</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Skipping relation </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">rel_id</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_relation_to_polygons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarPolygon</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a parsed OSM relation dict into a list of PolarPolygons.</span>
+
+<span class="sd">        Way members are resolved from the local node and way caches.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            relation: A relation dict as produced by :meth:`_parse_osm_file`.</span>
+<span class="sd">            **kwargs: Extra arguments forwarded to :class:`~promis.geo.PolarPolygon`,</span>
+<span class="sd">                e.g., ``location_type``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of :class:`~promis.geo.PolarPolygon` objects.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the relation has no resolvable ``outer`` way members.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">outer_members</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">relation</span><span class="p">[</span><span class="s2">&quot;members&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;role&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;outer&quot;</span> <span class="ow">and</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;way&quot;</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">outer_members</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Relation has no &#39;outer&#39; way members.&quot;</span><span class="p">)</span>
+
+        <span class="n">inner_members</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">relation</span><span class="p">[</span><span class="s2">&quot;members&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;role&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;inner&quot;</span> <span class="ow">and</span> <span class="n">m</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;way&quot;</span>
+        <span class="p">]</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">members_to_linestrings</span><span class="p">(</span><span class="n">members</span><span class="p">):</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+                <span class="n">way</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ways</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">member</span><span class="p">[</span><span class="s2">&quot;ref&quot;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">way</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_way_nodes</span><span class="p">(</span><span class="n">way</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">cartesian</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points</span><span class="p">]</span>
+                    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LineString</span><span class="p">([(</span><span class="n">c</span><span class="o">.</span><span class="n">east</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">north</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cartesian</span><span class="p">]))</span>
+            <span class="k">return</span> <span class="n">lines</span>
+
+        <span class="n">outer_lines</span> <span class="o">=</span> <span class="n">members_to_linestrings</span><span class="p">(</span><span class="n">outer_members</span><span class="p">)</span>
+        <span class="n">outer_polygons</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">polygonize</span><span class="p">(</span><span class="n">linemerge</span><span class="p">(</span><span class="n">outer_lines</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">outer_polygons</span> <span class="ow">and</span> <span class="n">outer_lines</span><span class="p">:</span>
+            <span class="c1"># The outer ring has gaps — some ring-closure ways are beyond the PBF&#39;s</span>
+            <span class="c1"># coverage.  Stitch the available segments against the Cartesian bbox</span>
+            <span class="c1"># boundary so the ring can close.</span>
+            <span class="n">half_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">half_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">cart_bbox</span> <span class="o">=</span> <span class="n">box</span><span class="p">(</span><span class="o">-</span><span class="n">half_w</span><span class="p">,</span> <span class="o">-</span><span class="n">half_h</span><span class="p">,</span> <span class="n">half_w</span><span class="p">,</span> <span class="n">half_h</span><span class="p">)</span>
+            <span class="n">combined</span> <span class="o">=</span> <span class="n">unary_union</span><span class="p">([</span><span class="n">linemerge</span><span class="p">(</span><span class="n">outer_lines</span><span class="p">),</span> <span class="n">cart_bbox</span><span class="o">.</span><span class="n">boundary</span><span class="p">])</span>
+            <span class="n">min_area</span> <span class="o">=</span> <span class="n">cart_bbox</span><span class="o">.</span><span class="n">area</span> <span class="o">*</span> <span class="mf">0.005</span>
+            <span class="n">outer_polygons</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">polygonize</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">min_area</span> <span class="o">&lt;</span> <span class="n">p</span><span class="o">.</span><span class="n">area</span> <span class="o">&lt;</span> <span class="n">cart_bbox</span><span class="o">.</span><span class="n">area</span> <span class="o">*</span> <span class="mf">0.5</span>
+            <span class="p">]</span>
+            <span class="k">if</span> <span class="n">outer_polygons</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s2">&quot;Closed incomplete outer ring via bbox boundary fallback (</span><span class="si">%d</span><span class="s2"> polygon(s))&quot;</span><span class="p">,</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">outer_polygons</span><span class="p">),</span>
+                <span class="p">)</span>
+
+        <span class="n">inner_polygons</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">polygonize</span><span class="p">(</span><span class="n">linemerge</span><span class="p">(</span><span class="n">members_to_linestrings</span><span class="p">(</span><span class="n">inner_members</span><span class="p">))))</span>
+
+        <span class="n">final_polygons</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">outer_poly</span> <span class="ow">in</span> <span class="n">outer_polygons</span><span class="p">:</span>
+            <span class="n">contained_holes</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">inner_poly</span> <span class="k">for</span> <span class="n">inner_poly</span> <span class="ow">in</span> <span class="n">inner_polygons</span>
+                <span class="k">if</span> <span class="n">outer_poly</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">inner_poly</span><span class="o">.</span><span class="n">representative_point</span><span class="p">())</span>
+            <span class="p">]</span>
+            <span class="n">outer_coords_polar</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">CartesianLocation</span><span class="p">(</span><span class="n">east</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">north</span><span class="o">=</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">outer_poly</span><span class="o">.</span><span class="n">exterior</span><span class="o">.</span><span class="n">coords</span>
+            <span class="p">]</span>
+            <span class="n">holes_coords_polar</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">[</span><span class="n">CartesianLocation</span><span class="p">(</span><span class="n">east</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">north</span><span class="o">=</span><span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">hole</span><span class="o">.</span><span class="n">exterior</span><span class="o">.</span><span class="n">coords</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">hole</span> <span class="ow">in</span> <span class="n">contained_holes</span>
+            <span class="p">]</span>
+            <span class="n">final_polygons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PolarPolygon</span><span class="p">(</span><span class="n">outer_coords_polar</span><span class="p">,</span> <span class="n">holes</span><span class="o">=</span><span class="n">holes_coords_polar</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">final_polygons</span></div>
 
 </pre></div>
 

@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>API &mdash; ProMis 3.0.0 documentation</title>
+  <title>API &mdash; ProMis 4.0.0.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="_static/documentation_options.js?v=0b1a429d"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -52,8 +52,13 @@
 <li class="toctree-l1"><a class="reference internal" href="gui.html">Graphical User Interface</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#promis.promis.ProMis"><code class="docutils literal notranslate"><span class="pre">ProMis</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#promis.promis.ProMis.adaptive_solve"><code class="docutils literal notranslate"><span class="pre">ProMis.adaptive_solve()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#promis.promis.ProMis.solve"><code class="docutils literal notranslate"><span class="pre">ProMis.solve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.promis.ProMis.adapt"><code class="docutils literal notranslate"><span class="pre">ProMis.adapt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.promis.ProMis.get_frequencies"><code class="docutils literal notranslate"><span class="pre">ProMis.get_frequencies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.promis.ProMis.get_names"><code class="docutils literal notranslate"><span class="pre">ProMis.get_names()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.promis.ProMis.get_reactive_circuit"><code class="docutils literal notranslate"><span class="pre">ProMis.get_reactive_circuit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.promis.ProMis.get_writer"><code class="docutils literal notranslate"><span class="pre">ProMis.get_writer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.promis.ProMis.initialize"><code class="docutils literal notranslate"><span class="pre">ProMis.initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.promis.ProMis.update"><code class="docutils literal notranslate"><span class="pre">ProMis.update()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#promis.star_map.StaRMap"><code class="docutils literal notranslate"><span class="pre">StaRMap</span></code></a><ul>
@@ -61,6 +66,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.get"><code class="docutils literal notranslate"><span class="pre">StaRMap.get()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.get_all"><code class="docutils literal notranslate"><span class="pre">StaRMap.get_all()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.initialize"><code class="docutils literal notranslate"><span class="pre">StaRMap.initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.link"><code class="docutils literal notranslate"><span class="pre">StaRMap.link()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.load"><code class="docutils literal notranslate"><span class="pre">StaRMap.load()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.location_types"><code class="docutils literal notranslate"><span class="pre">StaRMap.location_types</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.relation_and_location_types"><code class="docutils literal notranslate"><span class="pre">StaRMap.relation_and_location_types</span></code></a></li>
@@ -69,6 +75,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.relation_types"><code class="docutils literal notranslate"><span class="pre">StaRMap.relation_types</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.sample"><code class="docutils literal notranslate"><span class="pre">StaRMap.sample()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.save"><code class="docutils literal notranslate"><span class="pre">StaRMap.save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.star_map.StaRMap.update"><code class="docutils literal notranslate"><span class="pre">StaRMap.update()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-promis.geo">Geo</a><ul>
@@ -213,6 +220,10 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-promis.loaders">Loaders</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#promis.loaders.LocalOsmLoader"><code class="docutils literal notranslate"><span class="pre">LocalOsmLoader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#promis.loaders.LocalOsmLoader.load"><code class="docutils literal notranslate"><span class="pre">LocalOsmLoader.load()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.loaders.NauticalLoader"><code class="docutils literal notranslate"><span class="pre">NauticalLoader</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#promis.loaders.NauticalLoader.load"><code class="docutils literal notranslate"><span class="pre">NauticalLoader.load()</span></code></a></li>
 </ul>
@@ -249,7 +260,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#promis.logic.Over.arity"><code class="docutils literal notranslate"><span class="pre">Over.arity()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#promis.logic.Over.compute_relation"><code class="docutils literal notranslate"><span class="pre">Over.compute_relation()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#promis.logic.Over.empty_map_parameters"><code class="docutils literal notranslate"><span class="pre">Over.empty_map_parameters()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#promis.logic.Over.index_to_distributional_clause"><code class="docutils literal notranslate"><span class="pre">Over.index_to_distributional_clause()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#promis.logic.Relation"><code class="docutils literal notranslate"><span class="pre">Relation</span></code></a><ul>
@@ -258,21 +268,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#promis.logic.Relation.compute_relation"><code class="docutils literal notranslate"><span class="pre">Relation.compute_relation()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#promis.logic.Relation.empty_map_parameters"><code class="docutils literal notranslate"><span class="pre">Relation.empty_map_parameters()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#promis.logic.Relation.from_r_trees"><code class="docutils literal notranslate"><span class="pre">Relation.from_r_trees()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#promis.logic.Relation.index_to_distributional_clause"><code class="docutils literal notranslate"><span class="pre">Relation.index_to_distributional_clause()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#promis.logic.Relation.load"><code class="docutils literal notranslate"><span class="pre">Relation.load()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#promis.logic.Relation.save"><code class="docutils literal notranslate"><span class="pre">Relation.save()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#promis.logic.Relation.save_as_plp"><code class="docutils literal notranslate"><span class="pre">Relation.save_as_plp()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#promis.logic.Relation.to_distributional_clauses"><code class="docutils literal notranslate"><span class="pre">Relation.to_distributional_clauses()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#promis.logic.ScalarRelation"><code class="docutils literal notranslate"><span class="pre">ScalarRelation</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#promis.logic.ScalarRelation.index_to_distributional_clause"><code class="docutils literal notranslate"><span class="pre">ScalarRelation.index_to_distributional_clause()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#promis.logic.Solver"><code class="docutils literal notranslate"><span class="pre">Solver</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#promis.logic.Solver.inference"><code class="docutils literal notranslate"><span class="pre">Solver.inference()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l3"><a class="reference internal" href="#promis.logic.ScalarRelation"><code class="docutils literal notranslate"><span class="pre">ScalarRelation</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-promis.models">Models</a><ul>
@@ -328,54 +328,115 @@
              
   <section id="module-promis.promis">
 <span id="api"></span><h1>API<a class="headerlink" href="#module-promis.promis" title="Link to this heading"></a></h1>
-<p>The ProMis engine for solving constrained navigation tasks using hybrid probabilistic logic.</p>
+<p>The ProMis engine for reactive probabilistic mission landscapes using Resin.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="promis.promis.ProMis">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.promis.</span></span><span class="sig-name descname"><span class="pre">ProMis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">star_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.star_map.StaRMap" title="promis.star_map.StaRMap"><span class="pre">StaRMap</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/promis.html#ProMis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.promis.</span></span><span class="sig-name descname"><span class="pre">ProMis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">star_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.star_map.StaRMap" title="promis.star_map.StaRMap"><span class="pre">StaRMap</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">logic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/promis.html#ProMis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>The ProMis engine to create Probabilistic Mission Landscapes.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="promis.promis.ProMis.adaptive_solve">
-<span class="sig-name descname"><span class="pre">adaptive_solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_evaluation_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidate_sampler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_improvement_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolation_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acquisition_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'entropy'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/promis.html#ProMis.adaptive_solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis.adaptive_solve" title="Link to this definition"></a></dt>
-<dd><p>Automatically add support points at locations where the uncertainty is high.</p>
+<p>The ProMis engine for reactive Probabilistic Mission Landscapes using Resin.</p>
+<p>Parses a Resin logic program, compiles it, and automatically wires all sources
+declared with a known relation type (<code class="docutils literal notranslate"><span class="pre">over</span></code>, <code class="docutils literal notranslate"><span class="pre">distance</span></code>, <code class="docutils literal notranslate"><span class="pre">depth</span></code>) to the
+corresponding data in the provided StaRMap.  Sources for dynamic data (e.g.
+moving agents) can be obtained via <a class="reference internal" href="#promis.promis.ProMis.get_writer" title="promis.promis.ProMis.get_writer"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_writer()</span></code></a> and written to
+independently.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>number_of_random_maps</strong> – How often to sample from map data in order to
-compute statistics of spatial relations</p></li>
-<li><p><strong>number_of_improvement_points</strong> – How many points to add to improve the map</p></li>
-<li><p><strong>relations</strong> – The spatial relations to compute</p></li>
-<li><p><strong>location_types</strong> – The location types to compute</p></li>
-<li><p><strong>interpolation_method</strong> – The interpolation method used to get from StaR Map known values
-to evluation points</p></li>
-<li><p><strong>acquisition_method</strong> – The method to inform the adaptive solving process,
-one of {entropy, gaussian_process}</p></li>
+<li><p><strong>star_map</strong> – The statistical relational map holding pre-computed relation parameters.</p></li>
+<li><p><strong>logic</strong> – A Resin program string.  Every <code class="docutils literal notranslate"><span class="pre">atom</span> <span class="pre">&lt;-</span> <span class="pre">source(path,</span> <span class="pre">Type).</span></code> declaration
+whose atom matches a relation in the StaRMap is wired up automatically.</p></li>
+<li><p><strong>dimension</strong> – The number of spatial evaluation points (pixels / locations).</p></li>
+<li><p><strong>verbose</strong> – Whether to enable verbose output from Resin.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.promis.ProMis.adapt">
+<span class="sig-name descname"><span class="pre">adapt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bin_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/promis/promis.html#ProMis.adapt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis.adapt" title="Link to this definition"></a></dt>
+<dd><p>Adapt the reactive circuit by automatically lifting and dropping leaves.</p>
+<p>Delegates to the underlying reactive circuit’s <code class="docutils literal notranslate"><span class="pre">adapt</span></code> method, which
+decides internally which leaves to lift or drop based on the provided
+frequency-binning parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bin_size</strong> – Width of each frequency bin used for the adaptation heuristic.</p></li>
+<li><p><strong>number_bins</strong> – Number of frequency bins to consider.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="promis.promis.ProMis.solve">
-<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evaluation_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianCollection" title="promis.geo.collection.CartesianCollection"><span class="pre">CartesianCollection</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">logic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_first</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolation_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'linear'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/promis/promis.html#ProMis.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis.solve" title="Link to this definition"></a></dt>
-<dd><p>Solve the given ProMis problem.</p>
-<p>It searches the provided logic for the used relations and location types and
-only encodes the necessary information for the inference.
-It can further parallelize the inference process over multiple workers and batch
-into fewer solver invocations to speed up computations.</p>
+<dt class="sig sig-object py" id="promis.promis.ProMis.get_frequencies">
+<span class="sig-name descname"><span class="pre">get_frequencies</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/promis/promis.html#ProMis.get_frequencies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis.get_frequencies" title="Link to this definition"></a></dt>
+<dd><p>Return the current update frequencies of the reactive circuit leaves.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.promis.ProMis.get_names">
+<span class="sig-name descname"><span class="pre">get_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/promis/promis.html#ProMis.get_names"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis.get_names" title="Link to this definition"></a></dt>
+<dd><p>Return the canonical leaf names used by the reactive circuit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.promis.ProMis.get_reactive_circuit">
+<span class="sig-name descname"><span class="pre">get_reactive_circuit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/promis.html#ProMis.get_reactive_circuit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis.get_reactive_circuit" title="Link to this definition"></a></dt>
+<dd><p>Return the underlying Resin reactive circuit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.promis.ProMis.get_writer">
+<span class="sig-name descname"><span class="pre">get_writer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">relation_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">location_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/promis.html#ProMis.get_writer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis.get_writer" title="Link to this definition"></a></dt>
+<dd><p>Return the Resin writer for the given relation and location type.</p>
+<p>Use this to push dynamic (runtime-varying) data into a source that is
+not automatically wired from the StaRMap, e.g. moving vessels or UAS.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>support</strong> – The points to compute exactly, with the output being interpolated to the same
-target as the employed StaRMap</p></li>
-<li><p><strong>logic</strong> – The constraints of the landscape(X) predicate, including its definition</p></li>
-<li><p><strong>n_jobs</strong> – How many workers to use in parallel</p></li>
-<li><p><strong>batch_size</strong> – How many pixels to infer at once</p></li>
-<li><p><strong>show_progress</strong> – Whether to show a progress bar</p></li>
-<li><p><strong>print_first</strong> – Whether to print the first program to stdout</p></li>
-<li><p><strong>interpolation_method</strong> – The interpolation method used to get from StaR Map known values
-to evluation points</p></li>
+<li><p><strong>relation_type</strong> – The relation name, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;distance&quot;</span></code>.</p></li>
+<li><p><strong>location_type</strong> – The location type, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;vessel&quot;</span></code>.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Resin writer object with a <code class="docutils literal notranslate"><span class="pre">write(...)</span></code> method.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.14)"><strong>KeyError</strong></a> – If no source for the given relation and location type was
+    declared in the Resin program.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.promis.ProMis.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evaluation_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianCollection" title="promis.geo.collection.CartesianCollection"><span class="pre">CartesianCollection</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolation_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'hybrid'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/promis/promis.html#ProMis.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis.initialize" title="Link to this definition"></a></dt>
+<dd><p>Write StaRMap data to all auto-linked sources.</p>
+<p>Call this once (or whenever the set of evaluation points changes) to push
+the static, map-derived distributions into the reactive circuit before
+starting the update loop.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>evaluation_points</strong> – The spatial locations for which to evaluate and
+write relation parameters.</p></li>
+<li><p><strong>interpolation_method</strong> – Interpolation method forwarded to the StaRMap
+interpolators (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;hybrid&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;linear&quot;</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.promis.ProMis.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.CartesianCollection" title="promis.geo.collection.CartesianCollection"><span class="pre">CartesianCollection</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/promis/promis.html#ProMis.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.promis.ProMis.update" title="Link to this definition"></a></dt>
+<dd><p>Trigger a reactive circuit update and return the landscape as a collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A <a class="reference internal" href="#promis.geo.CartesianCollection" title="promis.geo.CartesianCollection"><code class="xref py py-class docutils literal notranslate"><span class="pre">CartesianCollection</span></code></a> with the same coordinates
+as the evaluation points passed to <a class="reference internal" href="#promis.promis.ProMis.initialize" title="promis.promis.ProMis.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initialize()</span></code></a>, where
+<code class="docutils literal notranslate"><span class="pre">data[&quot;v0&quot;]</span></code> holds the per-point landscape probabilities.
+Returns <code class="docutils literal notranslate"><span class="pre">None</span></code> when the reactive circuit has no new output yet.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -437,16 +498,11 @@ compute statistics of spatial relations</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.star_map.StaRMap.get_all">
-<span class="sig-name descname"><span class="pre">get_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#promis.logic.Relation" title="promis.logic.spatial.relation.Relation"><span class="pre">Relation</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.get_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.get_all" title="Link to this definition"></a></dt>
-<dd><p>Get all or a subset of relations for each location type.</p>
-<p>If a logic program is provided, only the relations mentioned in it are returned.
-Otherwise, all computed relations are returned.</p>
+<span class="sig-name descname"><span class="pre">get_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#promis.logic.Relation" title="promis.logic.spatial.relation.Relation"><span class="pre">Relation</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.get_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.get_all" title="Link to this definition"></a></dt>
+<dd><p>Get all computed relations.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>logic</strong> – An optional logic program to filter the relations.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A nested dictionary of all requested relations, mapping relation type to
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A nested dictionary of all computed relations, mapping relation type to
 location type to the <cite>Relation</cite> object.</p>
 </dd>
 </dl>
@@ -463,6 +519,20 @@ location type to the <cite>Relation</cite> object.</p>
 <li><p><strong>number_of_random_maps</strong> – The number of samples to be used per support point.</p></li>
 <li><p><strong>logic</strong> – The set of constraints deciding which relations are computed.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.star_map.StaRMap.link">
+<span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">promis</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.link" title="Link to this definition"></a></dt>
+<dd><p>Link this StaRMap to a ProMis instance.</p>
+<p>Once linked, <a class="reference internal" href="#promis.star_map.StaRMap.update" title="promis.star_map.StaRMap.update"><code class="xref py py-meth docutils literal notranslate"><span class="pre">update()</span></code></a> can recompute a spatial relation and write
+the result directly into the Resin reactive circuit without any manual
+interpolation or writer calls.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>promis</strong> – The <a class="reference internal" href="#promis.promis.ProMis" title="promis.promis.ProMis"><code class="xref py py-class docutils literal notranslate"><span class="pre">ProMis</span></code></a> instance to link to.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -550,6 +620,33 @@ types are computed.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>path</strong> – The path to the file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.star_map.StaRMap.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">relation_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">location_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianCollection" title="promis.geo.collection.CartesianCollection"><span class="pre">CartesianCollection</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_random_maps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">interpolation_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'hybrid'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/promis/star_map.html#StaRMap.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.star_map.StaRMap.update" title="Link to this definition"></a></dt>
+<dd><p>Recompute a spatial relation and write the result to the linked Resin circuit.</p>
+<p>This combines <a class="reference internal" href="#promis.star_map.StaRMap.sample" title="promis.star_map.StaRMap.sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample()</span></code></a>, parameter interpolation to the evaluation
+grid, and the Resin writer call into one step.  Call <a class="reference internal" href="#promis.star_map.StaRMap.link" title="promis.star_map.StaRMap.link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">link()</span></code></a> and
+<a class="reference internal" href="#promis.promis.ProMis.initialize" title="promis.promis.ProMis.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initialize()</span></code></a> before using this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>relation_type</strong> – The relation to recompute, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;distance&quot;</span></code>.</p></li>
+<li><p><strong>location_type</strong> – The location type to relate to, e.g. <code class="docutils literal notranslate"><span class="pre">&quot;vessel&quot;</span></code>.</p></li>
+<li><p><strong>sample_points</strong> – Points at which to compute the spatial relation
+(typically perturbed positions of the dynamic features).</p></li>
+<li><p><strong>number_of_random_maps</strong> – Number of random map samples used to
+estimate the relation parameters.</p></li>
+<li><p><strong>interpolation_method</strong> – Interpolation method used to map the newly
+computed relation parameters to the evaluation grid.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If <a class="reference internal" href="#promis.star_map.StaRMap.link" title="promis.star_map.StaRMap.link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">link()</span></code></a> or
+    <a class="reference internal" href="#promis.promis.ProMis.initialize" title="promis.promis.ProMis.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">initialize()</span></code></a> have not been called.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -709,8 +806,8 @@ east and north coordinates respectively</p></li>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
@@ -829,8 +926,8 @@ is represented by a pair of <code class="docutils literal notranslate"><span cla
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
@@ -942,7 +1039,7 @@ into a polar one</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="promis.geo.CartesianPolygon.make_centered_box">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">make_centered_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianLocation" title="promis.geo.location.CartesianLocation"><span class="pre">CartesianLocation</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CartesianLocation(east=0.0,</span> <span class="pre">north=0.0,</span> <span class="pre">identifier=4273627609548628596)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.CartesianPolygon" title="promis.geo.polygon.CartesianPolygon"><span class="pre">CartesianPolygon</span></a></span></span><a class="reference internal" href="_modules/promis/geo/polygon.html#CartesianPolygon.make_centered_box"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolygon.make_centered_box" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">make_centered_box</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianLocation" title="promis.geo.location.CartesianLocation"><span class="pre">CartesianLocation</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CartesianLocation(east=0.0,</span> <span class="pre">north=0.0,</span> <span class="pre">identifier=1618868020345131771)</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#promis.geo.CartesianPolygon" title="promis.geo.polygon.CartesianPolygon"><span class="pre">CartesianPolygon</span></a></span></span><a class="reference internal" href="_modules/promis/geo/polygon.html#CartesianPolygon.make_centered_box"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.geo.CartesianPolygon.make_centered_box" title="Link to this definition"></a></dt>
 <dd><p>Generates a box centered around a given offset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -986,8 +1083,8 @@ into a polar one</p></li>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
@@ -1335,8 +1432,8 @@ Supported methods are “entropy” and “gaussian_process”.</p></li>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
@@ -1736,8 +1833,8 @@ creation is relatively time consuming.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.0)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
-<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.0)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.HTTPError" title="(in Requests v2.33.1)"><strong>HTTPError</strong></a> – When the HTTP request returned an unsuccessful status code</p></li>
+<li><p><a class="reference external" href="https://requests.readthedocs.io/en/latest/api/#requests.ConnectionError" title="(in Requests v2.33.1)"><strong>ConnectionError</strong></a> – If the request fails due to connection issues</p></li>
 </ul>
 </dd>
 </dl>
@@ -2082,6 +2179,52 @@ determined by the RasterBand’s values and cost_model</p>
 <span id="loaders"></span><h2>Loaders<a class="headerlink" href="#module-promis.loaders" title="Link to this heading"></a></h2>
 <p>The ProMis loaders package provides data loading for various sources.</p>
 <dl class="py class">
+<dt class="sig sig-object py" id="promis.loaders.LocalOsmLoader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.loaders.</span></span><span class="sig-name descname"><span class="pre">LocalOsmLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.PolarLocation" title="promis.geo.location.PolarLocation"><span class="pre">PolarLocation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/loaders/osm_loader.html#LocalOsmLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.loaders.LocalOsmLoader" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#promis.loaders.SpatialLoader" title="promis.loaders.spatial_loader.SpatialLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpatialLoader</span></code></a></p>
+<p>A loader for spatial data from a local OSM file.</p>
+<p>Reads <code class="docutils literal notranslate"><span class="pre">.osm.pbf</span></code> files (and any other format supported by osmium, such as
+<code class="docutils literal notranslate"><span class="pre">.osm</span></code> and <code class="docutils literal notranslate"><span class="pre">.osm.bz2</span></code>) and applies the same <code class="docutils literal notranslate"><span class="pre">feature_description</span></code>
+interface as <a class="reference internal" href="#promis.loaders.OsmLoader" title="promis.loaders.OsmLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">OsmLoader</span></code></a>, so the two loaders are interchangeable from
+the caller’s perspective.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a <cite>feature_description</cite> is provided during initialization, data loading via the
+<cite>load</cite> method is triggered immediately. If it is not provided, you must call
+<cite>load()</cite> manually with a feature description to populate the loader with data.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> – Path to a local OSM file (<code class="docutils literal notranslate"><span class="pre">.osm.pbf</span></code>, <code class="docutils literal notranslate"><span class="pre">.osm</span></code>, <code class="docutils literal notranslate"><span class="pre">.osm.bz2</span></code>, …).</p></li>
+<li><p><strong>origin</strong> – The polar coordinates of the map’s center.</p></li>
+<li><p><strong>dimensions</strong> – The (width, height) of the map in meters.</p></li>
+<li><p><strong>feature_description</strong> – A mapping from a location type (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;buildings&quot;</span></code>) to
+an Overpass-style filter string (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;[building]&quot;</span></code>). If provided, data
+is loaded upon initialization. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="promis.loaders.LocalOsmLoader.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature_description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/promis/loaders/osm_loader.html#LocalOsmLoader.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.loaders.LocalOsmLoader.load" title="Link to this definition"></a></dt>
+<dd><p>Load features from the local file that match the given filter descriptions.</p>
+<ul class="simple">
+<li><p><strong>Ways</strong> are converted to <cite>PolarPolyLine</cite> (if open) or <cite>PolarPolygon</cite> (if closed).</p></li>
+<li><p><strong>Relations</strong> are converted to <cite>PolarPolygon</cite>.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>feature_description</strong> – A mapping from a location type (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;buildings&quot;</span></code>) to
+an Overpass-style filter string or list of filter strings
+(e.g., <code class="docutils literal notranslate"><span class="pre">&quot;[building]&quot;</span></code>).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="promis.loaders.NauticalLoader">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.loaders.</span></span><span class="sig-name descname"><span class="pre">NauticalLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chart_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.PolarLocation" title="promis.geo.location.PolarLocation"><span class="pre">PolarLocation</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimensions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/loaders/nautical_loader.html#NauticalLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.loaders.NauticalLoader" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#promis.loaders.SpatialLoader" title="promis.loaders.spatial_loader.SpatialLoader"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpatialLoader</span></code></a></p>
@@ -2239,7 +2382,7 @@ loader’s origin.</p>
 </section>
 <section id="module-promis.logic">
 <span id="logic"></span><h2>Logic<a class="headerlink" href="#module-promis.logic" title="Link to this heading"></a></h2>
-<p>The ProMis logic package provides probabilistic logic program inference and spatial relations.</p>
+<p>The ProMis logic package provides spatial relations for probabilistic mission design.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="promis.logic.Depth">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.logic.</span></span><span class="sig-name descname"><span class="pre">Depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianCollection" title="promis.geo.collection.CartesianCollection"><span class="pre">CartesianCollection</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">location_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/logic/spatial/depth.html#Depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.Depth" title="Link to this definition"></a></dt>
@@ -2409,23 +2552,6 @@ then performs a precise check.</p>
 <dd><p>Returns the parameters for an empty map, which is a probability of 0.0 with 0 variance.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="promis.logic.Over.index_to_distributional_clause">
-<span class="sig-name descname"><span class="pre">index_to_distributional_clause</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/promis/logic/spatial/over.html#Over.index_to_distributional_clause"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.Over.index_to_distributional_clause" title="Link to this definition"></a></dt>
-<dd><p>Express a single index of this Relation as a distributional clause.</p>
-<p>The clause is formatted as <cite>PROBABILITY::over(x_INDEX, location_type).</cite>, where the
-probability is the mean probability of the point being over a feature across the
-sample maps.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>index</strong> – The index of the point within the <cite>parameters</cite> collection.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A string representing the distributional clause for the specified entry.</p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -2518,20 +2644,6 @@ the relation from.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="promis.logic.Relation.index_to_distributional_clause">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">index_to_distributional_clause</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/promis/logic/spatial/relation.html#Relation.index_to_distributional_clause"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.Relation.index_to_distributional_clause" title="Link to this definition"></a></dt>
-<dd><p>Express a single index of this Relation as a distributional clause.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>index</strong> – The index of the point within the <cite>parameters</cite> collection.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A string representing the distributional clause for the specified entry.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="promis.logic.Relation.load">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DerivedRelation</span></span></span><a class="reference internal" href="_modules/promis/logic/spatial/relation.html#Relation.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.Relation.load" title="Link to this definition"></a></dt>
 <dd><p>Load the relation from a .pkl file.</p>
@@ -2556,35 +2668,11 @@ the relation from.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="promis.logic.Relation.save_as_plp">
-<span class="sig-name descname"><span class="pre">save_as_plp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/promis/logic/spatial/relation.html#Relation.save_as_plp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.Relation.save_as_plp" title="Link to this definition"></a></dt>
-<dd><p>Save the relation as a text file containing distributional clauses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path</strong> – The path to the file, including its name and file extension.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="promis.logic.Relation.to_distributional_clauses">
-<span class="sig-name descname"><span class="pre">to_distributional_clauses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/promis/logic/spatial/relation.html#Relation.to_distributional_clauses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.Relation.to_distributional_clauses" title="Link to this definition"></a></dt>
-<dd><p>Express the Relation as distributional clause.</p>
-<p>A distributional clause is a string representation of a probabilistic fact,
-suitable for use in a probabilistic logic program.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A list of distributional clauses, one for each point in the <cite>parameters</cite> collection.</p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="promis.logic.ScalarRelation">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.logic.</span></span><span class="sig-name descname"><span class="pre">ScalarRelation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianCollection" title="promis.geo.collection.CartesianCollection"><span class="pre">CartesianCollection</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">location_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">problog_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">enforced_min_variance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/logic/spatial/relation.html#ScalarRelation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.ScalarRelation" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.logic.</span></span><span class="sig-name descname"><span class="pre">ScalarRelation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#promis.geo.CartesianCollection" title="promis.geo.collection.CartesianCollection"><span class="pre">CartesianCollection</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">location_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">enforced_min_variance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/logic/spatial/relation.html#ScalarRelation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.ScalarRelation" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#promis.logic.Relation" title="promis.logic.spatial.relation.Relation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Relation</span></code></a></p>
 <p>A relation representing a scalar value modeled by a Gaussian distribution.</p>
 <p>This class provides a concrete implementation for relations where the value at each point
@@ -2596,62 +2684,11 @@ of the Gaussian distribution.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>parameters</strong> – A collection of points, where each has values for <cite>[mean, variance]</cite>.</p></li>
 <li><p><strong>location_type</strong> – The name of the locations this distance relates to.</p></li>
-<li><p><strong>problog_name</strong> – The name to be used for this relation in Problog clauses.</p></li>
 <li><p><strong>enforced_min_variance</strong> – The minimum variance to enforce for the distribution. Values below
 this will be clipped.</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="promis.logic.ScalarRelation.index_to_distributional_clause">
-<span class="sig-name descname"><span class="pre">index_to_distributional_clause</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="reference internal" href="_modules/promis/logic/spatial/relation.html#ScalarRelation.index_to_distributional_clause"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.ScalarRelation.index_to_distributional_clause" title="Link to this definition"></a></dt>
-<dd><p>Express a single index of this Relation as a distributional clause.</p>
-<p>Formats the clause as <cite>name(x_INDEX, location_type) ~ normal(MEAN, STD).</cite>
-or <cite>name(x_INDEX) ~ normal(MEAN, STD).</cite> if <cite>location_type</cite> is None.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>index</strong> – The index of the point within the <cite>parameters</cite> collection.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A string representing the distributional clause for the specified entry.</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="promis.logic.Solver">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">promis.logic.</span></span><span class="sig-name descname"><span class="pre">Solver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">program</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">configuration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/promis/logic/solver.html#Solver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.Solver" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>A solver for Hybrid Probabilistic Logic Programs (HPLP) in ProMis.</p>
-<p>This class wraps the DCProbLog inference engine, providing a simplified interface for
-running queries on a probabilistic logic program.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>program</strong> – The logic program, written as a string in ProbLog syntax with
-distributional clauses.</p></li>
-<li><p><strong>configuration</strong> – A dictionary of configuration options for the DCProbLog solver.
-If None, default settings are used. See <cite>DEFAULT_SOLVER_CONFIGURATION</cite>.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="promis.logic.Solver.inference">
-<span class="sig-name descname"><span class="pre">inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/promis/logic/solver.html#Solver.inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#promis.logic.Solver.inference" title="Link to this definition"></a></dt>
-<dd><p>Run probabilistic inference on the given program.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>configuration</strong> – A dictionary of configuration options to override the solver’s
-default settings for this specific inference run.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A list of probabilities, one for each query in the program.</p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 </section>

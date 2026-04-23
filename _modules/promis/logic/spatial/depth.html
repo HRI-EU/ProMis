@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.logic.spatial.depth &mdash; ProMis 3.0.0 documentation</title>
+  <title>promis.logic.spatial.depth &mdash; ProMis 4.0.0.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../../_static/documentation_options.js?v=0b1a429d"></script>
       <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -115,7 +115,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">problog_name</span><span class="o">=</span><span class="s2">&quot;depth&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">location_type</span> <span class="o">!=</span> <span class="s2">&quot;water&quot;</span><span class="p">:</span>
             <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Depth relation is usually only used for water locations, not </span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

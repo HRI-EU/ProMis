@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.logic.spatial.relation &mdash; ProMis 3.0.0 documentation</title>
+  <title>promis.logic.spatial.relation &mdash; ProMis 4.0.0.dev1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=acc74ff5"></script>
+      <script src="../../../../_static/documentation_options.js?v=0b1a429d"></script>
       <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -154,36 +154,6 @@
             <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Relation.save_as_plp">
-<a class="viewcode-back" href="../../../../api.html#promis.logic.Relation.save_as_plp">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_as_plp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the relation as a text file containing distributional clauses.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            path: The path to the file, including its name and file extension.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">plp_file</span><span class="p">:</span>
-            <span class="n">plp_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_distributional_clauses</span><span class="p">()))</span></div>
-
-
-<div class="viewcode-block" id="Relation.to_distributional_clauses">
-<a class="viewcode-back" href="../../../../api.html#promis.logic.Relation.to_distributional_clauses">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_distributional_clauses</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Express the Relation as distributional clause.</span>
-
-<span class="sd">        A distributional clause is a string representation of a probabilistic fact,</span>
-<span class="sd">        suitable for use in a probabilistic logic program.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A list of distributional clauses, one for each point in the `parameters` collection.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="p">[</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">index_to_distributional_clause</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
-        <span class="p">]</span></div>
-
-
 <div class="viewcode-block" id="Relation.empty_map_parameters">
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Relation.empty_map_parameters">[docs]</a>
     <span class="nd">@staticmethod</span>
@@ -193,20 +163,6 @@
 
 <span class="sd">        These parameters are used as a fallback when no map features are present to compute</span>
 <span class="sd">        the relation from.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-
-
-<div class="viewcode-block" id="Relation.index_to_distributional_clause">
-<a class="viewcode-back" href="../../../../api.html#promis.logic.Relation.index_to_distributional_clause">[docs]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">index_to_distributional_clause</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Express a single index of this Relation as a distributional clause.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            index: The index of the point within the `parameters` collection.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A string representing the distributional clause for the specified entry.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 
@@ -331,7 +287,6 @@
 <span class="sd">    Args:</span>
 <span class="sd">        parameters: A collection of points, where each has values for `[mean, variance]`.</span>
 <span class="sd">        location_type: The name of the locations this distance relates to.</span>
-<span class="sd">        problog_name: The name to be used for this relation in Problog clauses.</span>
 <span class="sd">        enforced_min_variance: The minimum variance to enforce for the distribution. Values below</span>
 <span class="sd">            this will be clipped.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -340,12 +295,10 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">parameters</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
         <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">problog_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">enforced_min_variance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">problog_name</span> <span class="o">=</span> <span class="n">problog_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">clip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">],</span> <span class="n">enforced_min_variance</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enforced_min_variance</span> <span class="o">=</span> <span class="n">enforced_min_variance</span>
 
@@ -398,33 +351,8 @@
         <span class="n">probabilities</span> <span class="o">=</span> <span class="bp">self</span> <span class="o">&lt;</span> <span class="n">value</span>
         <span class="n">probabilities</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">probabilities</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v0&quot;</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="n">probabilities</span>
+        <span class="k">return</span> <span class="n">probabilities</span></div>
 
-<div class="viewcode-block" id="ScalarRelation.index_to_distributional_clause">
-<a class="viewcode-back" href="../../../../api.html#promis.logic.ScalarRelation.index_to_distributional_clause">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">index_to_distributional_clause</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Express a single index of this Relation as a distributional clause.</span>
-
-<span class="sd">        Formats the clause as `name(x_INDEX, location_type) ~ normal(MEAN, STD).`</span>
-<span class="sd">        or `name(x_INDEX) ~ normal(MEAN, STD).` if `location_type` is None.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            index: The index of the point within the `parameters` collection.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A string representing the distributional clause for the specified entry.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">relation</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">problog_name</span><span class="si">}</span><span class="s2">(x_</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">relation</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">problog_name</span><span class="si">}</span><span class="s2">(x_</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="si">}</span><span class="s2">)&quot;</span>
-
-        <span class="n">mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;v0&#39;</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
-        <span class="n">std</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;v1&#39;</span><span class="p">][</span><span class="n">index</span><span class="p">])</span>
-        <span class="n">distribution</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;normal(</span><span class="si">{</span><span class="n">mean</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">std</span><span class="si">}</span><span class="s2">)&quot;</span>
-
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">relation</span><span class="si">}</span><span class="s2"> ~ </span><span class="si">{</span><span class="n">distribution</span><span class="si">}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">&quot;</span></div>
-</div>
 
 </pre></div>
 
