@@ -36,7 +36,8 @@ This is the recommended method for most users. It installs the latest stable ver
 
     pip install promis
 
-This also directly enables using the Web GUI without further steps by running `promis_gui --host 0.0.0.0 --port 8000`.
+    # Also enables using the Web GUI
+    promis_gui --host 0.0.0.0 --port 8000
 
 If you plan to work with nautical charts, install the necessary extras.
 Make sure you have installed GDAL first (see Prerequisites).
