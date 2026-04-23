@@ -238,7 +238,7 @@ export default function LandscapeSetting({
             type="number"
             size="small"
             variant="outlined"
-            label="Interpolated"
+            label="Interpolation"
             value={resolutions[0]}
             onFocus={() =>
               C().mapMan.highlightBoundaryAlter(
