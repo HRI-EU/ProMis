@@ -21,7 +21,7 @@ For instance, the following shows ProMis being applied in a diverse set of scena
   <img src="https://github.com/HRI-EU/ProMis/blob/main/images/landscapes.png"/>
 </p>
 
-# Usage
+# Installation & Usage
 
 To install ProMis, please follow the instructions [here](https://hri-eu.github.io/ProMis/installation.html).
 For an in-depth walkthrough on applying ProMis in your own applications, you can check our [usage guide](https://hri-eu.github.io/ProMis/notebooks/usage.html).
