@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.geo.collection &mdash; ProMis 4.0.0.dev1 documentation</title>
+  <title>promis.geo.collection &mdash; ProMis 4.0.0.dev2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=0b1a429d"></script>
+      <script src="../../../_static/documentation_options.js?v=3ce2c8f7"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -222,8 +222,20 @@
 <span class="sd">            The values of this Collection as numpy array.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">value_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="n">value_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span><span class="p">:]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">value_columns</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Collection.transitions">
+<a class="viewcode-back" href="../../../api.html#promis.geo.Collection.transitions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transitions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unpack the position and time offsets for each data point as numpy array.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An (N, 3) array with columns [delta_x, delta_y, delta_time] for each point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Collection.coordinates">
@@ -252,7 +264,7 @@
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">position</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="n">x</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">==</span> <span class="n">y</span><span class="p">)]</span>
-            <span class="o">.</span><span class="n">to_numpy</span><span class="p">()[:,</span> <span class="mi">2</span><span class="p">:]</span>  <span class="c1"># Get all columns except the first two</span>
+            <span class="o">.</span><span class="n">to_numpy</span><span class="p">()[:,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span><span class="p">:]</span>
             <span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Makes sure we get a 1D array</span>
         <span class="p">)</span>
 
@@ -275,24 +287,37 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">coordinates</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span> <span class="o">|</span> <span class="n">CartesianLocation</span><span class="p">],</span>
         <span class="n">values</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
+        <span class="n">transitions</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Append location and associated value vectors to collection.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            coordinates: A list of locations to append or matrix of coordinates.</span>
 <span class="sd">            values: The associated values as 2D matrix, each row belongs to a single location.</span>
+<span class="sd">            transitions: Optional transition matrix [N, 3] with delta_x, delta_y, delta_time values per coordinate.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span> <span class="o">==</span> <span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Number of coordinates and values mismatch, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">transitions</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">transitions</span><span class="p">)</span> <span class="o">==</span> <span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Number of transitions and values mismatch, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">transitions</span><span class="p">)</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">n_points</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">new_entries</span> <span class="o">=</span> <span class="n">concatenate</span><span class="p">([</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">values</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">spatial</span> <span class="o">=</span> <span class="n">coordinates</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">new_entries</span> <span class="o">=</span> <span class="n">concatenate</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">array</span><span class="p">([[</span><span class="n">location</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">location</span><span class="o">.</span><span class="n">y</span><span class="p">]</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">coordinates</span><span class="p">]),</span> <span class="n">values</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
-            <span class="p">)</span>
+            <span class="n">spatial</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="n">location</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">location</span><span class="o">.</span><span class="n">y</span><span class="p">]</span> <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">coordinates</span><span class="p">])</span>
+
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">spatial</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">transitions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transitions</span><span class="p">)</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">new_entries</span> <span class="o">=</span> <span class="n">concatenate</span><span class="p">(</span><span class="n">parts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">new_entries</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
@@ -311,15 +336,17 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">coordinates</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span> <span class="o">|</span> <span class="n">CartesianLocation</span><span class="p">],</span>
         <span class="n">value</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
+        <span class="n">transitions</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Append location with a default value.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            coordinates: A list of locations or a matrix of coordinates to append.</span>
 <span class="sd">            value: The default value to assign to all new locations.</span>
+<span class="sd">            transitions: Optional transition matrix [N, 3] with delta_x, delta_y, delta_time values per coordinate.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="n">repeat</span><span class="p">(</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="n">repeat</span><span class="p">(</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">transitions</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Collection.get_basemap">
@@ -542,7 +569,9 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_columns</span><span class="p">(</span><span class="n">number_of_values</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;east&quot;</span><span class="p">,</span> <span class="s2">&quot;north&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_values</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;east&quot;</span><span class="p">,</span> <span class="s2">&quot;north&quot;</span><span class="p">,</span> <span class="s2">&quot;delta_east&quot;</span><span class="p">,</span> <span class="s2">&quot;delta_north&quot;</span><span class="p">,</span> <span class="s2">&quot;delta_time&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_values</span><span class="p">)</span>
+        <span class="p">]</span>
 
 <div class="viewcode-block" id="CartesianCollection.make_latin_hypercube">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection.make_latin_hypercube">[docs]</a>
@@ -610,6 +639,25 @@
         <span class="k">return</span> <span class="n">locations</span></div>
 
 
+<div class="viewcode-block" id="CartesianCollection.to_cartesian_transition_locations">
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection.to_cartesian_transition_locations">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian_transition_locations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianLocation</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the collection&#39;s delta coordinates to a list of CartesianLocation objects.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of `CartesianLocation` objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
+        <span class="n">transitions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transitions</span><span class="p">()</span>
+
+        <span class="n">locations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">locations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CartesianLocation</span><span class="p">(</span><span class="n">east</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">transitions</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">north</span><span class="o">=</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">transitions</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">locations</span></div>
+
+
 <div class="viewcode-block" id="CartesianCollection.to_polar">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianCollection.to_polar">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PolarCollection&quot;</span><span class="p">:</span>
@@ -627,13 +675,23 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;east&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;north&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
 
+        <span class="c1"># Project the displaced points to get polar offsets</span>
+        <span class="n">displaced_longitudes</span><span class="p">,</span> <span class="n">displaced_latitudes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;east&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_east&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;north&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_north&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+            <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="c1"># Create the new collection in polar coordinates</span>
-        <span class="n">polar_collection</span> <span class="o">=</span> <span class="n">PolarCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">polar_collection</span> <span class="o">=</span> <span class="n">PolarCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span><span class="p">)</span>
         <span class="n">polar_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">longitudes</span>
         <span class="n">polar_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">latitudes</span>
+        <span class="n">polar_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_longitude&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">displaced_longitudes</span> <span class="o">-</span> <span class="n">longitudes</span>
+        <span class="n">polar_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_latitude&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">displaced_latitudes</span> <span class="o">-</span> <span class="n">latitudes</span>
+        <span class="n">polar_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_time&quot;</span><span class="p">]</span>
 
         <span class="c1"># Copy over the values</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span><span class="p">):</span>
             <span class="n">polar_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">polar_collection</span></div>
@@ -667,14 +725,16 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">target</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
 
-        <span class="c1"># Expand or reduce target to take up the same number of value columns</span>
-        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
-            <span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
-            <span class="k">del</span> <span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">3</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+        <span class="c1"># Expand or reduce target to match the number of value columns</span>
+        <span class="k">while</span> <span class="n">target</span><span class="o">.</span><span class="n">number_of_values</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">number_of_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">number_of_values</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="n">target</span><span class="o">.</span><span class="n">number_of_values</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">number_of_values</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">del</span> <span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">target</span><span class="o">.</span><span class="n">number_of_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
 
         <span class="n">interpolated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_interpolator</span><span class="p">(</span><span class="n">interpolation_method</span><span class="p">)(</span><span class="n">target</span><span class="o">.</span><span class="n">coordinates</span><span class="p">())</span>
-        <span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="n">atleast_2d</span><span class="p">(</span><span class="n">interpolated</span><span class="p">)</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span><span class="p">:]</span> <span class="o">=</span> <span class="n">atleast_2d</span><span class="p">(</span><span class="n">interpolated</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">target</span></div>
 
@@ -757,7 +817,9 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_columns</span><span class="p">(</span><span class="n">number_of_values</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">,</span> <span class="s2">&quot;latitude&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_values</span><span class="p">)]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">,</span> <span class="s2">&quot;latitude&quot;</span><span class="p">,</span> <span class="s2">&quot;delta_longitude&quot;</span><span class="p">,</span> <span class="s2">&quot;delta_latitude&quot;</span><span class="p">,</span> <span class="s2">&quot;delta_time&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_values</span><span class="p">)</span>
+        <span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dimensions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
@@ -809,18 +871,27 @@
 <span class="sd">            A new `CartesianCollection` with the data from this collection.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># Apply the inverse projection of the origin location</span>
+        <span class="c1"># Apply the forward projection of the origin location</span>
         <span class="n">easts</span><span class="p">,</span> <span class="n">norths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
         <span class="p">)</span>
 
-        <span class="c1"># Create the new collection in polar coordinates</span>
-        <span class="n">cartesian_collection</span> <span class="o">=</span> <span class="n">CartesianCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># Project the displaced points to get Cartesian offsets</span>
+        <span class="n">displaced_easts</span><span class="p">,</span> <span class="n">displaced_norths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="o">.</span><span class="n">projection</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;longitude&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_longitude&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;latitude&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_latitude&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create the new collection in Cartesian coordinates</span>
+        <span class="n">cartesian_collection</span> <span class="o">=</span> <span class="n">CartesianCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span><span class="p">)</span>
         <span class="n">cartesian_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;east&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">easts</span>
         <span class="n">cartesian_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;north&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">norths</span>
+        <span class="n">cartesian_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_east&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">displaced_easts</span> <span class="o">-</span> <span class="n">easts</span>
+        <span class="n">cartesian_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_north&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">displaced_norths</span> <span class="o">-</span> <span class="n">norths</span>
+        <span class="n">cartesian_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;delta_time&quot;</span><span class="p">]</span>
 
         <span class="c1"># Copy over the values</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_values</span><span class="p">):</span>
             <span class="n">cartesian_collection</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;v</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">cartesian_collection</span></div>

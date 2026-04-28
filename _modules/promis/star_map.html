@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.star_map &mdash; ProMis 4.0.0.dev1 documentation</title>
+  <title>promis.star_map &mdash; ProMis 4.0.0.dev2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=0b1a429d"></script>
+      <script src="../../_static/documentation_options.js?v=3ce2c8f7"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -100,7 +100,7 @@
 
 <span class="c1"># ProMis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianMap</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.logic.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Depth</span><span class="p">,</span> <span class="n">Distance</span><span class="p">,</span> <span class="n">Over</span><span class="p">,</span> <span class="n">Relation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.logic.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Crosses</span><span class="p">,</span> <span class="n">Depth</span><span class="p">,</span> <span class="n">Distance</span><span class="p">,</span> <span class="n">Follows</span><span class="p">,</span> <span class="n">Opposes</span><span class="p">,</span> <span class="n">Over</span><span class="p">,</span> <span class="n">Relation</span><span class="p">,</span> <span class="n">ScalarRelation</span>
 
 
 <div class="viewcode-block" id="StaRMap">
@@ -121,7 +121,14 @@
         <span class="n">uam</span><span class="p">:</span> <span class="n">CartesianMap</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">uam</span> <span class="o">=</span> <span class="n">uam</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Relation</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;over&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Relation</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;over&quot;</span><span class="p">:</span> <span class="p">{},</span> 
+            <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="p">{},</span> 
+            <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="p">{},</span> 
+            <span class="s2">&quot;crosses&quot;</span><span class="p">:</span> <span class="p">{},</span> 
+            <span class="s2">&quot;follows&quot;</span><span class="p">:</span> <span class="p">{},</span> 
+            <span class="s2">&quot;opposes&quot;</span><span class="p">:</span> <span class="p">{}</span>
+        <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_promis</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="StaRMap.initialize">
@@ -159,12 +166,18 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">match</span> <span class="n">relation</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">&quot;crosses&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Crosses</span>
             <span class="k">case</span> <span class="s2">&quot;over&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">Over</span>
             <span class="k">case</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">Distance</span>
             <span class="k">case</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">Depth</span>
+            <span class="k">case</span> <span class="s2">&quot;follows&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Follows</span>
+            <span class="k">case</span> <span class="s2">&quot;opposes&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Opposes</span>
             <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Requested unknown relation &quot;</span><span class="si">{</span><span class="n">relation</span><span class="si">}</span><span class="s1">&quot; from StaR Map&#39;</span><span class="p">)</span></div>
 
@@ -280,6 +293,7 @@
             <span class="p">)</span>
 
         <span class="c1"># Recompute the relation at the provided sample points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">location_type</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sample_points</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="p">{</span><span class="n">relation_type</span><span class="p">:</span> <span class="p">[</span><span class="n">location_type</span><span class="p">]})</span>
 
         <span class="c1"># Interpolate to the evaluation grid stored by ProMis</span>
@@ -290,14 +304,14 @@
         <span class="c1"># Write to the appropriate Resin channel</span>
         <span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_promis</span><span class="o">.</span><span class="n">get_writer</span><span class="p">(</span><span class="n">relation_type</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
         <span class="n">relation_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">relation_obj</span><span class="p">,</span> <span class="n">Over</span><span class="p">):</span>
-            <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">())</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">relation_obj</span><span class="p">,</span> <span class="n">ScalarRelation</span><span class="p">):</span>
             <span class="n">means</span> <span class="o">=</span> <span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
             <span class="n">stds</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">maximum</span><span class="p">(</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">1e-6</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">())</span></div>
+            <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">())</span></div>
 
-
+            
 <div class="viewcode-block" id="StaRMap.get">
 <a class="viewcode-back" href="../../api.html#promis.star_map.StaRMap.get">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Relation</span><span class="p">:</span>
@@ -436,6 +450,7 @@
         <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">r_trees</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">random_maps</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianMap</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">transitions</span><span class="p">:</span> <span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the parameters for a given relation.</span>
 
@@ -445,6 +460,7 @@
 <span class="sd">            location_type: The location type to relate to.</span>
 <span class="sd">            r_trees: A list of R-trees for the location type, one for each random map.</span>
 <span class="sd">            random_maps: A list of randomly sampled maps.</span>
+<span class="sd">            transitions: Optional transitions [N, 3] (ordered delta_east, delta_north, delta_time) into new states taken at the given coordinates.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            An array of computed parameters for each coordinate.</span>
@@ -459,7 +475,7 @@
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">collection</span> <span class="o">=</span> <span class="n">CartesianCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uam</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
-            <span class="n">collection</span><span class="o">.</span><span class="n">append_with_default</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">collection</span><span class="o">.</span><span class="n">append_with_default</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">transitions</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">relation_class</span><span class="o">.</span><span class="n">from_r_trees</span><span class="p">(</span>
                 <span class="n">collection</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">original_geometries</span><span class="o">=</span><span class="n">random_maps</span>
@@ -500,6 +516,7 @@
         <span class="n">what</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_and_location_types</span> <span class="k">if</span> <span class="n">what</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">what</span>
         <span class="n">all_location_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span><span class="p">]</span>
         <span class="n">coordinates</span> <span class="o">=</span> <span class="n">evaluation_points</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
+        <span class="n">transitions</span> <span class="o">=</span> <span class="n">evaluation_points</span><span class="o">.</span><span class="n">transitions</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">all_location_types</span><span class="p">:</span>
             <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_r_trees</span><span class="p">(</span><span class="n">location_type</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="p">)</span>
@@ -518,7 +535,8 @@
                 <span class="c1"># Update collection of sample points</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">coordinates</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_compute_parameters</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_compute_parameters</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span><span class="p">,</span> <span class="n">transitions</span><span class="p">),</span>
+                    <span class="n">transitions</span>
                 <span class="p">)</span></div>
 </div>
 
