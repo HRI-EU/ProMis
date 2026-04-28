@@ -24,7 +24,7 @@ from numpy.typing import NDArray
 
 # ProMis
 from promis.geo import CartesianCollection, CartesianMap
-from promis.logic.spatial import Depth, Distance, Over, Relation
+from promis.logic.spatial import Crosses, Depth, Distance, Follows, Opposes, Over, Relation, ScalarRelation
 
 
 class StaRMap:
@@ -43,7 +43,14 @@ class StaRMap:
         uam: CartesianMap,
     ) -> None:
         self.uam = uam
-        self.relations: dict[str, dict[str, Relation]] = {"over": {}, "distance": {}, "depth": {}}
+        self.relations: dict[str, dict[str, Relation]] = {
+            "over": {}, 
+            "distance": {}, 
+            "depth": {}, 
+            "crosses": {}, 
+            "follows": {}, 
+            "opposes": {}
+        }
         self._promis = None
 
     def initialize(self, evaluation_points: CartesianCollection, number_of_random_maps: int, logic: str):
@@ -76,12 +83,18 @@ class StaRMap:
         """
 
         match relation:
+            case "crosses":
+                return Crosses
             case "over":
                 return Over
             case "distance":
                 return Distance
             case "depth":
                 return Depth
+            case "follows":
+                return Follows
+            case "opposes":
+                return Opposes
             case _:
                 raise NotImplementedError(f'Requested unknown relation "{relation}" from StaR Map')
 
@@ -185,6 +198,7 @@ class StaRMap:
             )
 
         # Recompute the relation at the provided sample points
+        self.relations[relation_type].pop(location_type)
         self.sample(sample_points, number_of_random_maps, what={relation_type: [location_type]})
 
         # Interpolate to the evaluation grid stored by ProMis
@@ -195,13 +209,13 @@ class StaRMap:
         # Write to the appropriate Resin channel
         writer = self._promis.get_writer(relation_type, location_type)
         relation_obj = self.relations[relation_type][location_type]
-        if isinstance(relation_obj, Over):
-            writer.write(params[:, 0].ravel().tolist(), time.monotonic())
-        else:
+        if isinstance(relation_obj, ScalarRelation):
             means = params[:, 0].ravel().tolist()
             stds = sqrt(maximum(params[:, 1], 1e-6)).ravel().tolist()
             writer.write("normal", [means, stds], time.monotonic())
-
+        else:
+            writer.write(params[:, 0].ravel().tolist(), time.monotonic())
+            
     def get(self, relation: str, location_type: str) -> Relation:
         """Get the computed data for a relation to a location type.
 
@@ -331,6 +345,7 @@ class StaRMap:
         location_type: str,
         r_trees: list | None,
         random_maps: list[CartesianMap] | None,
+        transitions: NDArray | None = None,
     ) -> NDArray:
         """Compute the parameters for a given relation.
 
@@ -340,6 +355,7 @@ class StaRMap:
             location_type: The location type to relate to.
             r_trees: A list of R-trees for the location type, one for each random map.
             random_maps: A list of randomly sampled maps.
+            transitions: Optional transitions [N, 3] (ordered delta_east, delta_north, delta_time) into new states taken at the given coordinates.
 
         Returns:
             An array of computed parameters for each coordinate.
@@ -354,7 +370,7 @@ class StaRMap:
 
         try:
             collection = CartesianCollection(self.uam.origin)
-            collection.append_with_default(coordinates, 0.0)
+            collection.append_with_default(coordinates, 0.0, transitions)
 
             return relation_class.from_r_trees(
                 collection, r_trees, location_type, original_geometries=random_maps
@@ -393,6 +409,7 @@ class StaRMap:
         what = self.relation_and_location_types if what is None else what
         all_location_types = [location_type for types in what.values() for location_type in types]
         coordinates = evaluation_points.coordinates()
+        transitions = evaluation_points.transitions()
 
         for location_type in all_location_types:
             r_trees, random_maps = self._make_r_trees(location_type, number_of_random_maps)
@@ -411,5 +428,6 @@ class StaRMap:
                 # Update collection of sample points
                 self.relations[relation][location_type].parameters.append(
                     coordinates,
-                    self._compute_parameters(coordinates, relation, location_type, r_trees, random_maps)
+                    self._compute_parameters(coordinates, relation, location_type, r_trees, random_maps, transitions),
+                    transitions
                 )

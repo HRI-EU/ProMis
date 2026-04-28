@@ -10,6 +10,7 @@
 
 # Standard Library
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from pathlib import Path
 from pickle import dump, load
 from typing import TypeVar
@@ -82,12 +83,13 @@ class Relation(ABC):
     @staticmethod
     @abstractmethod
     def compute_relation(
-        location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
+        location: CartesianLocation, transition_location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
     ) -> float:
         """Compute the value of this Relation type for a specific location and map.
 
         Args:
             location: The location to evaluate in Cartesian coordinates.
+            transition_location: The location where the state is transitioning into.
             r_tree: The map represented as an R-tree for efficient spatial queries.
             original_geometries: The original geometries indexed by the STRtree.
 
@@ -104,6 +106,7 @@ class Relation(ABC):
     def compute_parameters(
         cls,
         location: CartesianLocation,
+        transition_location: CartesianLocation,
         r_trees: list[STRtree],
         original_geometries: list[CartesianMap],
     ) -> array:
@@ -111,6 +114,7 @@ class Relation(ABC):
 
         Args:
             location: The location to evaluate in Cartesian coordinates.
+            transition_location: The location where the state is transitioning into.
             r_trees: A list of generated maps, each represented as an R-tree.
             original_geometries: The original geometries indexed by the STRtrees.
 
@@ -120,7 +124,7 @@ class Relation(ABC):
         """
 
         relation_data = [
-            cls.compute_relation(location, r_tree, geometries)
+            cls.compute_relation(location, transition_location, r_tree, geometries)
             for r_tree, geometries in zip(r_trees, original_geometries)
         ]
 
@@ -148,28 +152,19 @@ class Relation(ABC):
 
         # Compute relation over support points
         locations = support.to_cartesian_locations()
+        transitions = support.to_cartesian_transition_locations()
         statistical_moments = vstack(
             [
-                cls.compute_parameters(location, r_trees, original_geometries)
-                for location in locations
+                cls.compute_parameters(location, transitions, r_trees, original_geometries)
+                for location, transitions in zip(locations, transitions)
             ]
         )
 
-        if isinstance(support, CartesianRasterBand):
-            # Maintain the efficient raster representation
-            parameters = CartesianRasterBand(
-                support.origin,
-                support.resolution,
-                support.width,
-                support.height,
-                number_of_values=statistical_moments.shape[1],
-            )
-            for i in range(statistical_moments.shape[1]):
-                parameters.data[f"v{i}"] = statistical_moments[:, i]
-        else:
-            # Setup parameter collection
-            parameters = CartesianCollection(support.origin, number_of_values=statistical_moments.shape[1])
-            parameters.append(locations, statistical_moments)
+        # Setup parameter collection
+        parameters = deepcopy(support)
+        parameters.number_of_values = 2
+        parameters.data["v0"] = statistical_moments[:, 0]
+        parameters.data["v1"] = statistical_moments[:, 1]
 
         return cls(parameters, location_type)
 

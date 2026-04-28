@@ -130,8 +130,17 @@ class Collection(ABC):
             The values of this Collection as numpy array.
         """
 
-        value_columns = self.data.columns[2:]
+        value_columns = self.data.columns[-self.number_of_values:]
         return self.data[value_columns].to_numpy()
+
+    def transitions(self) -> NDArray[Any]:
+        """Unpack the position and time offsets for each data point as numpy array.
+
+        Returns:
+            An (N, 3) array with columns [delta_x, delta_y, delta_time] for each point.
+        """
+
+        return self.data.iloc[:, 2:5].to_numpy()
 
     def coordinates(self) -> NDArray[Any]:
         """Unpack the location coordinates as numpy array.
@@ -156,7 +165,7 @@ class Collection(ABC):
         x, y = position
         return (
             self.data.loc[(self.data[self.data.columns[0]] == x) & (self.data[self.data.columns[1]] == y)]
-            .to_numpy()[:, 2:]  # Get all columns except the first two
+            .to_numpy()[:, -self.number_of_values:]
             .squeeze(0)  # Makes sure we get a 1D array
         )
 
@@ -174,24 +183,37 @@ class Collection(ABC):
         self,
         coordinates: NDArray[Any] | list[PolarLocation | CartesianLocation],
         values: NDArray[Any],
+        transitions: NDArray[Any] | None = None
     ):
         """Append location and associated value vectors to collection.
 
         Args:
             coordinates: A list of locations to append or matrix of coordinates.
             values: The associated values as 2D matrix, each row belongs to a single location.
+            transitions: Optional transition matrix [N, 3] with delta_x, delta_y, delta_time values per coordinate.
         """
 
         assert len(coordinates) == values.shape[0], (
             f"Number of coordinates and values mismatch, got {len(coordinates)} and {values.shape[0]}"
         )
+        assert transitions is None or len(transitions) == values.shape[0], (
+            f"Number of transitions and values mismatch, got {len(transitions)} and {values.shape[0]}"
+        )
+
+        n_points = values.shape[0]
 
         if isinstance(coordinates, ndarray):
-            new_entries = concatenate([coordinates, values], axis=1)
+            spatial = coordinates
         else:
-            new_entries = concatenate(
-                [array([[location.x, location.y] for location in coordinates]), values], axis=1
-            )
+            spatial = array([[location.x, location.y] for location in coordinates])
+
+        parts = [spatial]
+        if transitions is None:
+            parts.append(zeros((n_points, 3)))
+        else:
+            parts.append(transitions)
+        parts.append(values)
+        new_entries = concatenate(parts, axis=1)
 
         if self.data.empty:
             self.data = DataFrame(new_entries, columns=self.data.columns)
@@ -207,15 +229,17 @@ class Collection(ABC):
         self,
         coordinates: NDArray[Any] | list[PolarLocation | CartesianLocation],
         value: NDArray[Any],
+        transitions: NDArray[Any] | None = None
     ):
         """Append location with a default value.
 
         Args:
             coordinates: A list of locations or a matrix of coordinates to append.
             value: The default value to assign to all new locations.
+            transitions: Optional transition matrix [N, 3] with delta_x, delta_y, delta_time values per coordinate.
         """
 
-        self.append(atleast_2d(coordinates), repeat(atleast_2d(value), len(coordinates), axis=0))
+        self.append(atleast_2d(coordinates), repeat(atleast_2d(value), len(coordinates), axis=0), transitions)
 
     def get_basemap(self, zoom=16):
         """Obtain the OSM basemap image of the collection's area.
@@ -416,7 +440,9 @@ class CartesianCollection(Collection):
 
     @staticmethod
     def _columns(number_of_values: int) -> list[str]:
-        return ["east", "north"] + [f"v{i}" for i in range(number_of_values)]
+        return ["east", "north", "delta_east", "delta_north", "delta_time"] + [
+            f"v{i}" for i in range(number_of_values)
+        ]
 
     @classmethod
     def make_latin_hypercube(
@@ -478,6 +504,22 @@ class CartesianCollection(Collection):
 
         return locations
 
+    def to_cartesian_transition_locations(self) -> list[CartesianLocation]:
+        """Converts the collection's delta coordinates to a list of CartesianLocation objects.
+
+        Returns:
+            A list of `CartesianLocation` objects.
+        """
+
+        coordinates = self.coordinates()
+        transitions = self.transitions()
+
+        locations = []
+        for i in range(coordinates.shape[0]):
+            locations.append(CartesianLocation(east=coordinates[i, 0] + transitions[i, 0], north=coordinates[i, 1] + transitions[i, 1]))
+
+        return locations
+
     def to_polar(self) -> "PolarCollection":
         """Converts this CartesianCollection to a PolarCollection.
 
@@ -493,13 +535,23 @@ class CartesianCollection(Collection):
             self.data["east"].to_numpy(), self.data["north"].to_numpy(), inverse=True
         )
 
+        # Project the displaced points to get polar offsets
+        displaced_longitudes, displaced_latitudes = self.origin.projection(
+            (self.data["east"] + self.data["delta_east"]).to_numpy(),
+            (self.data["north"] + self.data["delta_north"]).to_numpy(),
+            inverse=True,
+        )
+
         # Create the new collection in polar coordinates
-        polar_collection = PolarCollection(self.origin, len(self.data.columns) - 2)
+        polar_collection = PolarCollection(self.origin, self.number_of_values)
         polar_collection.data["longitude"] = longitudes
         polar_collection.data["latitude"] = latitudes
+        polar_collection.data["delta_longitude"] = displaced_longitudes - longitudes
+        polar_collection.data["delta_latitude"] = displaced_latitudes - latitudes
+        polar_collection.data["delta_time"] = self.data["delta_time"]
 
         # Copy over the values
-        for i in range(len(self.data.columns) - 2):
+        for i in range(self.number_of_values):
             polar_collection.data[f"v{i}"] = self.data[f"v{i}"]
 
         return polar_collection
@@ -530,14 +582,16 @@ class CartesianCollection(Collection):
         else:
             target = deepcopy(other)
 
-        # Expand or reduce target to take up the same number of value columns
-        while len(target.data.columns) < len(self.data.columns):
-            target.data[f"v{len(target.data.columns) - 2}"] = 0.0
-        while len(target.data.columns) > len(self.data.columns):
-            del target.data[f"v{len(target.data.columns) - 3}"]
+        # Expand or reduce target to match the number of value columns
+        while target.number_of_values < self.number_of_values:
+            target.data[f"v{target.number_of_values}"] = 0.0
+            target.number_of_values += 1
+        while target.number_of_values > self.number_of_values:
+            target.number_of_values -= 1
+            del target.data[f"v{target.number_of_values}"]
 
         interpolated = self.get_interpolator(interpolation_method)(target.coordinates())
-        target.data.iloc[:, 2:] = atleast_2d(interpolated)
+        target.data.iloc[:, -self.number_of_values:] = atleast_2d(interpolated)
 
         return target
 
@@ -610,7 +664,9 @@ class PolarCollection(Collection):
 
     @staticmethod
     def _columns(number_of_values: int) -> list[str]:
-        return ["longitude", "latitude"] + [f"v{i}" for i in range(number_of_values)]
+        return ["longitude", "latitude", "delta_longitude", "delta_latitude", "delta_time"] + [
+            f"v{i}" for i in range(number_of_values)
+        ]
 
     @property
     def dimensions(self) -> tuple[float, float]:
@@ -657,18 +713,27 @@ class PolarCollection(Collection):
             A new `CartesianCollection` with the data from this collection.
         """
 
-        # Apply the inverse projection of the origin location
+        # Apply the forward projection of the origin location
         easts, norths = self.origin.projection(
             self.data["longitude"].to_numpy(), self.data["latitude"].to_numpy()
         )
 
-        # Create the new collection in polar coordinates
-        cartesian_collection = CartesianCollection(self.origin, len(self.data.columns) - 2)
+        # Project the displaced points to get Cartesian offsets
+        displaced_easts, displaced_norths = self.origin.projection(
+            (self.data["longitude"] + self.data["delta_longitude"]).to_numpy(),
+            (self.data["latitude"] + self.data["delta_latitude"]).to_numpy(),
+        )
+
+        # Create the new collection in Cartesian coordinates
+        cartesian_collection = CartesianCollection(self.origin, self.number_of_values)
         cartesian_collection.data["east"] = easts
         cartesian_collection.data["north"] = norths
+        cartesian_collection.data["delta_east"] = displaced_easts - easts
+        cartesian_collection.data["delta_north"] = displaced_norths - norths
+        cartesian_collection.data["delta_time"] = self.data["delta_time"]
 
         # Copy over the values
-        for i in range(len(self.data.columns) - 2):
+        for i in range(self.number_of_values):
             cartesian_collection.data[f"v{i}"] = self.data[f"v{i}"]
 
         return cartesian_collection

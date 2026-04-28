@@ -38,7 +38,7 @@ class Distance(ScalarRelation):
 
     @staticmethod
     def compute_relation(
-        location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
+        location: CartesianLocation, transition_location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
     ) -> float:
         """Computes the distance from a location to the nearest geometry in the map.
 

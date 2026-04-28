@@ -242,9 +242,11 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
         # Compute coordinates from spatial dimensions and resolution
         raster_coordinates = vstack(list(map(ravel, meshgrid(self._x_coordinates, self._y_coordinates)))).T
 
-        # Put coordinates and default value 0 together into matrix and set DataFrame
+        # Put coordinates, meta columns (time + offsets), and default values together
+        n_points = raster_coordinates.shape[0]
+        n_meta = len(self.data.columns) - 2 - number_of_values
         raster_entries = concatenate(
-            (raster_coordinates, zeros((raster_coordinates.shape[0], number_of_values))), axis=1
+            (raster_coordinates, zeros((n_points, n_meta + number_of_values))), axis=1
         )
         self.data = DataFrame(raster_entries, columns=self.data.columns)
 
