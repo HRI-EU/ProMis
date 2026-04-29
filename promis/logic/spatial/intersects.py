@@ -17,8 +17,8 @@ from promis.geo import CartesianLocation, CartesianMap
 from .relation import Relation
 
 
-class Crosses(Relation):
-    """A probabilistic relation that checks if a point to point transition "crosses" a map feature.
+class Intersects(Relation):
+    """A probabilistic relation that checks if a point to point transition "intersects" a map feature.
 
     This relation is true if a given location and its transition location form a line that crosses over 
     any of the geometries of a specific type on the map. The probability is derived from a set of sample maps.
@@ -29,7 +29,7 @@ class Crosses(Relation):
         location: CartesianLocation, transition_location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap, **kwargs
     ) -> float:
         trajectory = LineString([location.geometry, transition_location.geometry])
-        return bool(r_tree.query(trajectory, predicate="crosses").size)
+        return bool(r_tree.query(trajectory, predicate="intersects").size)
 
     @staticmethod
     def empty_map_parameters() -> list[float]:

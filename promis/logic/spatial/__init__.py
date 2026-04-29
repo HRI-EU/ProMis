@@ -12,9 +12,10 @@
 from promis.logic.spatial.crosses import Crosses
 from promis.logic.spatial.depth import Depth
 from promis.logic.spatial.distance import Distance
+from promis.logic.spatial.intersects import Intersects
 from promis.logic.spatial.follows import Follows
 from promis.logic.spatial.opposes import Opposes
 from promis.logic.spatial.over import Over
 from promis.logic.spatial.relation import Relation, ScalarRelation
 
-__all__ = ["Crosses", "Depth", "Distance", "Follows", "Opposes", "Over", "Relation", "ScalarRelation"]
+__all__ = ["Crosses", "Depth", "Distance", "Intersects", "Follows", "Opposes", "Over", "Relation", "ScalarRelation"]

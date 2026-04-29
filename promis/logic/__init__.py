@@ -9,6 +9,6 @@
 #
 
 # ProMis
-from promis.logic.spatial import Crosses, Depth, Distance, Follows, Opposes, Over, Relation, ScalarRelation
+from promis.logic.spatial import Crosses, Depth, Distance, Intersects, Follows, Opposes, Over, Relation, ScalarRelation
 
-__all__ = ["Crosses", "Depth", "Distance", "Follows", "Opposes", "Over", "Relation", "ScalarRelation"]
+__all__ = ["Crosses", "Depth", "Distance", "Intersects", "Follows", "Opposes", "Over", "Relation", "ScalarRelation"]
