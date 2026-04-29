@@ -100,7 +100,7 @@
 
 <span class="c1"># ProMis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianMap</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.logic.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Crosses</span><span class="p">,</span> <span class="n">Depth</span><span class="p">,</span> <span class="n">Distance</span><span class="p">,</span> <span class="n">Follows</span><span class="p">,</span> <span class="n">Opposes</span><span class="p">,</span> <span class="n">Over</span><span class="p">,</span> <span class="n">Relation</span><span class="p">,</span> <span class="n">ScalarRelation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.logic.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Crosses</span><span class="p">,</span> <span class="n">Depth</span><span class="p">,</span> <span class="n">Distance</span><span class="p">,</span> <span class="n">Intersects</span><span class="p">,</span> <span class="n">Follows</span><span class="p">,</span> <span class="n">Opposes</span><span class="p">,</span> <span class="n">Over</span><span class="p">,</span> <span class="n">Relation</span><span class="p">,</span> <span class="n">ScalarRelation</span>
 
 
 <div class="viewcode-block" id="StaRMap">
@@ -126,6 +126,7 @@
             <span class="s2">&quot;distance&quot;</span><span class="p">:</span> <span class="p">{},</span> 
             <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="p">{},</span> 
             <span class="s2">&quot;crosses&quot;</span><span class="p">:</span> <span class="p">{},</span> 
+            <span class="s2">&quot;intersects&quot;</span><span class="p">:</span> <span class="p">{},</span> 
             <span class="s2">&quot;follows&quot;</span><span class="p">:</span> <span class="p">{},</span> 
             <span class="s2">&quot;opposes&quot;</span><span class="p">:</span> <span class="p">{}</span>
         <span class="p">}</span>
@@ -174,6 +175,8 @@
                 <span class="k">return</span> <span class="n">Distance</span>
             <span class="k">case</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">Depth</span>
+            <span class="k">case</span> <span class="s2">&quot;intersects&quot;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">Intersects</span>
             <span class="k">case</span> <span class="s2">&quot;follows&quot;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">Follows</span>
             <span class="k">case</span> <span class="s2">&quot;opposes&quot;</span><span class="p">:</span>
