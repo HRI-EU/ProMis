@@ -24,7 +24,7 @@ from numpy.typing import NDArray
 
 # ProMis
 from promis.geo import CartesianCollection, CartesianMap
-from promis.logic.spatial import Crosses, Depth, Distance, Enters, Intersects, Follows, Opposes, Over, Relation, ScalarRelation
+from promis.logic.spatial import Crosses, Depth, Distance, Enters, Exits, Intersects, Follows, Opposes, Over, Relation, ScalarRelation
 
 
 class StaRMap:
@@ -48,6 +48,7 @@ class StaRMap:
             "distance": {}, 
             "depth": {}, 
             "enters": {},
+            "exits": {},
             "crosses": {}, 
             "intersects": {}, 
             "follows": {}, 
@@ -95,6 +96,8 @@ class StaRMap:
                 return Depth
             case "enters":
                 return Enters
+            case "exits":
+                return Exits
             case "intersects":
                 return Intersects
             case "follows":
