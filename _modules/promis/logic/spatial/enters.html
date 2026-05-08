@@ -83,12 +83,12 @@
 <span class="c1">#</span>
 
 <span class="c1"># Third Party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">points</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapely.strtree</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">LineString</span><span class="p">,</span> <span class="n">Geometry</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">deg2rad</span>
 
 <span class="c1"># ProMis</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianMap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianMap</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.relation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Relation</span>
 
@@ -98,7 +98,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Enters</span><span class="p">(</span><span class="n">Relation</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A probabilistic relation that checks if a point to point transition &quot;enters&quot; a map feature.</span>
 
-<span class="sd">    This relation is true if a given location is outside but transitions into </span>
+<span class="sd">    This relation is true if a given location is outside but transitions into</span>
 <span class="sd">    any of the geometries of a specific type on the map. The probability is derived from a set of sample maps.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -106,14 +106,26 @@
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Enters.compute_relation">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
-        <span class="n">location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">transition_location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="n">starts_outside</span> <span class="o">=</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="s2">&quot;within&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="n">starts_outside</span><span class="p">:</span>
-            <span class="n">ends_within</span> <span class="o">=</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">transition_location</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="s2">&quot;within&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span>
-            <span class="k">return</span> <span class="n">ends_within</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span></div>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
+        <span class="n">end_coords</span> <span class="o">=</span> <span class="n">coords</span> <span class="o">+</span> <span class="n">collection</span><span class="o">.</span><span class="n">transitions</span><span class="p">()[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">points</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="n">ends</span> <span class="o">=</span> <span class="n">points</span><span class="p">(</span><span class="n">end_coords</span><span class="p">)</span>
+
+        <span class="n">starts_inside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">ends_inside</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+        <span class="n">start_hits</span> <span class="o">=</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="s2">&quot;within&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">start_hits</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">starts_inside</span><span class="p">[</span><span class="n">start_hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">end_hits</span> <span class="o">=</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">ends</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="s2">&quot;within&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">end_hits</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ends_inside</span><span class="p">[</span><span class="n">end_hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="o">~</span><span class="n">starts_inside</span> <span class="o">&amp;</span> <span class="n">ends_inside</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Enters.empty_map_parameters">

@@ -172,18 +172,18 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
-        <span class="n">location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">transition_location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the value of this Relation type for a specific location and map.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            location: The location to evaluate in Cartesian coordinates.</span>
-<span class="sd">            transition_location: The location where the state is transitioning into.</span>
+<span class="sd">            collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.</span>
 <span class="sd">            r_tree: The map represented as an R-tree for efficient spatial queries.</span>
 <span class="sd">            original_geometries: The original geometries indexed by the STRtree.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            A scalar value representing the computed relation (e.g., distance, depth).</span>
+<span class="sd">            The scalar values representing the computed relation (e.g., distance, depth) for all</span>
+<span class="sd">            points in the input collection.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 
@@ -200,16 +200,14 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_parameters</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
-        <span class="n">location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span>
-        <span class="n">transition_location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
         <span class="n">r_trees</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">STRtree</span><span class="p">],</span>
         <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianMap</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">array</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the parameters of this Relation type for a specific location and set of maps.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            location: The location to evaluate in Cartesian coordinates.</span>
-<span class="sd">            transition_location: The location where the state is transitioning into.</span>
+<span class="sd">            collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.</span>
 <span class="sd">            r_trees: A list of generated maps, each represented as an R-tree.</span>
 <span class="sd">            original_geometries: The original geometries indexed by the STRtrees.</span>
 
@@ -219,7 +217,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">relation_data</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="bp">cls</span><span class="o">.</span><span class="n">compute_relation</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">transition_location</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">,</span> <span class="n">geometries</span><span class="p">)</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">compute_relation</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">,</span> <span class="n">geometries</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">r_tree</span><span class="p">,</span> <span class="n">geometries</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">r_trees</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">)</span>
         <span class="p">]</span>
 
@@ -231,7 +229,7 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_r_trees</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
-        <span class="n">support</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
         <span class="n">r_trees</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">STRtree</span><span class="p">],</span>
         <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianMap</span><span class="p">],</span>
@@ -239,7 +237,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute relation for a Cartesian collection of points and a set of R-trees.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            support: The collection of Cartesian points to compute the relation for.</span>
+<span class="sd">            collection: The Collection of Cartesian points to compute the relation for.</span>
 <span class="sd">            r_trees: Random variations of the features of a map, each indexible by an STRtree.</span>
 <span class="sd">            location_type: The type of features this relates to.</span>
 <span class="sd">            original_geometries: The original geometries indexed by the STRtrees.</span>
@@ -249,17 +247,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Compute relation over support points</span>
-        <span class="n">locations</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">to_cartesian_locations</span><span class="p">()</span>
-        <span class="n">transitions</span> <span class="o">=</span> <span class="n">support</span><span class="o">.</span><span class="n">to_cartesian_transition_locations</span><span class="p">()</span>
-        <span class="n">statistical_moments</span> <span class="o">=</span> <span class="n">vstack</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="bp">cls</span><span class="o">.</span><span class="n">compute_parameters</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">transitions</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">location</span><span class="p">,</span> <span class="n">transitions</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">transitions</span><span class="p">)</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
+        <span class="n">statistical_moments</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">compute_parameters</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">)</span>
 
         <span class="c1"># Setup parameter collection</span>
-        <span class="n">parameters</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">support</span><span class="p">)</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">collection</span><span class="p">)</span>
         <span class="n">parameters</span><span class="o">.</span><span class="n">number_of_values</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistical_moments</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistical_moments</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>

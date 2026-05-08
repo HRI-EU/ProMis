@@ -480,11 +480,12 @@
 
             <span class="c1"># Decide next points to sample at</span>
             <span class="n">top_candidate_indices</span> <span class="o">=</span> <span class="n">argsort</span><span class="p">(</span><span class="n">score</span><span class="p">)[</span><span class="o">-</span><span class="n">number_of_improvement_points</span><span class="p">:][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">next_points</span> <span class="o">=</span> <span class="n">atleast_2d</span><span class="p">(</span><span class="n">candidate_coordinates</span><span class="p">[</span><span class="n">top_candidate_indices</span><span class="p">])</span>
+            <span class="n">next_collection</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">candidate_collection</span><span class="p">)</span>
+            <span class="n">next_collection</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">candidate_collection</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">top_candidate_indices</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
             <span class="c1"># Compute new samples and append to collection</span>
-            <span class="n">next_values</span> <span class="o">=</span> <span class="n">value_function</span><span class="p">(</span><span class="n">next_points</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_points</span><span class="p">,</span> <span class="n">next_values</span><span class="p">)</span></div>
+            <span class="n">next_values</span> <span class="o">=</span> <span class="n">value_function</span><span class="p">(</span><span class="n">next_collection</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_collection</span><span class="o">.</span><span class="n">coordinates</span><span class="p">(),</span> <span class="n">next_values</span><span class="p">,</span> <span class="n">next_collection</span><span class="o">.</span><span class="n">transitions</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="Collection.get_entropy">

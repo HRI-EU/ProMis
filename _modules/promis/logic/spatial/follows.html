@@ -85,13 +85,12 @@
 <span class="c1">#</span>
 
 <span class="c1"># Third Party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_coordinates</span><span class="p">,</span> <span class="n">get_num_coordinates</span><span class="p">,</span> <span class="n">linestrings</span><span class="p">,</span> <span class="n">points</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapely.strtree</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">LineString</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">dot</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
 
 <span class="c1"># ProMis</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="n">CartesianPolygon</span><span class="p">,</span> <span class="n">CartesianPolyLine</span><span class="p">,</span> <span class="n">PolarPolyLine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="n">CartesianPolygon</span><span class="p">,</span> <span class="n">CartesianPolyLine</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.relation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Relation</span>
 
@@ -101,7 +100,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Follows</span><span class="p">(</span><span class="n">Relation</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A probabilistic relation that checks if a point to point transition &quot;follows&quot; along a map feature.</span>
 
-<span class="sd">    This relation is true if a given location and its transition location form a line that slopes along </span>
+<span class="sd">    This relation is true if a given location and its transition location form a line that slopes along</span>
 <span class="sd">    the nearest geometry of a specific type on the map. The probability is derived from a set of sample maps.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -109,38 +108,47 @@
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Follows.compute_relation">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
-        <span class="n">location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">transition_location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="c1"># Get nearest feature from original geometries</span>
-        <span class="n">nearest_feature</span> <span class="o">=</span> <span class="n">original_geometries</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">r_tree</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="p">)]</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span><span class="p">,</span>
+        <span class="n">deltas</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">deltas</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">deltas</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">transitions</span><span class="p">()[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
 
-        <span class="c1"># Follows works on Polylines and the exterior of Polygons</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nearest_feature</span><span class="p">,</span> <span class="n">CartesianPolyLine</span><span class="p">):</span>        
-            <span class="n">coords</span> <span class="o">=</span> <span class="n">nearest_feature</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">coords</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nearest_feature</span><span class="p">,</span> <span class="n">CartesianPolygon</span><span class="p">):</span>        
-            <span class="n">coords</span> <span class="o">=</span> <span class="n">nearest_feature</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">exterior</span><span class="o">.</span><span class="n">coords</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="c1"># Extract geometries from valid features (polylines and polygon exteriors)</span>
+        <span class="n">geoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="n">feature</span><span class="o">.</span><span class="n">geometry</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">CartesianPolyLine</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">feature</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">exterior</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">original_geometries</span><span class="o">.</span><span class="n">features</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="p">(</span><span class="n">CartesianPolyLine</span><span class="p">,</span> <span class="n">CartesianPolygon</span><span class="p">))</span>
+        <span class="p">])</span>
 
-        <span class="c1"># Query the closest segment of this polyline</span>
-        <span class="n">segments</span> <span class="o">=</span> <span class="p">[</span><span class="n">LineString</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
-        <span class="n">segment_index</span> <span class="o">=</span> <span class="n">STRtree</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">geoms</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
 
-        <span class="c1"># Get direction vectors</span>
-        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">segment_index</span><span class="p">:</span><span class="n">segment_index</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">line_direction</span> <span class="o">=</span> <span class="n">array</span><span class="p">([</span><span class="n">end</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">start</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">end</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">start</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
-        <span class="n">movement_direction</span> <span class="o">=</span> <span class="n">array</span><span class="p">([</span><span class="n">transition_location</span><span class="o">.</span><span class="n">east</span> <span class="o">-</span> <span class="n">location</span><span class="o">.</span><span class="n">east</span><span class="p">,</span> <span class="n">transition_location</span><span class="o">.</span><span class="n">north</span> <span class="o">-</span> <span class="n">location</span><span class="o">.</span><span class="n">north</span><span class="p">])</span>
+        <span class="c1"># Extract all coordinates and mask out cross-geometry pairs</span>
+        <span class="n">all_coords</span> <span class="o">=</span> <span class="n">get_coordinates</span><span class="p">(</span><span class="n">geoms</span><span class="p">)</span>                           <span class="c1"># (total_pts, 2)</span>
+        <span class="n">feature_of_coord</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">geoms</span><span class="p">)),</span> <span class="n">get_num_coordinates</span><span class="p">(</span><span class="n">geoms</span><span class="p">))</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">feature_of_coord</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">feature_of_coord</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
 
-        <span class="c1"># Get vector lengths</span>
-        <span class="n">line_norm</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">line_direction</span><span class="p">)</span>
-        <span class="n">movement_norm</span> <span class="o">=</span> <span class="n">norm</span><span class="p">(</span><span class="n">movement_direction</span><span class="p">)</span>
+        <span class="n">seg_starts</span> <span class="o">=</span> <span class="n">all_coords</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">valid</span><span class="p">]</span>                           <span class="c1"># (M, 2)</span>
+        <span class="n">seg_ends</span> <span class="o">=</span> <span class="n">all_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">:][</span><span class="n">valid</span><span class="p">]</span>                              <span class="c1"># (M, 2)</span>
+        <span class="n">seg_dirs</span> <span class="o">=</span> <span class="n">seg_ends</span> <span class="o">-</span> <span class="n">seg_starts</span>                              <span class="c1"># (M, 2)</span>
+        <span class="n">seg_tree</span> <span class="o">=</span> <span class="n">STRtree</span><span class="p">(</span><span class="n">linestrings</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">seg_starts</span><span class="p">,</span> <span class="n">seg_ends</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)))</span>
 
-        <span class="c1"># If both lines are super short we avoid noise and return 0 </span>
-        <span class="k">if</span> <span class="n">line_norm</span> <span class="o">&lt;</span> <span class="mf">1e-9</span> <span class="ow">or</span> <span class="n">movement_norm</span> <span class="o">&lt;</span> <span class="mf">1e-9</span><span class="p">:</span>
-            <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="n">seg_indices</span> <span class="o">=</span> <span class="n">seg_tree</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">points</span><span class="p">(</span><span class="n">coords</span><span class="p">))</span>
+        <span class="n">line_dirs</span> <span class="o">=</span> <span class="n">seg_dirs</span><span class="p">[</span><span class="n">seg_indices</span><span class="p">]</span>       <span class="c1"># (N, 2)</span>
 
-        <span class="c1"># Cosine similarity clamped to [0, 1]: 1 = parallel, 0 = orthogonal or reverse</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dot</span><span class="p">(</span><span class="n">line_direction</span><span class="p">,</span> <span class="n">movement_direction</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">line_norm</span> <span class="o">*</span> <span class="n">movement_norm</span><span class="p">)))</span></div>
+        <span class="n">line_norms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">line_dirs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">move_norms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">deltas</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">line_norms</span> <span class="o">&gt;=</span> <span class="mf">1e-9</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">move_norms</span> <span class="o">&gt;=</span> <span class="mf">1e-9</span><span class="p">)</span>
+        <span class="n">cosine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="p">))</span>
+        <span class="n">cosine</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">line_dirs</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">*</span> <span class="n">deltas</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="o">/</span> <span class="p">(</span><span class="n">line_norms</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span> <span class="o">*</span> <span class="n">move_norms</span><span class="p">[</span><span class="n">valid</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">cosine</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Follows.empty_map_parameters">

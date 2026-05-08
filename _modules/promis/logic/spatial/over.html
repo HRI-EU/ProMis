@@ -85,10 +85,11 @@
 <span class="c1">#</span>
 
 <span class="c1"># Third Party</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">shapely.strtree</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">points</span><span class="p">,</span> <span class="n">STRtree</span>
 
 <span class="c1"># ProMis</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianMap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianMap</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.relation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Relation</span>
 
@@ -106,15 +107,15 @@
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Over.compute_relation">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
-        <span class="n">location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">transition_location</span><span class="p">:</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if a location is within any of the geometries in the map.</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if a collection of locations is within any of the geometries in the map.</span>
 
 <span class="sd">        This method queries the R-tree for all geometries that could contain the location and</span>
 <span class="sd">        then performs a precise check.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            location: The location to check.</span>
+<span class="sd">            collection: The location to check.</span>
 <span class="sd">            r_tree: The R-tree of the map geometries for efficient querying.</span>
 <span class="sd">            original_geometries: The original map geometries (unused in this relation).</span>
 
@@ -122,8 +123,14 @@
 <span class="sd">            1.0 if the location is within any geometry, 0.0 otherwise.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">geometry</span> <span class="o">=</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">geometries</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">r_tree</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="p">))</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">location</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">within</span><span class="p">(</span><span class="n">geometry</span><span class="p">))</span></div>
+        <span class="n">locations</span> <span class="o">=</span> <span class="n">points</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">coordinates</span><span class="p">())</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="s2">&quot;within&quot;</span><span class="p">)</span>
+
+        <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">hits</span><span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="k">return</span> <span class="n">hits</span></div>
 
 
 <div class="viewcode-block" id="Over.empty_map_parameters">

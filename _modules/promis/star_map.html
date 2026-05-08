@@ -405,7 +405,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">what</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_and_location_types</span> <span class="k">if</span> <span class="n">what</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">what</span>
-        <span class="n">all_location_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span><span class="p">]</span>
+        <span class="n">all_location_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
+            <span class="n">location_type</span> <span class="k">for</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span>
+        <span class="p">))</span>
 
         <span class="c1"># For each location_type we get one set of random maps and RTrees</span>
         <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">all_location_types</span><span class="p">:</span>
@@ -417,8 +419,8 @@
                     <span class="k">continue</span>
 
                 <span class="c1"># Define value function and improve Collection</span>
-                <span class="k">def</span><span class="w"> </span><span class="nf">value_function</span><span class="p">(</span><span class="n">points</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_parameters</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span><span class="p">)</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">value_function</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_parameters</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span><span class="p">)</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">improve</span><span class="p">(</span>
                     <span class="n">candidate_sampler</span><span class="o">=</span><span class="n">candidate_sampler</span><span class="p">,</span>
@@ -454,22 +456,18 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_parameters</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">coordinates</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
         <span class="n">relation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">r_trees</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">random_maps</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianMap</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">transitions</span><span class="p">:</span> <span class="n">NDArray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the parameters for a given relation.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            coordinates: The coordinates at which to compute the parameters.</span>
+<span class="sd">            collection: The collection defining coordinates at which to compute the parameters.</span>
 <span class="sd">            relation: The name of the relation to compute.</span>
-<span class="sd">            location_type: The location type to relate to.</span>
 <span class="sd">            r_trees: A list of R-trees for the location type, one for each random map.</span>
 <span class="sd">            random_maps: A list of randomly sampled maps.</span>
-<span class="sd">            transitions: Optional transitions [N, 3] (ordered delta_east, delta_north, delta_time) into new states taken at the given coordinates.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            An array of computed parameters for each coordinate.</span>
@@ -480,15 +478,10 @@
 
         <span class="c1"># If the map had no relevant features, fill with default values</span>
         <span class="k">if</span> <span class="n">r_trees</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">relation_class</span><span class="o">.</span><span class="n">empty_map_parameters</span><span class="p">()]</span> <span class="o">*</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">relation_class</span><span class="o">.</span><span class="n">empty_map_parameters</span><span class="p">()]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">collection</span> <span class="o">=</span> <span class="n">CartesianCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uam</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
-            <span class="n">collection</span><span class="o">.</span><span class="n">append_with_default</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">transitions</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">relation_class</span><span class="o">.</span><span class="n">from_r_trees</span><span class="p">(</span>
-                <span class="n">collection</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">original_geometries</span><span class="o">=</span><span class="n">random_maps</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">relation_class</span><span class="o">.</span><span class="n">compute_parameters</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">warn</span><span class="p">(</span>
@@ -497,7 +490,7 @@
                 <span class="sa">f</span><span class="s2">&quot;Error was:</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">format_exception</span><span class="p">(</span><span class="n">e</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">relation_class</span><span class="o">.</span><span class="n">empty_map_parameters</span><span class="p">()]</span> <span class="o">*</span> <span class="n">coordinates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">relation_class</span><span class="o">.</span><span class="n">empty_map_parameters</span><span class="p">()]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
 
 <div class="viewcode-block" id="StaRMap.sample">
 <a class="viewcode-back" href="../../api.html#promis.star_map.StaRMap.sample">[docs]</a>
@@ -523,7 +516,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">what</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_and_location_types</span> <span class="k">if</span> <span class="n">what</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">what</span>
-        <span class="n">all_location_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span><span class="p">]</span>
+        <span class="n">all_location_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
+            <span class="n">location_type</span> <span class="k">for</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span>
+        <span class="p">))</span>
         <span class="n">coordinates</span> <span class="o">=</span> <span class="n">evaluation_points</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
         <span class="n">transitions</span> <span class="o">=</span> <span class="n">evaluation_points</span><span class="o">.</span><span class="n">transitions</span><span class="p">()</span>
 
@@ -544,7 +539,7 @@
                 <span class="c1"># Update collection of sample points</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">coordinates</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_compute_parameters</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span><span class="p">,</span> <span class="n">transitions</span><span class="p">),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_compute_parameters</span><span class="p">(</span><span class="n">evaluation_points</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">random_maps</span><span class="p">),</span>
                     <span class="n">transitions</span>
                 <span class="p">)</span></div>
 </div>
