@@ -13,12 +13,11 @@ from warnings import warn
 # Third Party
 import matplotlib.pyplot as plt
 from matplotlib.colors import CenteredNorm
-from shapely import STRtree
+from shapely import points, STRtree
 
 # ProMis
 from promis.geo import CartesianGeometry, CartesianMap, CartesianRasterBand
 from promis.geo.collection import CartesianCollection
-from promis.geo.location import CartesianLocation
 from promis.logic.spatial.relation import ScalarRelation
 
 DEFAULT_UNIFORM_VARIANCE = 0.25
@@ -44,27 +43,27 @@ class Depth(ScalarRelation):
 
     @staticmethod
     def compute_relation(
-        location: CartesianLocation, transition_location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
-    ) -> float:
-        """Computes the depth at a location based on the nearest water feature.
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+    ) -> list[float]:
+        """Computes the depth at each location based on the nearest water feature.
 
-        If the map is empty, it returns a depth of 0 (sea level).
+        If the map is empty, it returns a depth of 0 (sea level) for all locations.
 
         Args:
-            location: The location to compute the depth for.
+            collection: The locations to compute depth for.
             r_tree: The R-tree of the map geometries for efficient querying.
             original_geometries: The original map geometries, which contain metadata.
 
         Returns:
-            The depth in meters.
+            The depth in meters for each location.
         """
 
         if not r_tree.geometries.size:
-            return 0.0  # Assume sea level for empty maps
+            return [0.0] * len(collection.data)
 
-        nearest_geometry_idx = r_tree.nearest(location.geometry)
-        nearest_geometry = original_geometries.features[nearest_geometry_idx]
-        return feature_to_depth(nearest_geometry)
+        locations = points(collection.coordinates())
+        nearest_indices = r_tree.nearest(locations)
+        return [feature_to_depth(original_geometries.features[idx]) for idx in nearest_indices]
 
     @staticmethod
     def empty_map_parameters() -> list[float]:

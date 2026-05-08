@@ -9,10 +9,11 @@
 #
 
 # Third Party
-from shapely.strtree import STRtree
+import numpy as np
+from shapely import points, STRtree
 
 # ProMis
-from promis.geo import CartesianLocation, CartesianMap
+from promis.geo import CartesianCollection, CartesianMap
 
 from .relation import Relation
 
@@ -26,15 +27,15 @@ class Over(Relation):
 
     @staticmethod
     def compute_relation(
-        location: CartesianLocation, transition_location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
-    ) -> float:
-        """Checks if a location is within any of the geometries in the map.
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+    ) -> list[float]:
+        """Checks if a collection of locations is within any of the geometries in the map.
 
         This method queries the R-tree for all geometries that could contain the location and
         then performs a precise check.
 
         Args:
-            location: The location to check.
+            collection: The location to check.
             r_tree: The R-tree of the map geometries for efficient querying.
             original_geometries: The original map geometries (unused in this relation).
 
@@ -42,8 +43,14 @@ class Over(Relation):
             1.0 if the location is within any geometry, 0.0 otherwise.
         """
 
-        geometry = r_tree.geometries.take(r_tree.nearest(location.geometry))
-        return float(location.geometry.within(geometry))
+        locations = points(collection.coordinates())
+        result = r_tree.query(locations, predicate="within")
+
+        hits = np.zeros(len(collection.data), dtype=float)
+        if result.size > 0:
+            hits[result[0]] = 1.0
+
+        return hits
 
     @staticmethod
     def empty_map_parameters() -> list[float]:

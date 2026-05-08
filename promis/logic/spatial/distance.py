@@ -9,10 +9,11 @@
 #
 
 # Third Party
+from shapely import distance as shapely_distance, points
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianLocation, CartesianMap
+from promis.geo import CartesianCollection, CartesianMap
 
 from .relation import ScalarRelation
 
@@ -38,12 +39,12 @@ class Distance(ScalarRelation):
 
     @staticmethod
     def compute_relation(
-        location: CartesianLocation, transition_location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
-    ) -> float:
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+    ) -> list[float]:
         """Computes the distance from a location to the nearest geometry in the map.
 
         Args:
-            location: The location to compute the distance from.
+            collection: The location to check.
             r_tree: The R-tree of the map geometries for efficient querying.
             original_geometries: The original map geometries (unused in this relation, but required
                 by the abstract base class).
@@ -52,8 +53,9 @@ class Distance(ScalarRelation):
             The Euclidean distance to the nearest geometry.
         """
 
-        geometry = r_tree.geometries.take(r_tree.nearest(location.geometry))
-        return location.geometry.distance(geometry)
+        locations = points(collection.coordinates())
+        nearest_geometries = r_tree.geometries.take(r_tree.nearest(locations))
+        return shapely_distance(locations, nearest_geometries)
 
     @staticmethod
     def empty_map_parameters() -> list[float]:

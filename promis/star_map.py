@@ -301,7 +301,9 @@ class StaRMap:
         """
 
         what = self.relation_and_location_types if what is None else what
-        all_location_types = [location_type for types in what.values() for location_type in types]
+        all_location_types = list(dict.fromkeys(
+            location_type for types in what.values() for location_type in types
+        ))
 
         # For each location_type we get one set of random maps and RTrees
         for location_type in all_location_types:
@@ -313,8 +315,8 @@ class StaRMap:
                     continue
 
                 # Define value function and improve Collection
-                def value_function(points):
-                    return self._compute_parameters(points, relation, location_type, r_trees, random_maps)
+                def value_function(collection):
+                    return self._compute_parameters(collection, relation, r_trees, random_maps)
 
                 self.relations[relation][location_type].parameters.improve(
                     candidate_sampler=candidate_sampler,
@@ -349,22 +351,18 @@ class StaRMap:
 
     def _compute_parameters(
         self,
-        coordinates: NDArray,
+        collection: CartesianCollection,
         relation: str,
-        location_type: str,
         r_trees: list | None,
         random_maps: list[CartesianMap] | None,
-        transitions: NDArray | None = None,
     ) -> NDArray:
         """Compute the parameters for a given relation.
 
         Args:
-            coordinates: The coordinates at which to compute the parameters.
+            collection: The collection defining coordinates at which to compute the parameters.
             relation: The name of the relation to compute.
-            location_type: The location type to relate to.
             r_trees: A list of R-trees for the location type, one for each random map.
             random_maps: A list of randomly sampled maps.
-            transitions: Optional transitions [N, 3] (ordered delta_east, delta_north, delta_time) into new states taken at the given coordinates.
 
         Returns:
             An array of computed parameters for each coordinate.
@@ -375,15 +373,10 @@ class StaRMap:
 
         # If the map had no relevant features, fill with default values
         if r_trees is None:
-            return array([relation_class.empty_map_parameters()] * coordinates.shape[0])
+            return array([relation_class.empty_map_parameters()] * len(collection.data))
 
         try:
-            collection = CartesianCollection(self.uam.origin)
-            collection.append_with_default(coordinates, 0.0, transitions)
-
-            return relation_class.from_r_trees(
-                collection, r_trees, location_type, original_geometries=random_maps
-            ).parameters.values()
+            return relation_class.compute_parameters(collection, r_trees, random_maps)
 
         except Exception as e:
             warn(
@@ -392,7 +385,7 @@ class StaRMap:
                 f"Error was:\n{''.join(format_exception(e))}"
             )
 
-            return array([relation_class.empty_map_parameters()] * coordinates.shape[0])
+            return array([relation_class.empty_map_parameters()] * len(collection.data))
 
     def sample(
         self,
@@ -416,7 +409,9 @@ class StaRMap:
         """
 
         what = self.relation_and_location_types if what is None else what
-        all_location_types = [location_type for types in what.values() for location_type in types]
+        all_location_types = list(dict.fromkeys(
+            location_type for types in what.values() for location_type in types
+        ))
         coordinates = evaluation_points.coordinates()
         transitions = evaluation_points.transitions()
 
@@ -437,6 +432,6 @@ class StaRMap:
                 # Update collection of sample points
                 self.relations[relation][location_type].parameters.append(
                     coordinates,
-                    self._compute_parameters(coordinates, relation, location_type, r_trees, random_maps, transitions),
+                    self._compute_parameters(evaluation_points, relation, r_trees, random_maps),
                     transitions
                 )

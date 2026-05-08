@@ -7,12 +7,12 @@
 #
 
 # Third Party
+import numpy as np
+from shapely import linestrings
 from shapely.strtree import STRtree
-from shapely import LineString, Geometry
-from numpy import array, sin, cos, deg2rad
 
 # ProMis
-from promis.geo import CartesianLocation, CartesianMap
+from promis.geo import CartesianCollection, CartesianMap
 
 from .relation import Relation
 
@@ -20,16 +20,23 @@ from .relation import Relation
 class Crosses(Relation):
     """A probabilistic relation that checks if a point to point transition "crosses" a map feature.
 
-    This relation is true if a given location and its transition location form a line that crosses over 
+    This relation is true if a given location and its transition location form a line that crosses over
     any of the geometries of a specific type on the map. The probability is derived from a set of sample maps.
     """
 
     @staticmethod
     def compute_relation(
-        location: CartesianLocation, transition_location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap, **kwargs
-    ) -> float:
-        trajectory = LineString([location.geometry, transition_location.geometry])
-        return bool(r_tree.query(trajectory, predicate="crosses").size)
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+    ) -> list[float]:
+        coords = collection.coordinates()
+        end_coords = coords + collection.transitions()[:, :2]
+        trajectories = linestrings(np.stack([coords, end_coords], axis=1))
+
+        result = r_tree.query(trajectories, predicate="crosses")
+        hits = np.zeros(len(coords), dtype=float)
+        if result.size > 0:
+            hits[result[0]] = 1.0
+        return hits
 
     @staticmethod
     def empty_map_parameters() -> list[float]:

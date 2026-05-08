@@ -83,18 +83,18 @@ class Relation(ABC):
     @staticmethod
     @abstractmethod
     def compute_relation(
-        location: CartesianLocation, transition_location: CartesianLocation, r_tree: STRtree, original_geometries: CartesianMap
-    ) -> float:
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+    ) -> list[float]:
         """Compute the value of this Relation type for a specific location and map.
 
         Args:
-            location: The location to evaluate in Cartesian coordinates.
-            transition_location: The location where the state is transitioning into.
+            collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.
             r_tree: The map represented as an R-tree for efficient spatial queries.
             original_geometries: The original geometries indexed by the STRtree.
 
         Returns:
-            A scalar value representing the computed relation (e.g., distance, depth).
+            The scalar values representing the computed relation (e.g., distance, depth) for all
+            points in the input collection.
         """
 
     @staticmethod
@@ -105,16 +105,14 @@ class Relation(ABC):
     @classmethod
     def compute_parameters(
         cls,
-        location: CartesianLocation,
-        transition_location: CartesianLocation,
+        collection: CartesianCollection,
         r_trees: list[STRtree],
         original_geometries: list[CartesianMap],
     ) -> array:
         """Compute the parameters of this Relation type for a specific location and set of maps.
 
         Args:
-            location: The location to evaluate in Cartesian coordinates.
-            transition_location: The location where the state is transitioning into.
+            collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.
             r_trees: A list of generated maps, each represented as an R-tree.
             original_geometries: The original geometries indexed by the STRtrees.
 
@@ -124,7 +122,7 @@ class Relation(ABC):
         """
 
         relation_data = [
-            cls.compute_relation(location, transition_location, r_tree, geometries)
+            cls.compute_relation(collection, r_tree, geometries)
             for r_tree, geometries in zip(r_trees, original_geometries)
         ]
 
@@ -133,7 +131,7 @@ class Relation(ABC):
     @classmethod
     def from_r_trees(
         cls,
-        support: CartesianCollection,
+        collection: CartesianCollection,
         r_trees: list[STRtree],
         location_type: str,
         original_geometries: list[CartesianMap],
@@ -141,7 +139,7 @@ class Relation(ABC):
         """Compute relation for a Cartesian collection of points and a set of R-trees.
 
         Args:
-            support: The collection of Cartesian points to compute the relation for.
+            collection: The Collection of Cartesian points to compute the relation for.
             r_trees: Random variations of the features of a map, each indexible by an STRtree.
             location_type: The type of features this relates to.
             original_geometries: The original geometries indexed by the STRtrees.
@@ -151,17 +149,10 @@ class Relation(ABC):
         """
 
         # Compute relation over support points
-        locations = support.to_cartesian_locations()
-        transitions = support.to_cartesian_transition_locations()
-        statistical_moments = vstack(
-            [
-                cls.compute_parameters(location, transitions, r_trees, original_geometries)
-                for location, transitions in zip(locations, transitions)
-            ]
-        )
+        statistical_moments = cls.compute_parameters(collection, r_trees, original_geometries)
 
         # Setup parameter collection
-        parameters = deepcopy(support)
+        parameters = deepcopy(collection)
         parameters.number_of_values = 2
         parameters.data["v0"] = statistical_moments[:, 0]
         parameters.data["v1"] = statistical_moments[:, 1]

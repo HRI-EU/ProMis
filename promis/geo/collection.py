@@ -361,11 +361,12 @@ class Collection(ABC):
 
             # Decide next points to sample at
             top_candidate_indices = argsort(score)[-number_of_improvement_points:][::-1]
-            next_points = atleast_2d(candidate_coordinates[top_candidate_indices])
+            next_collection = deepcopy(candidate_collection)
+            next_collection.data = candidate_collection.data.iloc[top_candidate_indices].reset_index(drop=True)
 
             # Compute new samples and append to collection
-            next_values = value_function(next_points)
-            self.append(next_points, next_values)
+            next_values = value_function(next_collection)
+            self.append(next_collection.coordinates(), next_values, next_collection.transitions())
 
     def get_entropy(
         self, number_of_neighbours: int = 4, number_of_bins: int = 10, value_index: int = 0
