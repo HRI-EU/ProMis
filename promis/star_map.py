@@ -224,7 +224,7 @@ class StaRMap:
             writer.write("normal", [means, stds], time.monotonic())
         else:
             writer.write(params[:, 0].ravel().tolist(), time.monotonic())
-            
+
     def get(self, relation: str, location_type: str) -> Relation:
         """Get the computed data for a relation to a location type.
 

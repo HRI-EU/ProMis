@@ -10,7 +10,7 @@ FROM ubuntu:22.04
 
 # APT installs and settings
 RUN apt-get update -qq
-RUN apt-get install -qy git curl xz-utils python3-pip python3-gdal libgdal-dev cython3
+RUN apt-get install -qy git curl xz-utils python3-pip cython3
 
 # Locales settings for Sphinx to work
 RUN apt-get install -qy locales

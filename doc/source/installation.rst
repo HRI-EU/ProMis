@@ -6,27 +6,7 @@ This guide covers the installation of ProMis and its dependencies.
 Prerequisites
 -------------
 
-Before installing ProMis, you need to set up your environment.
-
-**Python**
-
 ProMis requires Python 3.10 or newer. You can download it from `python.org <https://www.python.org/downloads/>`_.
-
-**Optional Dependencies**
-
-*   **Nautical Charts:** To work with nautical chart data (e.g., from S-57 files), `GDAL <https://gdal.org/en/stable/download.html>`_ is required. GDAL can be tricky to install, but here are some tips for common platforms:
-
-    .. code-block:: bash
-
-        # Ubuntu / Debian
-        sudo apt-get update
-        sudo apt-get install python3-gdal libgdal-dev
-
-        # macOS (using Homebrew)
-        brew install gdal
-
-    For other systems, please refer to the `official GDAL documentation <https://gdal.org/en/stable/download.html>`_.
-
 Standard Installation
 ---------------------
 
@@ -39,8 +19,7 @@ This is the recommended method for most users. It installs the latest stable ver
     # Also enables using the Web GUI
     promis_gui --host 0.0.0.0 --port 8000
 
-If you plan to work with nautical charts, install the necessary extras.
-Make sure you have installed GDAL first (see Prerequisites).
+If you plan to work with nautical charts, install the necessary extras:
 
 .. code-block:: bash
 

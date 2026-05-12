@@ -84,9 +84,8 @@ setuptools.setup(
             "sphinxcontrib-programoutput",
         ],
         # Loading nautical chart data into ProMis
-        # Requires GDAL to be installed on the system
         "nautical": [
-            "gdal",
+            "fiona",
         ],
         # Development tools for quality assurance
         "dev": [
