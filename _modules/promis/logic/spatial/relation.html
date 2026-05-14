@@ -92,7 +92,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span>
 
 <span class="c1"># Third Party</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">clip</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">vstack</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">clip</span><span class="p">,</span> <span class="n">empty</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">vstack</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapely.strtree</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
 
@@ -208,10 +208,11 @@
 <span class="sd">            relation&#39;s distribution for the given location.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">relation_data</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="bp">cls</span><span class="o">.</span><span class="n">compute_relation</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">,</span> <span class="n">geometries</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">r_tree</span><span class="p">,</span> <span class="n">geometries</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">r_trees</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">)</span>
-        <span class="p">]</span>
+        <span class="n">n_maps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">r_trees</span><span class="p">)</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">relation_data</span> <span class="o">=</span> <span class="n">empty</span><span class="p">((</span><span class="n">n_maps</span><span class="p">,</span> <span class="n">n_points</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">r_tree</span><span class="p">,</span> <span class="n">geometries</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">r_trees</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">)):</span>
+            <span class="n">relation_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">compute_relation</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">,</span> <span class="n">geometries</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">array</span><span class="p">([</span><span class="n">mean</span><span class="p">(</span><span class="n">relation_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">var</span><span class="p">(</span><span class="n">relation_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span></div>
 
