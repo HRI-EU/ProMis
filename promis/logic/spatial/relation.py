@@ -16,7 +16,7 @@ from pickle import dump, load
 from typing import TypeVar
 
 # Third Party
-from numpy import array, clip, mean, sqrt, var, vstack
+from numpy import array, clip, empty, mean, sqrt, var, vstack
 from scipy.stats import norm
 from shapely.strtree import STRtree
 
@@ -116,10 +116,11 @@ class Relation(ABC):
             relation's distribution for the given location.
         """
 
-        relation_data = [
-            cls.compute_relation(collection, r_tree, geometries)
-            for r_tree, geometries in zip(r_trees, original_geometries)
-        ]
+        n_maps = len(r_trees)
+        n_points = len(collection.data)
+        relation_data = empty((n_maps, n_points))
+        for i, (r_tree, geometries) in enumerate(zip(r_trees, original_geometries)):
+            relation_data[i] = cls.compute_relation(collection, r_tree, geometries)
 
         return array([mean(relation_data, axis=0), var(relation_data, axis=0)]).T
 

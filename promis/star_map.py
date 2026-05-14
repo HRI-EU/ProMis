@@ -19,7 +19,7 @@ from traceback import format_exception
 from warnings import warn
 
 # Third Party
-from numpy import array, maximum, sqrt
+from numpy import array, empty, maximum, mean, sqrt, var
 from numpy.typing import NDArray
 
 # ProMis
@@ -385,8 +385,8 @@ class StaRMap:
 
         except Exception as e:
             warn(
-                f"StaR Map encountered excpetion! "
-                f"Relation {relation} for {location_type} will use default parameters. "
+                f"StaR Map encountered exception! "
+                f"Relation {relation} will use default parameters. "
                 f"Error was:\n{''.join(format_exception(e))}"
             )
 
@@ -419,24 +419,64 @@ class StaRMap:
         ))
         coordinates = evaluation_points.coordinates()
         transitions = evaluation_points.transitions()
+        n_points = len(evaluation_points.data)
 
         for location_type in all_location_types:
             r_trees, feature_samples = self._make_r_trees(location_type, number_of_random_maps)
 
-            # This could be parallelized, as each relation and location type is independent from all others
-            for relation, types in what.items():
-                if location_type not in types:
-                    continue
+            relevant = [
+                (relation, self.relation_name_to_class(relation))
+                for relation, types in what.items()
+                if location_type in types
+            ]
 
-                if location_type not in self.relations[relation].keys():
-                    self.relations[relation][location_type] = self.relation_name_to_class(relation)(
-                        CartesianCollection(self.uam.origin, 2),
-                        location_type
+            # No features for this type: fill all relations with defaults and move on
+            if r_trees is None:
+                for relation, relation_class in relevant:
+                    if location_type not in self.relations[relation]:
+                        self.relations[relation][location_type] = relation_class(
+                            CartesianCollection(self.uam.origin, 2), location_type
+                        )
+                    self.relations[relation][location_type].parameters.append(
+                        coordinates,
+                        array([relation_class.empty_map_parameters()] * n_points),
+                        transitions,
+                    )
+                continue
+
+            # Single pass over all R-trees, computing all relevant relations at once
+            n_maps = len(r_trees)
+            accumulator = {relation: empty((n_maps, n_points)) for relation, _ in relevant}
+            failed: set[str] = set()
+
+            for i, (r_tree, geometries) in enumerate(zip(r_trees, feature_samples)):
+                for relation, relation_class in relevant:
+                    if relation in failed:
+                        continue
+                    try:
+                        accumulator[relation][i] = relation_class.compute_relation(
+                            evaluation_points, r_tree, geometries
+                        )
+                    except Exception as e:
+                        warn(
+                            f"StaR Map encountered exception! "
+                            f"Relation {relation} for {location_type} will use default parameters. "
+                            f"Error was:\n{''.join(format_exception(e))}"
+                        )
+                        failed.add(relation)
+
+            for relation, relation_class in relevant:
+                if location_type not in self.relations[relation]:
+                    self.relations[relation][location_type] = relation_class(
+                        CartesianCollection(self.uam.origin, 2), location_type
                     )
 
-                # Update collection of sample points
+                if relation in failed:
+                    params = array([relation_class.empty_map_parameters()] * n_points)
+                else:
+                    data = accumulator[relation]
+                    params = array([mean(data, axis=0), var(data, axis=0)]).T
+
                 self.relations[relation][location_type].parameters.append(
-                    coordinates,
-                    self._compute_parameters(evaluation_points, relation, r_trees, feature_samples),
-                    transitions
+                    coordinates, params, transitions
                 )
