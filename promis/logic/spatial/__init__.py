@@ -9,6 +9,7 @@
 #
 
 # ProMis
+from promis.logic.spatial.approaches import Approaches
 from promis.logic.spatial.crosses import Crosses
 from promis.logic.spatial.depth import Depth
 from promis.logic.spatial.distance import Distance
@@ -20,4 +21,4 @@ from promis.logic.spatial.opposes import Opposes
 from promis.logic.spatial.over import Over
 from promis.logic.spatial.relation import Relation, ScalarRelation
 
-__all__ = ["Crosses", "Depth", "Distance", "Enters", "Exits", "Intersects", "Follows", "Opposes", "Over", "Relation", "ScalarRelation"]
+__all__ = ["Approaches", "Crosses", "Depth", "Distance", "Enters", "Exits", "Intersects", "Follows", "Opposes", "Over", "Relation", "ScalarRelation"]

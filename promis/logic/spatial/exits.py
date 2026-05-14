@@ -12,7 +12,7 @@ from shapely import points
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianMap
+from promis.geo import CartesianCollection
 
 from .relation import Relation
 
@@ -26,7 +26,7 @@ class Exits(Relation):
 
     @staticmethod
     def compute_relation(
-        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: list
     ) -> list[float]:
         coords = collection.coordinates()
         end_coords = coords + collection.transitions()[:, :2]
@@ -50,7 +50,3 @@ class Exits(Relation):
     @staticmethod
     def empty_map_parameters() -> list[float]:
         return [0.0, 0.0]
-
-    @staticmethod
-    def arity() -> int:
-        return 2

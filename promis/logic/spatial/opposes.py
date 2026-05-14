@@ -12,7 +12,7 @@
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianMap
+from promis.geo import CartesianCollection
 
 from .relation import Relation
 from .follows import Follows
@@ -27,7 +27,7 @@ class Opposes(Relation):
 
     @staticmethod
     def compute_relation(
-        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: list
     ) -> list[float]:
         return Follows.compute_relation(
             collection, r_tree, original_geometries,
@@ -37,7 +37,3 @@ class Opposes(Relation):
     @staticmethod
     def empty_map_parameters() -> list[float]:
         return [0.0, 0.0]
-
-    @staticmethod
-    def arity() -> int:
-        return 2

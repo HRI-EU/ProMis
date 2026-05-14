@@ -10,6 +10,7 @@
 
 # Standard Library
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from typing import Any
 
 # ProMis
@@ -35,7 +36,10 @@ class SpatialLoader(ABC):
         Returns:
             A PolarMap centered at the loader's origin containing all loaded features.
         """
-        return PolarMap(self.origin, self.features)
+        grouped: defaultdict[str, list[PolarGeometry]] = defaultdict(list)
+        for f in self.features:
+            grouped[f.location_type].append(f)
+        return PolarMap(self.origin, grouped)
 
     def to_cartesian_map(self) -> CartesianMap:
         """Creates a CartesianMap from the loaded features.

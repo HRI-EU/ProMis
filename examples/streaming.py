@@ -197,7 +197,8 @@ if __name__ == "__main__":
     data_path = Path(__file__).parent / "data"
     # Local features such as roads, hospitals, ... to relate to
     uam = get_uam(data_path / "streaming_uam.pkl", origin, dimensions, recompute=False)
-    uam.features.extend(vertiports)
+    for v in vertiports:
+        uam.features[v.location_type].append(v)
 
     # Spatial relations
     star_map = get_starmap(data_path / "streaming_star_map.pkl", uam=uam, evaluation_points=raster, recompute=False)
@@ -242,8 +243,8 @@ if __name__ == "__main__":
     FAR_MEAN = 10_000.0  # m
     FAR_STD  = 100.0
     n = len(coords)
-    promis.get_writer("distance", "vessel").write("normal", [[FAR_MEAN] * n, [FAR_STD] * n], time.monotonic())
-    promis.get_writer("distance", "uas").write("normal",    [[FAR_MEAN] * n, [FAR_STD] * n], time.monotonic())
+    promis.get_star_map_writer("distance", "vessel").write("normal", [[FAR_MEAN] * n, [FAR_STD] * n], time.monotonic())
+    promis.get_star_map_writer("distance", "uas").write("normal",    [[FAR_MEAN] * n, [FAR_STD] * n], time.monotonic())
 
     # Ensures that all data was transferred
     time.sleep(0.00001)
@@ -287,11 +288,12 @@ if __name__ == "__main__":
                 ais_updated = True
 
             if ais_updated:
-                dynamic_uam.features = list(dynamic_features.values())
+                vessels = list(dynamic_features.values())
+                dynamic_uam.features = {"vessel": vessels} if vessels else {}
                 vessel_locations = CartesianCollection(origin)
-                if dynamic_uam.features:
+                if vessels:
                     vessel_locations.append_with_default(
-                        np.vstack([normal([l.x, l.y], 150.0, [50, 2]) for l in dynamic_uam.features]), 0.0
+                        np.vstack([normal([l.x, l.y], 150.0, [50, 2]) for l in vessels]), 0.0
                     )
                     dynamic_star_map.update("distance", "vessel", vessel_locations, 25)
 
@@ -323,9 +325,9 @@ if __name__ == "__main__":
                 else:
                     drone["position"] += (direction / distance) * DRONE_SPEED * dt
 
-            dynamic_uam.features = [
+            dynamic_uam.features = {"uas": [
                 CartesianLocation(d["position"][0], d["position"][1], location_type="uas") for d in drones
-            ]
+            ]}
 
             uas_locations = CartesianCollection(origin)
             uas_locations.append_with_default(
