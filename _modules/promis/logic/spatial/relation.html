@@ -97,7 +97,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapely.strtree</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
 
 <span class="c1"># ProMis</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="n">CartesianRasterBand</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianRasterBand</span>
 
 <span class="c1">#: Helper to define derived relations within base class</span>
 <span class="n">DerivedRelation</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;DerivedRelation&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;Relation&quot;</span><span class="p">)</span>
@@ -172,27 +172,19 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
-        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the value of this Relation type for a specific location and map.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.</span>
 <span class="sd">            r_tree: The map represented as an R-tree for efficient spatial queries.</span>
-<span class="sd">            original_geometries: The original geometries indexed by the STRtree.</span>
+<span class="sd">            original_geometries: The flat list of features indexed by the STRtree.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The scalar values representing the computed relation (e.g., distance, depth) for all</span>
 <span class="sd">            points in the input collection.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
-
-
-<div class="viewcode-block" id="Relation.arity">
-<a class="viewcode-back" href="../../../../api.html#promis.logic.Relation.arity">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">arity</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the arity of the relation.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="Relation.compute_parameters">
@@ -202,14 +194,14 @@
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
         <span class="n">r_trees</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">STRtree</span><span class="p">],</span>
-        <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianMap</span><span class="p">],</span>
+        <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">array</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the parameters of this Relation type for a specific location and set of maps.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.</span>
 <span class="sd">            r_trees: A list of generated maps, each represented as an R-tree.</span>
-<span class="sd">            original_geometries: The original geometries indexed by the STRtrees.</span>
+<span class="sd">            original_geometries: For each R-tree, the flat list of features it was built from.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A numpy array containing the computed parameters (e.g., mean and variance) of the</span>
@@ -232,7 +224,7 @@
         <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
         <span class="n">r_trees</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">STRtree</span><span class="p">],</span>
         <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianMap</span><span class="p">],</span>
+        <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedRelation</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute relation for a Cartesian collection of points and a set of R-trees.</span>
 
@@ -240,7 +232,7 @@
 <span class="sd">            collection: The Collection of Cartesian points to compute the relation for.</span>
 <span class="sd">            r_trees: Random variations of the features of a map, each indexible by an STRtree.</span>
 <span class="sd">            location_type: The type of features this relates to.</span>
-<span class="sd">            original_geometries: The original geometries indexed by the STRtrees.</span>
+<span class="sd">            original_geometries: For each R-tree, the flat list of features it was built from.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A new instance of the Relation class, populated with the computed parameters.</span>

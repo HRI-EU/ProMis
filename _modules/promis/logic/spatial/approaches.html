@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.logic.spatial.opposes &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>promis.logic.spatial.approaches &mdash; ProMis 4.0.0.dev2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -64,7 +64,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
-      <li class="breadcrumb-item active">promis.logic.spatial.opposes</li>
+      <li class="breadcrumb-item active">promis.logic.spatial.approaches</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -73,11 +73,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <h1>Source code for promis.logic.spatial.opposes</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module implements a distributional predicate describing if a state transition opposes a path.&quot;&quot;&quot;</span>
-
-<span class="c1">#</span>
-<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH</span>
+  <h1>Source code for promis.logic.spatial.approaches</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
 <span class="c1">#</span>
 <span class="c1"># This file is part of ProMis and licensed under the BSD 3-Clause License.</span>
 <span class="c1"># You should have received a copy of the BSD 3-Clause License along with ProMis.</span>
@@ -85,38 +83,45 @@
 <span class="c1">#</span>
 
 <span class="c1"># Third Party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">distance</span> <span class="k">as</span> <span class="n">shapely_distance</span><span class="p">,</span> <span class="n">points</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapely.strtree</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
 
 <span class="c1"># ProMis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.relation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Relation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.follows</span><span class="w"> </span><span class="kn">import</span> <span class="n">Follows</span>
 
 
-<div class="viewcode-block" id="Opposes">
-<a class="viewcode-back" href="../../../../api.html#promis.logic.Opposes">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">Opposes</span><span class="p">(</span><span class="n">Relation</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A probabilistic relation that checks if a point to point transition &quot;opposes&quot; along a map feature.</span>
+<div class="viewcode-block" id="Approaches">
+<a class="viewcode-back" href="../../../../api.html#promis.logic.Approaches">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Approaches</span><span class="p">(</span><span class="n">Relation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A probabilistic relation that checks if a point to point transition &quot;approaches&quot; a map feature.</span>
 
-<span class="sd">    This relation is true if a given location and its transition location form a line that slopes along (but in opposite direction)</span>
-<span class="sd">    the nearest geometry of a specific type on the map. The probability is derived from a set of sample maps.</span>
+<span class="sd">    This relation is true if a given location transitions toward any of the geometries of a specific</span>
+<span class="sd">    type on the map, i.e., the distance to the nearest feature must decrease over the transition.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Opposes.compute_relation">
-<a class="viewcode-back" href="../../../../api.html#promis.logic.Opposes.compute_relation">[docs]</a>
+<div class="viewcode-block" id="Approaches.compute_relation">
+<a class="viewcode-back" href="../../../../api.html#promis.logic.Approaches.compute_relation">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
         <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">Follows</span><span class="o">.</span><span class="n">compute_relation</span><span class="p">(</span>
-            <span class="n">collection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">,</span>
-            <span class="n">deltas</span><span class="o">=-</span><span class="n">collection</span><span class="o">.</span><span class="n">transitions</span><span class="p">()[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span>
-        <span class="p">)</span></div>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
+        <span class="n">end_coords</span> <span class="o">=</span> <span class="n">coords</span> <span class="o">+</span> <span class="n">collection</span><span class="o">.</span><span class="n">transitions</span><span class="p">()[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">points</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="n">ends</span> <span class="o">=</span> <span class="n">points</span><span class="p">(</span><span class="n">end_coords</span><span class="p">)</span>
+
+        <span class="n">d_start</span> <span class="o">=</span> <span class="n">shapely_distance</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">geometries</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">r_tree</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">starts</span><span class="p">)))</span>
+        <span class="n">d_end</span> <span class="o">=</span> <span class="n">shapely_distance</span><span class="p">(</span><span class="n">ends</span><span class="p">,</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">geometries</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">r_tree</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">ends</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">d_end</span> <span class="o">&lt;</span> <span class="n">d_start</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Opposes.empty_map_parameters">
-<a class="viewcode-back" href="../../../../api.html#promis.logic.Opposes.empty_map_parameters">[docs]</a>
+<div class="viewcode-block" id="Approaches.empty_map_parameters">
+<a class="viewcode-back" href="../../../../api.html#promis.logic.Approaches.empty_map_parameters">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">empty_map_parameters</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
         <span class="k">return</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span></div>

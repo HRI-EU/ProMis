@@ -127,6 +127,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">star_map</span> <span class="o">=</span> <span class="n">star_map</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logic</span> <span class="o">=</span> <span class="n">logic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span> <span class="o">=</span> <span class="n">dimension</span>
 
         <span class="c1"># Parse and validate the target declaration</span>
         <span class="n">target_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(\w+)\s*-&gt;\s*target\(&#39;</span><span class="p">,</span> <span class="n">logic</span><span class="p">)</span>
@@ -144,7 +145,7 @@
         <span class="p">}</span>
 
         <span class="c1"># Compile Resin and obtain the reactive circuit</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_resin</span> <span class="o">=</span> <span class="n">Resin</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">logic</span><span class="p">,</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resin</span> <span class="o">=</span> <span class="n">Resin</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logic</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resin</span><span class="o">.</span><span class="n">get_reactive_circuit</span><span class="p">()</span>
 
         <span class="c1"># Pre-create writers for every declared source</span>
@@ -155,6 +156,19 @@
 
         <span class="c1"># Auto-link so the star_map can write back to Resin via update()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">star_map</span><span class="o">.</span><span class="n">_promis</span> <span class="o">=</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="ProMis.set_evaluation_points">
+<a class="viewcode-back" href="../../api.html#promis.promis.ProMis.set_evaluation_points">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_evaluation_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evaluation_points</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets a new target set of points to run inference for. </span>
+<span class="sd">        </span>
+<span class="sd">        All directly written data will be associated with these points.</span>
+<span class="sd">        The StaR Map relations are interpolated onto this collection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_evaluation_points</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">,</span> <span class="s2">&quot;The number of evaluation points must match the ProMis inference dimension!&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evaluation_points</span> <span class="o">=</span> <span class="n">evaluation_points</span></div>
+
 
 <div class="viewcode-block" id="ProMis.initialize">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.initialize">[docs]</a>
@@ -238,10 +252,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_rc</span><span class="o">.</span><span class="n">adapt</span><span class="p">(</span><span class="n">bin_size</span><span class="p">,</span> <span class="n">number_bins</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ProMis.get_writer">
-<a class="viewcode-back" href="../../api.html#promis.promis.ProMis.get_writer">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_writer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relation_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the Resin writer for the given relation and location type.</span>
+<div class="viewcode-block" id="ProMis.get_star_map_writer">
+<a class="viewcode-back" href="../../api.html#promis.promis.ProMis.get_star_map_writer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_star_map_writer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relation_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the Resin writer for the given StaR Map relation and location type.</span>
 
 <span class="sd">        Use this to push dynamic (runtime-varying) data into a source that is</span>
 <span class="sd">        not automatically wired from the StaRMap, e.g. moving vessels or UAS.</span>
@@ -260,6 +274,38 @@
 
         <span class="n">atom</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">relation_type</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_writers</span><span class="p">[</span><span class="n">atom</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="ProMis.make_writer">
+<a class="viewcode-back" href="../../api.html#promis.promis.ProMis.make_writer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_writer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is used to create a writer for non-StaR Map topics.</span>
+
+<span class="sd">        When declaring a channel in a resin program, i.e.,</span>
+<span class="sd">        `atom &lt;- source(&quot;/channel/name&quot;, DataType).`,</span>
+<span class="sd">        this method can be used to obtain a writer for channel = &quot;/channel/name&quot;.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            channel: The channel of the ground atom to write to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resin</span><span class="o">.</span><span class="n">make_writer</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ProMis.make_writer_for">
+<a class="viewcode-back" href="../../api.html#promis.promis.ProMis.make_writer_for">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">make_writer_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is used to create a writer for non-StaR Map topics.</span>
+
+<span class="sd">        When declaring a channel in a resin program, i.e.,</span>
+<span class="sd">        `atom &lt;- source(&quot;/channel/name&quot;, DataType).`,</span>
+<span class="sd">        this method can be used to obtain a writer for atom = &quot;atom&quot;.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            atom: The name of the ground atom to write to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resin</span><span class="o">.</span><span class="n">make_writer_for</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ProMis.get_reactive_circuit">

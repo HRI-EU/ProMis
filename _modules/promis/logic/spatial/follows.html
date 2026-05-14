@@ -90,7 +90,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapely.strtree</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
 
 <span class="c1"># ProMis</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianMap</span><span class="p">,</span> <span class="n">CartesianPolygon</span><span class="p">,</span> <span class="n">CartesianPolyLine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianPolygon</span><span class="p">,</span> <span class="n">CartesianPolyLine</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.relation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Relation</span>
 
@@ -108,7 +108,7 @@
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Follows.compute_relation">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
-        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="n">CartesianMap</span><span class="p">,</span>
+        <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
         <span class="n">deltas</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
         <span class="n">coords</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
@@ -119,7 +119,7 @@
         <span class="n">geoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
             <span class="n">feature</span><span class="o">.</span><span class="n">geometry</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">CartesianPolyLine</span><span class="p">)</span>
             <span class="k">else</span> <span class="n">feature</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">exterior</span>
-            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">original_geometries</span><span class="o">.</span><span class="n">features</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">original_geometries</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="p">(</span><span class="n">CartesianPolyLine</span><span class="p">,</span> <span class="n">CartesianPolygon</span><span class="p">))</span>
         <span class="p">])</span>
 
@@ -156,13 +156,6 @@
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">empty_map_parameters</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
         <span class="k">return</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span></div>
-
-
-<div class="viewcode-block" id="Follows.arity">
-<a class="viewcode-back" href="../../../../api.html#promis.logic.Follows.arity">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">arity</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">2</span></div>
 </div>
 
 </pre></div>

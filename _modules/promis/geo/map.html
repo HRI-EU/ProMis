@@ -87,6 +87,7 @@
 
 <span class="c1"># Standard Library</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pickle</span><span class="w"> </span><span class="kn">import</span> <span class="n">dump</span><span class="p">,</span> <span class="n">load</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span>
 
@@ -98,7 +99,6 @@
 
 <span class="c1"># ProMis (need to avoid circular imports)</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">promis.geo</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.geospatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">Geospatial</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.location</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolarLocation</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.polygon</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianPolygon</span><span class="p">,</span> <span class="n">PolarPolygon</span>
 
@@ -113,17 +113,17 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        origin: The origin point of this map</span>
-<span class="sd">        features: A list of features that should be contained by this map</span>
+<span class="sd">        features: A dict mapping location_type to a list of features</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span>
-        <span class="n">features</span><span class="p">:</span> <span class="s2">&quot;list[promis.geo.CartesianGeometry | promis.geo.PolarGeometry] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="s2">&quot;dict[str, list[promis.geo.CartesianGeometry | promis.geo.PolarGeometry]] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Attributes setup</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">features</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="n">defaultdict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">features</span> <span class="ow">or</span> <span class="p">{})</span>
 
 <div class="viewcode-block" id="Map.load">
 <a class="viewcode-back" href="../../../api.html#promis.geo.Map.load">[docs]</a>
@@ -149,7 +149,7 @@
 <span class="sd">            A list of all location types contained in this map</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">]))</span></div>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="Map.is_valid">
@@ -161,29 +161,12 @@
 <span class="sd">        Other tools might still refuse it, like *GEOS*.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">PolarPolygon</span> <span class="o">|</span> <span class="n">CartesianPolygon</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">feature</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
-                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">flist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">PolarPolygon</span> <span class="o">|</span> <span class="n">CartesianPolygon</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">feature</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+                    <span class="k">return</span> <span class="kc">False</span>
 
         <span class="k">return</span> <span class="kc">True</span></div>
-
-
-<div class="viewcode-block" id="Map.filter">
-<a class="viewcode-back" href="../../../api.html#promis.geo.Map.filter">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedMap</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a map with only features of the given type.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            location_type: The type of locations to filter for</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A map that only contains features of the given type</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span>
-            <span class="p">[</span><span class="n">feature</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="o">==</span> <span class="n">location_type</span><span class="p">],</span>
-        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Map.to_rtree">
@@ -196,7 +179,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Construct an STR tree with the geometry of this map</span>
-        <span class="k">return</span> <span class="n">STRtree</span><span class="p">([</span><span class="n">feature</span><span class="o">.</span><span class="n">geometry</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">])</span></div>
+        <span class="k">return</span> <span class="n">STRtree</span><span class="p">([</span><span class="n">f</span><span class="o">.</span><span class="n">geometry</span> <span class="k">for</span> <span class="n">flist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="Map.to_geo_json">
@@ -209,25 +192,19 @@
 <span class="sd">        For more information on GeoJSON, see :func:`promis.geo.geospatial.Geospatial.to_geo_json`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
+        <span class="n">flat</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">flist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">location_type</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">location_type</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">dumps</span><span class="p">(</span>
             <span class="n">FeatureCollection</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="n">Feature</span><span class="p">(</span>
-                        <span class="n">geometry</span><span class="o">=</span><span class="n">feature</span><span class="p">,</span>
-                        <span class="nb">id</span><span class="o">=</span><span class="n">feature</span><span class="o">.</span><span class="n">identifier</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span>
-                    <span class="k">if</span> <span class="n">location_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="o">==</span> <span class="n">location_type</span>
-                <span class="p">],</span>
+                <span class="p">[</span><span class="n">Feature</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">identifier</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flat</span><span class="p">],</span>
                 <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span></div>
 
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_features</span><span class="p">(</span><span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Geospatial</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Geospatial</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">sample</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Map.sample">
 <a class="viewcode-back" href="../../../api.html#promis.geo.Map.sample">[docs]</a>
@@ -242,24 +219,18 @@
 <span class="sd">            to their uncertainties and underlying sample methods</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># TODO: investigate why the parallelization is not working</span>
-        <span class="c1"># (it makes all features be the same in the sampled maps</span>
-        <span class="c1">#  because on Linux, processes are not individually re-seeded)</span>
-
-        <span class="c1"># with Pool(n_jobs) as pool:</span>
-        <span class="c1">#     sampled_feature_lists = list(</span>
-        <span class="c1">#         track(</span>
-        <span class="c1">#             pool.imap_unordered(</span>
-        <span class="c1">#                 Map._sample_features, repeat(self.features, number_of_samples), chunksize=1</span>
-        <span class="c1">#             ),</span>
-        <span class="c1">#             description=f&quot;Resampling Map {number_of_samples} times&quot;,</span>
-        <span class="c1">#             total=number_of_samples,</span>
-        <span class="c1">#             disable=not show_progress,</span>
-        <span class="c1">#         )</span>
-        <span class="c1">#     )</span>
+        <span class="c1"># Draw all N samples per feature in one vectorized call, then slice across maps</span>
+        <span class="n">sampled_per_type</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">lt</span><span class="p">:</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">number_of_samples</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">lt</span><span class="p">,</span> <span class="n">flist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
 
         <span class="k">return</span> <span class="p">[</span>
-            <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="n">Map</span><span class="o">.</span><span class="n">_sample_features</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_samples</span><span class="p">)</span>
+            <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="p">{</span>
+                <span class="n">lt</span><span class="p">:</span> <span class="p">[</span><span class="n">feature_samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">feature_samples</span> <span class="ow">in</span> <span class="n">feat_sample_lists</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">lt</span><span class="p">,</span> <span class="n">feat_sample_lists</span> <span class="ow">in</span> <span class="n">sampled_per_type</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">})</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_samples</span><span class="p">)</span>
         <span class="p">]</span></div>
 
 
@@ -274,12 +245,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">covariance</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="ow">in</span> <span class="n">covariance</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">feature</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span><span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">location_type</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">lt</span><span class="p">,</span> <span class="n">cov</span> <span class="ow">in</span> <span class="n">covariance</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">lt</span><span class="p">,</span> <span class="p">[]):</span>
+                    <span class="n">feature</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">cov</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
-                <span class="n">feature</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span></div>
+            <span class="k">for</span> <span class="n">flist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">:</span>
+                    <span class="n">feature</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span></div>
 
 
     <span class="nd">@property</span>
@@ -290,10 +262,10 @@
 <span class="sd">            A set of all location types contained in this map</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="p">{</span><span class="n">feature</span><span class="o">.</span><span class="n">location_type</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">}</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flist</span><span class="p">)</span> <span class="k">for</span> <span class="n">flist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">values</span><span class="p">())</span></div>
 
 
 
@@ -304,17 +276,17 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        origin: The origin point of this map</span>
-<span class="sd">        features: A list of features that should be contained by this map</span>
+<span class="sd">        features: A dict mapping location_type to a list of features</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span>
-        <span class="n">features</span><span class="p">:</span> <span class="s2">&quot;list[promis.geo.PolarGeometry] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="s2">&quot;dict[str, list[promis.geo.PolarGeometry]] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">features</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">promis</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">PolarGeometry</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">promis</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">PolarGeometry</span><span class="p">]]</span>
 
 <div class="viewcode-block" id="PolarMap.to_cartesian">
 <a class="viewcode-back" href="../../../api.html#promis.geo.PolarMap.to_cartesian">[docs]</a>
@@ -325,7 +297,10 @@
 <span class="sd">            The cartesian representation of this map with the given reference point being the same</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">cartesian_features</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">]</span>
+        <span class="n">cartesian_features</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">lt</span><span class="p">:</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">lt</span><span class="p">,</span> <span class="n">flist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">CartesianMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="n">cartesian_features</span><span class="p">)</span></div>
 
@@ -345,16 +320,12 @@
 <span class="sd">            :class:`~requests.ConnectionError`: If the request fails due to connection issues</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">flat</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">flist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flat</span><span class="p">:</span>
             <span class="k">return</span>
-        
-        <span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span>
-        <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">+=</span> <span class="n">feature</span><span class="o">.</span><span class="n">to_geo_json</span><span class="p">()</span>
-            <span class="n">data</span> <span class="o">+=</span> <span class="s2">&quot;,&quot;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">data</span> <span class="o">+=</span> <span class="s2">&quot;]&quot;</span>
-        
+
+        <span class="n">data</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">to_geo_json</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flat</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;]&quot;</span>
+
         <span class="n">r</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;http://</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">/add_geojson_map&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
         <span class="n">r</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span></div>
 </div>
@@ -368,17 +339,17 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        origin: The origin point of this map</span>
-<span class="sd">        features: A list of features that should be contained by this map</span>
+<span class="sd">        features: A dict mapping location_type to a list of features</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span>
-        <span class="n">features</span><span class="p">:</span> <span class="s2">&quot;list[promis.geo.CartesianGeometry] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">:</span> <span class="s2">&quot;dict[str, list[promis.geo.CartesianGeometry]] | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="n">features</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">promis</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">CartesianGeometry</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">promis</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">CartesianGeometry</span><span class="p">]]</span>
 
 <div class="viewcode-block" id="CartesianMap.to_polar">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianMap.to_polar">[docs]</a>
@@ -389,7 +360,10 @@
 <span class="sd">            The cartesian representation of this map with the given reference point being the same</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">polar_features</span> <span class="o">=</span> <span class="p">[</span><span class="n">feature</span><span class="o">.</span><span class="n">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">]</span>
+        <span class="n">polar_features</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">lt</span><span class="p">:</span> <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">lt</span><span class="p">,</span> <span class="n">flist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">PolarMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="n">polar_features</span><span class="p">)</span></div>
 
