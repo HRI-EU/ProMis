@@ -52,13 +52,13 @@ class ProMis:
         self.dimension = dimension
 
         # Parse and validate the target declaration
-        target_match = re.search(r'(\w+)\s*->\s*target\(', logic)
+        target_match = re.search(r'landscape\s*->\s*target\(\"/landscape\"\)\.', logic)
         if target_match is None:
             raise ValueError(
                 "No target declaration found in Resin program. "
-                "Add a line like: landscape -> target(\"/landscape\")."
+                "Define the landscape clause and declar: landscape -> target(\"/landscape\")."
             )
-        self._target_name = target_match.group(1)
+        self._target_name = "/landscape"
 
         # Parse source declarations from paths: atom -> (relation_type, location_type, source_type)
         self._sources = {
