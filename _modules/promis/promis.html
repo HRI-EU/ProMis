@@ -130,13 +130,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span> <span class="o">=</span> <span class="n">dimension</span>
 
         <span class="c1"># Parse and validate the target declaration</span>
-        <span class="n">target_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(\w+)\s*-&gt;\s*target\(&#39;</span><span class="p">,</span> <span class="n">logic</span><span class="p">)</span>
+        <span class="n">target_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;landscape\s*-&gt;\s*target\(\&quot;/landscape\&quot;\)\.&#39;</span><span class="p">,</span> <span class="n">logic</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">target_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;No target declaration found in Resin program. &quot;</span>
-                <span class="s2">&quot;Add a line like: landscape -&gt; target(</span><span class="se">\&quot;</span><span class="s2">/landscape</span><span class="se">\&quot;</span><span class="s2">).&quot;</span>
+                <span class="s2">&quot;Define the landscape clause and declar: landscape -&gt; target(</span><span class="se">\&quot;</span><span class="s2">/landscape</span><span class="se">\&quot;</span><span class="s2">).&quot;</span>
             <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_target_name</span> <span class="o">=</span> <span class="n">target_match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target_name</span> <span class="o">=</span> <span class="s2">&quot;/landscape&quot;</span>
 
         <span class="c1"># Parse source declarations from paths: atom -&gt; (relation_type, location_type, source_type)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sources</span> <span class="o">=</span> <span class="p">{</span>
