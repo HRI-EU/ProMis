@@ -175,11 +175,11 @@ class StaRMap:
 
     def update(
         self,
-        relation_type: str,
-        location_type: str,
         sample_points: CartesianCollection,
         number_of_random_maps: int,
+        what: dict[str, Iterable[str | None]] | None = None,
         interpolation_method: str = "hybrid",
+        timestamp: float = None,
     ) -> None:
         """Recompute a spatial relation and write the result to the linked Resin circuit.
 
@@ -188,14 +188,16 @@ class StaRMap:
         :meth:`~promis.promis.ProMis.initialize` before using this method.
 
         Args:
-            relation_type: The relation to recompute, e.g. ``"distance"``.
-            location_type: The location type to relate to, e.g. ``"vessel"``.
             sample_points: Points at which to compute the spatial relation
                 (typically perturbed positions of the dynamic features).
             number_of_random_maps: Number of random map samples used to
                 estimate the relation parameters.
+            what: The spatial relations to compute, as a mapping of relation names to
+                location types. If None, all relations with already present location
+                types are updated.
             interpolation_method: Interpolation method used to map the newly
                 computed relation parameters to the evaluation grid.
+            timestamp: The timestamp to write with. If None, the current time is used.
 
         Raises:
             RuntimeError: If :meth:`link` or
@@ -211,25 +213,35 @@ class StaRMap:
                 "ProMis.initialize() must be called before StaRMap.update()."
             )
 
-        # Recompute the relation at the provided sample points
-        if location_type in self.relations[relation_type].keys():
-            self.relations[relation_type].pop(location_type)
-        self.sample(sample_points, number_of_random_maps, what={relation_type: [location_type]})
+        # Default: Update all relations and location types in the StaR Map
+        what = self.relation_and_location_types if what is None else what
 
-        # Interpolate to the evaluation grid stored by ProMis
-        relation = self.get(relation_type, location_type)
+        # Delete all existing, relevant relations
+        for relation_type, location_types in what.items():
+            for location_type in location_types:
+                self.relations[relation_type].pop(location_type)
+        
+        # Sample all the relevant relations on the given points
+        self.sample(sample_points, number_of_random_maps, what=what)
+
+        # Interpolate to the evaluation grid stored by ProMis and upload to Resin
         coords = self._promis._evaluation_points.coordinates()
-        params = relation.parameters.get_interpolator(interpolation_method)(coords)
+        timestamp = timestamp if timestamp is not None else time.monotonic()
+        for relation_type, location_types in what.items():
+            for location_type in location_types:     
+                # Get relation parameters interpolated onto ProMis evaluation points           
+                relation = self.get(relation_type, location_type)
+                params = relation.parameters.get_interpolator(interpolation_method)(coords)
 
-        # Write to the appropriate Resin channel
-        writer = self._promis.get_star_map_writer(relation_type, location_type)
-        relation_obj = self.relations[relation_type][location_type]
-        if isinstance(relation_obj, ScalarRelation):
-            means = params[:, 0].ravel().tolist()
-            stds = sqrt(maximum(params[:, 1], 1e-6)).ravel().tolist()
-            writer.write("normal", [means, stds], time.monotonic())
-        else:
-            writer.write(params[:, 0].ravel().tolist(), time.monotonic())
+                # Write to the appropriate Resin channel
+                writer = self._promis.get_star_map_writer(relation_type, location_type)
+                relation_obj = self.relations[relation_type][location_type]
+                if isinstance(relation_obj, ScalarRelation):
+                    means = params[:, 0].ravel()
+                    stds = sqrt(maximum(params[:, 1], 1e-6)).ravel()
+                    writer.write("normal", [means, stds], timestamp)
+                else:
+                    writer.write(params[:, 0].ravel(), timestamp)
             
     def get(self, relation: str, location_type: str) -> Relation:
         """Get the computed data for a relation to a location type.
