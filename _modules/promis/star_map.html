@@ -270,11 +270,11 @@
 <a class="viewcode-back" href="../../api.html#promis.star_map.StaRMap.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">relation_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">sample_points</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
         <span class="n">number_of_random_maps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">what</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">interpolation_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;hybrid&quot;</span><span class="p">,</span>
+        <span class="n">timestamp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recompute a spatial relation and write the result to the linked Resin circuit.</span>
 
@@ -283,14 +283,16 @@
 <span class="sd">        :meth:`~promis.promis.ProMis.initialize` before using this method.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            relation_type: The relation to recompute, e.g. ``&quot;distance&quot;``.</span>
-<span class="sd">            location_type: The location type to relate to, e.g. ``&quot;vessel&quot;``.</span>
 <span class="sd">            sample_points: Points at which to compute the spatial relation</span>
 <span class="sd">                (typically perturbed positions of the dynamic features).</span>
 <span class="sd">            number_of_random_maps: Number of random map samples used to</span>
 <span class="sd">                estimate the relation parameters.</span>
+<span class="sd">            what: The spatial relations to compute, as a mapping of relation names to</span>
+<span class="sd">                location types. If None, all relations with already present location</span>
+<span class="sd">                types are updated.</span>
 <span class="sd">            interpolation_method: Interpolation method used to map the newly</span>
 <span class="sd">                computed relation parameters to the evaluation grid.</span>
+<span class="sd">            timestamp: The timestamp to write with. If None, the current time is used.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            RuntimeError: If :meth:`link` or</span>
@@ -306,25 +308,35 @@
                 <span class="s2">&quot;ProMis.initialize() must be called before StaRMap.update().&quot;</span>
             <span class="p">)</span>
 
-        <span class="c1"># Recompute the relation at the provided sample points</span>
-        <span class="k">if</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">location_type</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sample_points</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="p">{</span><span class="n">relation_type</span><span class="p">:</span> <span class="p">[</span><span class="n">location_type</span><span class="p">]})</span>
+        <span class="c1"># Default: Update all relations and location types in the StaR Map</span>
+        <span class="n">what</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_and_location_types</span> <span class="k">if</span> <span class="n">what</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">what</span>
 
-        <span class="c1"># Interpolate to the evaluation grid stored by ProMis</span>
-        <span class="n">relation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">relation_type</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
+        <span class="c1"># Delete all existing, relevant relations</span>
+        <span class="k">for</span> <span class="n">relation_type</span><span class="p">,</span> <span class="n">location_types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">location_types</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">location_type</span><span class="p">)</span>
+        
+        <span class="c1"># Sample all the relevant relations on the given points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sample_points</span><span class="p">,</span> <span class="n">number_of_random_maps</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="n">what</span><span class="p">)</span>
+
+        <span class="c1"># Interpolate to the evaluation grid stored by ProMis and upload to Resin</span>
         <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_promis</span><span class="o">.</span><span class="n">_evaluation_points</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get_interpolator</span><span class="p">(</span><span class="n">interpolation_method</span><span class="p">)(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="n">timestamp</span> <span class="k">if</span> <span class="n">timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">relation_type</span><span class="p">,</span> <span class="n">location_types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">location_types</span><span class="p">:</span>     
+                <span class="c1"># Get relation parameters interpolated onto ProMis evaluation points           </span>
+                <span class="n">relation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">relation_type</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get_interpolator</span><span class="p">(</span><span class="n">interpolation_method</span><span class="p">)(</span><span class="n">coords</span><span class="p">)</span>
 
-        <span class="c1"># Write to the appropriate Resin channel</span>
-        <span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_promis</span><span class="o">.</span><span class="n">get_star_map_writer</span><span class="p">(</span><span class="n">relation_type</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
-        <span class="n">relation_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">relation_obj</span><span class="p">,</span> <span class="n">ScalarRelation</span><span class="p">):</span>
-            <span class="n">means</span> <span class="o">=</span> <span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="n">stds</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">maximum</span><span class="p">(</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">1e-6</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">())</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">())</span></div>
+                <span class="c1"># Write to the appropriate Resin channel</span>
+                <span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_promis</span><span class="o">.</span><span class="n">get_star_map_writer</span><span class="p">(</span><span class="n">relation_type</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
+                <span class="n">relation_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">relation_obj</span><span class="p">,</span> <span class="n">ScalarRelation</span><span class="p">):</span>
+                    <span class="n">means</span> <span class="o">=</span> <span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+                    <span class="n">stds</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">maximum</span><span class="p">(</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">1e-6</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+                    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">],</span> <span class="n">timestamp</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">timestamp</span><span class="p">)</span></div>
 
             
 <div class="viewcode-block" id="StaRMap.get">
