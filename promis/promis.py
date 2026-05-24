@@ -37,6 +37,8 @@ class ProMis:
         logic: A Resin program string.  Every ``atom <- source(path, Type).`` declaration
             whose atom matches a relation in the StaRMap is wired up automatically.
         dimension: The number of spatial evaluation points (pixels / locations).
+        max_models: The maximum number of models to enumerate when solving the Resin program.
+            If exceeded, this initializer raises ``RuntimeError("Stable model limit exceeded: ...")``.
         verbose: Whether to enable verbose output from Resin.
     """
 
@@ -45,6 +47,7 @@ class ProMis:
         star_map: StaRMap,
         logic: str,
         dimension: int,
+        max_models: int | None = None,
         verbose: bool = False,
     ) -> None:
         self.star_map = star_map
@@ -67,7 +70,7 @@ class ProMis:
         }
 
         # Compile Resin and obtain the reactive circuit
-        self._resin = Resin.compile(self.logic, self.dimension, verbose)
+        self._resin = Resin.compile(self.logic, self.dimension, max_models=max_models, verbose=verbose)
         self._rc = self._resin.get_reactive_circuit()
 
         # Pre-create writers for every declared source
