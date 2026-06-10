@@ -6,7 +6,7 @@
 		"dockerfile": "../Dockerfile",
 		"context": ".."
 	},
-	"postCreateCommand": "pip install -e '.[doc,dev]'",
+	"postCreateCommand": "pip install -e '.[doc,nautical,dev]'",
 	"customizations": {
 		"vscode": {
 			"extensions": [
