@@ -16,12 +16,12 @@ from pickle import dump, load
 from typing import TypeVar
 
 # Third Party
-from numpy import array, clip, mean, sqrt, var, vstack
+from numpy import array, clip, empty, mean, sqrt, var, vstack
 from scipy.stats import norm
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianLocation, CartesianMap, CartesianRasterBand
+from promis.geo import CartesianCollection, CartesianLocation, CartesianRasterBand
 
 #: Helper to define derived relations within base class
 DerivedRelation = TypeVar("DerivedRelation", bound="Relation")
@@ -83,48 +83,44 @@ class Relation(ABC):
     @staticmethod
     @abstractmethod
     def compute_relation(
-        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: list
     ) -> list[float]:
         """Compute the value of this Relation type for a specific location and map.
 
         Args:
             collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.
             r_tree: The map represented as an R-tree for efficient spatial queries.
-            original_geometries: The original geometries indexed by the STRtree.
+            original_geometries: The flat list of features indexed by the STRtree.
 
         Returns:
             The scalar values representing the computed relation (e.g., distance, depth) for all
             points in the input collection.
         """
 
-    @staticmethod
-    @abstractmethod
-    def arity() -> int:
-        """Return the arity of the relation."""
-
     @classmethod
     def compute_parameters(
         cls,
         collection: CartesianCollection,
         r_trees: list[STRtree],
-        original_geometries: list[CartesianMap],
+        original_geometries: list[list],
     ) -> array:
         """Compute the parameters of this Relation type for a specific location and set of maps.
 
         Args:
             collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.
             r_trees: A list of generated maps, each represented as an R-tree.
-            original_geometries: The original geometries indexed by the STRtrees.
+            original_geometries: For each R-tree, the flat list of features it was built from.
 
         Returns:
             A numpy array containing the computed parameters (e.g., mean and variance) of the
             relation's distribution for the given location.
         """
 
-        relation_data = [
-            cls.compute_relation(collection, r_tree, geometries)
-            for r_tree, geometries in zip(r_trees, original_geometries)
-        ]
+        n_maps = len(r_trees)
+        n_points = len(collection.data)
+        relation_data = empty((n_maps, n_points))
+        for i, (r_tree, geometries) in enumerate(zip(r_trees, original_geometries)):
+            relation_data[i] = cls.compute_relation(collection, r_tree, geometries)
 
         return array([mean(relation_data, axis=0), var(relation_data, axis=0)]).T
 
@@ -134,7 +130,7 @@ class Relation(ABC):
         collection: CartesianCollection,
         r_trees: list[STRtree],
         location_type: str,
-        original_geometries: list[CartesianMap],
+        original_geometries: list[list],
     ) -> DerivedRelation:
         """Compute relation for a Cartesian collection of points and a set of R-trees.
 
@@ -142,7 +138,7 @@ class Relation(ABC):
             collection: The Collection of Cartesian points to compute the relation for.
             r_trees: Random variations of the features of a map, each indexible by an STRtree.
             location_type: The type of features this relates to.
-            original_geometries: The original geometries indexed by the STRtrees.
+            original_geometries: For each R-tree, the flat list of features it was built from.
 
         Returns:
             A new instance of the Relation class, populated with the computed parameters.

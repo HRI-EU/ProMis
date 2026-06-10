@@ -8,7 +8,7 @@
 
 # Third Party
 import numpy as np
-from shapely import linestrings
+from shapely import distance as shapely_distance, points
 from shapely.strtree import STRtree
 
 # ProMis
@@ -17,11 +17,11 @@ from promis.geo import CartesianCollection
 from .relation import Relation
 
 
-class Crosses(Relation):
-    """A probabilistic relation that checks if a point to point transition "crosses" a map feature.
+class Approaches(Relation):
+    """A probabilistic relation that checks if a point to point transition "approaches" a map feature.
 
-    This relation is true if a given location and its transition location form a line that crosses over
-    any of the geometries of a specific type on the map. The probability is derived from a set of sample maps.
+    This relation is true if a given location transitions toward any of the geometries of a specific
+    type on the map, i.e., the distance to the nearest feature must decrease over the transition.
     """
 
     @staticmethod
@@ -30,13 +30,14 @@ class Crosses(Relation):
     ) -> list[float]:
         coords = collection.coordinates()
         end_coords = coords + collection.transitions()[:, :2]
-        trajectories = linestrings(np.stack([coords, end_coords], axis=1))
 
-        result = r_tree.query(trajectories, predicate="crosses")
-        hits = np.zeros(len(coords), dtype=float)
-        if result.size > 0:
-            hits[result[0]] = 1.0
-        return hits
+        starts = points(coords)
+        ends = points(end_coords)
+
+        d_start = shapely_distance(starts, r_tree.geometries.take(r_tree.nearest(starts)))
+        d_end = shapely_distance(ends, r_tree.geometries.take(r_tree.nearest(ends)))
+
+        return (d_end < d_start).astype(float)
 
     @staticmethod
     def empty_map_parameters() -> list[float]:

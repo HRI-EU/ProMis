@@ -14,7 +14,7 @@ from shapely import get_coordinates, get_num_coordinates, linestrings, points
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianMap, CartesianPolygon, CartesianPolyLine
+from promis.geo import CartesianCollection, CartesianPolygon, CartesianPolyLine
 
 from .relation import Relation
 
@@ -28,7 +28,7 @@ class Follows(Relation):
 
     @staticmethod
     def compute_relation(
-        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap,
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: list,
         deltas: np.ndarray | None = None,
     ) -> list[float]:
         coords = collection.coordinates()
@@ -39,7 +39,7 @@ class Follows(Relation):
         geoms = np.array([
             feature.geometry if isinstance(feature, CartesianPolyLine)
             else feature.geometry.exterior
-            for feature in original_geometries.features
+            for feature in original_geometries
             if isinstance(feature, (CartesianPolyLine, CartesianPolygon))
         ])
 
@@ -73,7 +73,3 @@ class Follows(Relation):
     @staticmethod
     def empty_map_parameters() -> list[float]:
         return [0.0, 0.0]
-
-    @staticmethod
-    def arity() -> int:
-        return 2

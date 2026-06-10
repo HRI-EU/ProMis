@@ -37,6 +37,8 @@ class ProMis:
         logic: A Resin program string.  Every ``atom <- source(path, Type).`` declaration
             whose atom matches a relation in the StaRMap is wired up automatically.
         dimension: The number of spatial evaluation points (pixels / locations).
+        max_models: The maximum number of models to enumerate when solving the Resin program.
+            If exceeded, this initializer raises ``RuntimeError("Stable model limit exceeded: ...")``.
         verbose: Whether to enable verbose output from Resin.
     """
 
@@ -45,19 +47,21 @@ class ProMis:
         star_map: StaRMap,
         logic: str,
         dimension: int,
+        max_models: int | None = None,
         verbose: bool = False,
     ) -> None:
         self.star_map = star_map
         self.logic = logic
+        self.dimension = dimension
 
         # Parse and validate the target declaration
-        target_match = re.search(r'(\w+)\s*->\s*target\(', logic)
+        target_match = re.search(r'landscape\s*->\s*target\(\"/landscape\"\)\.', logic)
         if target_match is None:
             raise ValueError(
                 "No target declaration found in Resin program. "
-                "Add a line like: landscape -> target(\"/landscape\")."
+                "Define the landscape clause and declar: landscape -> target(\"/landscape\")."
             )
-        self._target_name = target_match.group(1)
+        self._target_name = "/landscape"
 
         # Parse source declarations from paths: atom -> (relation_type, location_type, source_type)
         self._sources = {
@@ -66,7 +70,7 @@ class ProMis:
         }
 
         # Compile Resin and obtain the reactive circuit
-        self._resin = Resin.compile(logic, dimension, verbose)
+        self._resin = Resin.compile(self.logic, self.dimension, max_models=max_models, verbose=verbose)
         self._rc = self._resin.get_reactive_circuit()
 
         # Pre-create writers for every declared source
@@ -77,6 +81,16 @@ class ProMis:
 
         # Auto-link so the star_map can write back to Resin via update()
         self.star_map._promis = self
+
+    def set_evaluation_points(self, evaluation_points: CartesianCollection):
+        """Sets a new target set of points to run inference for. 
+        
+        All directly written data will be associated with these points.
+        The StaR Map relations are interpolated onto this collection.
+        """
+        
+        assert len(self._evaluation_points) == self.dimension, "The number of evaluation points must match the ProMis inference dimension!"
+        self._evaluation_points = evaluation_points
 
     def initialize(
         self,
@@ -151,8 +165,8 @@ class ProMis:
 
         self._rc.adapt(bin_size, number_bins)
 
-    def get_writer(self, relation_type: str, location_type: str):
-        """Return the Resin writer for the given relation and location type.
+    def get_star_map_writer(self, relation_type: str, location_type: str):
+        """Return the Resin writer for the given StaR Map relation and location type.
 
         Use this to push dynamic (runtime-varying) data into a source that is
         not automatically wired from the StaRMap, e.g. moving vessels or UAS.
@@ -171,6 +185,32 @@ class ProMis:
 
         atom = f"{relation_type}({location_type})"
         return self._writers[atom]
+
+    def make_writer(self, channel: str):
+        """This is used to create a writer for non-StaR Map topics.
+
+        When declaring a channel in a resin program, i.e.,
+        `atom <- source("/channel/name", DataType).`,
+        this method can be used to obtain a writer for channel = "/channel/name".
+        
+        Args:
+            channel: The channel of the ground atom to write to.
+        """
+        
+        return self._resin.make_writer(channel)
+
+    def make_writer_for(self, atom: str):
+        """This is used to create a writer for non-StaR Map topics.
+
+        When declaring a channel in a resin program, i.e.,
+        `atom <- source("/channel/name", DataType).`,
+        this method can be used to obtain a writer for atom = "atom".
+
+        Args:
+            atom: The name of the ground atom to write to.
+        """
+
+        return self._resin.make_writer_for(atom)
 
     def get_reactive_circuit(self):
         """Return the underlying Resin reactive circuit."""

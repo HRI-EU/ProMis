@@ -13,7 +13,7 @@ import numpy as np
 from shapely import points, STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianMap
+from promis.geo import CartesianCollection
 
 from .relation import Relation
 
@@ -27,7 +27,7 @@ class Over(Relation):
 
     @staticmethod
     def compute_relation(
-        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: list
     ) -> list[float]:
         """Checks if a collection of locations is within any of the geometries in the map.
 
@@ -58,8 +58,3 @@ class Over(Relation):
 
         return [0.0, 0.0]
 
-    @staticmethod
-    def arity() -> int:
-        """Returns the arity of the 'over' relation, which is 2 (location, feature_type)."""
-
-        return 2

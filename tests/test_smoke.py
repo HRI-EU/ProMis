@@ -57,7 +57,7 @@ permits -> target("/landscape").
             uam = OsmLoader(origin, (width, height), feature_description).to_cartesian_map()
             print("Done OSM loading")
 
-            uam.features.append(CartesianLocation(0.0, 0.0, location_type="operator"))
+            uam.features["operator"].append(CartesianLocation(0.0, 0.0, location_type="operator"))
             uam.apply_covariance(covariance)
             uam.save(tmpdir / "uam.pkl")
 

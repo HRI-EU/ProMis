@@ -13,7 +13,7 @@ from shapely import distance as shapely_distance, points
 from shapely.strtree import STRtree
 
 # ProMis
-from promis.geo import CartesianCollection, CartesianMap
+from promis.geo import CartesianCollection
 
 from .relation import ScalarRelation
 
@@ -39,7 +39,7 @@ class Distance(ScalarRelation):
 
     @staticmethod
     def compute_relation(
-        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: list
     ) -> list[float]:
         """Computes the distance from a location to the nearest geometry in the map.
 
@@ -66,9 +66,3 @@ class Distance(ScalarRelation):
         """
 
         return [DEFAULT_EMPTY_MAP_DISTANCE_MEAN, DEFAULT_EMPTY_MAP_DISTANCE_VARIANCE]
-
-    @staticmethod
-    def arity() -> int:
-        """Returns the arity of the 'distance' relation, which is 2 (location, feature_type)."""
-
-        return 2

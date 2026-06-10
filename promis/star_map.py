@@ -19,12 +19,12 @@ from traceback import format_exception
 from warnings import warn
 
 # Third Party
-from numpy import array, maximum, sqrt
+from numpy import array, empty, maximum, mean, sqrt, var
 from numpy.typing import NDArray
 
 # ProMis
 from promis.geo import CartesianCollection, CartesianMap
-from promis.logic.spatial import Crosses, Depth, Distance, Enters, Exits, Intersects, Follows, Opposes, Over, Relation, ScalarRelation
+from promis.logic.spatial import Approaches, Crosses, Depth, Distance, Enters, Exits, Faces, Intersects, Follows, Opposes, Over, Relation, ScalarRelation
 
 
 class StaRMap:
@@ -49,7 +49,8 @@ class StaRMap:
             "depth": {}, 
             "enters": {},
             "exits": {},
-            "crosses": {}, 
+            "faces": {},
+            "crosses": {},
             "intersects": {}, 
             "follows": {}, 
             "opposes": {}
@@ -86,6 +87,8 @@ class StaRMap:
         """
 
         match relation:
+            case "approaches":
+                return Approaches
             case "crosses":
                 return Crosses
             case "over":
@@ -98,6 +101,8 @@ class StaRMap:
                 return Enters
             case "exits":
                 return Exits
+            case "faces":
+                return Faces
             case "intersects":
                 return Intersects
             case "follows":
@@ -170,11 +175,11 @@ class StaRMap:
 
     def update(
         self,
-        relation_type: str,
-        location_type: str,
         sample_points: CartesianCollection,
         number_of_random_maps: int,
+        what: dict[str, Iterable[str | None]] | None = None,
         interpolation_method: str = "hybrid",
+        timestamp: float = None,
     ) -> None:
         """Recompute a spatial relation and write the result to the linked Resin circuit.
 
@@ -183,14 +188,16 @@ class StaRMap:
         :meth:`~promis.promis.ProMis.initialize` before using this method.
 
         Args:
-            relation_type: The relation to recompute, e.g. ``"distance"``.
-            location_type: The location type to relate to, e.g. ``"vessel"``.
             sample_points: Points at which to compute the spatial relation
                 (typically perturbed positions of the dynamic features).
             number_of_random_maps: Number of random map samples used to
                 estimate the relation parameters.
+            what: The spatial relations to compute, as a mapping of relation names to
+                location types. If None, all relations with already present location
+                types are updated.
             interpolation_method: Interpolation method used to map the newly
                 computed relation parameters to the evaluation grid.
+            timestamp: The timestamp to write with. If None, the current time is used.
 
         Raises:
             RuntimeError: If :meth:`link` or
@@ -206,24 +213,35 @@ class StaRMap:
                 "ProMis.initialize() must be called before StaRMap.update()."
             )
 
-        # Recompute the relation at the provided sample points
-        self.relations[relation_type].pop(location_type)
-        self.sample(sample_points, number_of_random_maps, what={relation_type: [location_type]})
+        # Default: Update all relations and location types in the StaR Map
+        what = self.relation_and_location_types if what is None else what
 
-        # Interpolate to the evaluation grid stored by ProMis
-        relation = self.get(relation_type, location_type)
+        # Delete all existing, relevant relations
+        for relation_type, location_types in what.items():
+            for location_type in location_types:
+                self.relations[relation_type].pop(location_type)
+
+        # Sample all the relevant relations on the given points
+        self.sample(sample_points, number_of_random_maps, what=what)
+
+        # Interpolate to the evaluation grid stored by ProMis and upload to Resin
         coords = self._promis._evaluation_points.coordinates()
-        params = relation.parameters.get_interpolator(interpolation_method)(coords)
+        timestamp = timestamp if timestamp is not None else time.monotonic()
+        for relation_type, location_types in what.items():
+            for location_type in location_types:     
+                # Get relation parameters interpolated onto ProMis evaluation points           
+                relation = self.get(relation_type, location_type)
+                params = relation.parameters.get_interpolator(interpolation_method)(coords)
 
-        # Write to the appropriate Resin channel
-        writer = self._promis.get_writer(relation_type, location_type)
-        relation_obj = self.relations[relation_type][location_type]
-        if isinstance(relation_obj, ScalarRelation):
-            means = params[:, 0].ravel().tolist()
-            stds = sqrt(maximum(params[:, 1], 1e-6)).ravel().tolist()
-            writer.write("normal", [means, stds], time.monotonic())
-        else:
-            writer.write(params[:, 0].ravel().tolist(), time.monotonic())
+                # Write to the appropriate Resin channel
+                writer = self._promis.get_star_map_writer(relation_type, location_type)
+                relation_obj = self.relations[relation_type][location_type]
+                if isinstance(relation_obj, ScalarRelation):
+                    means = params[:, 0].ravel()
+                    stds = sqrt(maximum(params[:, 1], 1e-6)).ravel()
+                    writer.write("normal", [means, stds], timestamp)
+                else:
+                    writer.write(params[:, 0].ravel(), timestamp)
 
     def get(self, relation: str, location_type: str) -> Relation:
         """Get the computed data for a relation to a location type.
@@ -307,7 +325,7 @@ class StaRMap:
 
         # For each location_type we get one set of random maps and RTrees
         for location_type in all_location_types:
-            r_trees, random_maps = self._make_r_trees(location_type, number_of_random_maps)
+            r_trees, feature_samples = self._make_r_trees(location_type, number_of_random_maps)
 
             # For each relation we decide new sample points based on distance and entropy scores
             for relation, types in what.items():
@@ -316,7 +334,7 @@ class StaRMap:
 
                 # Define value function and improve Collection
                 def value_function(collection):
-                    return self._compute_parameters(collection, relation, r_trees, random_maps)
+                    return self._compute_parameters(collection, relation, r_trees, feature_samples)
 
                 self.relations[relation][location_type].parameters.improve(
                     candidate_sampler=candidate_sampler,
@@ -341,11 +359,13 @@ class StaRMap:
             given location type exist.
         """
 
-        # Filter relevant features, sample randomized variations of map and package into RTrees
-        typed_map: CartesianMap = self.uam.filter(location_type)
-        if typed_map.features:
+        type_features = self.uam.features.get(location_type, [])
+        if type_features:
+            typed_map = CartesianMap(self.uam.origin, {location_type: type_features})
             random_maps = typed_map.sample(number_of_random_maps)
-            return [instance.to_rtree() for instance in random_maps], random_maps
+            r_trees = [instance.to_rtree() for instance in random_maps]
+            feature_samples = [instance.features[location_type] for instance in random_maps]
+            return r_trees, feature_samples
         else:
             return None, None
 
@@ -354,7 +374,7 @@ class StaRMap:
         collection: CartesianCollection,
         relation: str,
         r_trees: list | None,
-        random_maps: list[CartesianMap] | None,
+        feature_samples: list[list] | None,
     ) -> NDArray:
         """Compute the parameters for a given relation.
 
@@ -362,7 +382,7 @@ class StaRMap:
             collection: The collection defining coordinates at which to compute the parameters.
             relation: The name of the relation to compute.
             r_trees: A list of R-trees for the location type, one for each random map.
-            random_maps: A list of randomly sampled maps.
+            feature_samples: For each R-tree, the flat list of features it was built from.
 
         Returns:
             An array of computed parameters for each coordinate.
@@ -376,12 +396,12 @@ class StaRMap:
             return array([relation_class.empty_map_parameters()] * len(collection.data))
 
         try:
-            return relation_class.compute_parameters(collection, r_trees, random_maps)
+            return relation_class.compute_parameters(collection, r_trees, feature_samples)
 
         except Exception as e:
             warn(
-                f"StaR Map encountered excpetion! "
-                f"Relation {relation} for {location_type} will use default parameters. "
+                f"StaR Map encountered exception! "
+                f"Relation {relation} will use default parameters. "
                 f"Error was:\n{''.join(format_exception(e))}"
             )
 
@@ -414,24 +434,64 @@ class StaRMap:
         ))
         coordinates = evaluation_points.coordinates()
         transitions = evaluation_points.transitions()
+        n_points = len(evaluation_points.data)
 
         for location_type in all_location_types:
-            r_trees, random_maps = self._make_r_trees(location_type, number_of_random_maps)
+            r_trees, feature_samples = self._make_r_trees(location_type, number_of_random_maps)
 
-            # This could be parallelized, as each relation and location type is independent from all others
-            for relation, types in what.items():
-                if location_type not in types:
-                    continue
+            relevant = [
+                (relation, self.relation_name_to_class(relation))
+                for relation, types in what.items()
+                if location_type in types
+            ]
 
-                if location_type not in self.relations[relation].keys():
-                    self.relations[relation][location_type] = self.relation_name_to_class(relation)(
-                        CartesianCollection(self.uam.origin, 2),
-                        location_type
+            # No features for this type: fill all relations with defaults and move on
+            if r_trees is None:
+                for relation, relation_class in relevant:
+                    if location_type not in self.relations[relation]:
+                        self.relations[relation][location_type] = relation_class(
+                            CartesianCollection(self.uam.origin, 2), location_type
+                        )
+                    self.relations[relation][location_type].parameters.append(
+                        coordinates,
+                        array([relation_class.empty_map_parameters()] * n_points),
+                        transitions,
+                    )
+                continue
+
+            # Single pass over all R-trees, computing all relevant relations at once
+            n_maps = len(r_trees)
+            accumulator = {relation: empty((n_maps, n_points)) for relation, _ in relevant}
+            failed: set[str] = set()
+
+            for i, (r_tree, geometries) in enumerate(zip(r_trees, feature_samples)):
+                for relation, relation_class in relevant:
+                    if relation in failed:
+                        continue
+                    try:
+                        accumulator[relation][i] = relation_class.compute_relation(
+                            evaluation_points, r_tree, geometries
+                        )
+                    except Exception as e:
+                        warn(
+                            f"StaR Map encountered exception! "
+                            f"Relation {relation} for {location_type} will use default parameters. "
+                            f"Error was:\n{''.join(format_exception(e))}"
+                        )
+                        failed.add(relation)
+
+            for relation, relation_class in relevant:
+                if location_type not in self.relations[relation]:
+                    self.relations[relation][location_type] = relation_class(
+                        CartesianCollection(self.uam.origin, 2), location_type
                     )
 
-                # Update collection of sample points
+                if relation in failed:
+                    params = array([relation_class.empty_map_parameters()] * n_points)
+                else:
+                    data = accumulator[relation]
+                    params = array([mean(data, axis=0), var(data, axis=0)]).T
+
                 self.relations[relation][location_type].parameters.append(
-                    coordinates,
-                    self._compute_parameters(evaluation_points, relation, r_trees, random_maps),
-                    transitions
+                    coordinates, params, transitions
                 )

@@ -345,7 +345,7 @@ def calculate_star_map(req: RunRequest, hash_val: int):
                 cartesian_marker.covariance = (marker.std_dev**2) * eye(2)
                 polar_marker = cartesian_marker.to_polar(origin)
 
-            polar_map.features.append(polar_marker)
+            polar_map.features[polar_marker.location_type].append(polar_marker)
 
         for polyline in polylines:
             if polyline.location_type == "":
@@ -361,7 +361,7 @@ def calculate_star_map(req: RunRequest, hash_val: int):
                 cartesian_polyline.covariance = (polyline.std_dev**2) * eye(2)
                 polyline_feature = cartesian_polyline.to_polar(origin)
 
-            polar_map.features.append(polyline_feature)
+            polar_map.features[polyline_feature.location_type].append(polyline_feature)
 
         for polygon in polygons:
             if polygon.location_type == "":
@@ -377,7 +377,7 @@ def calculate_star_map(req: RunRequest, hash_val: int):
                 cartesian_polygon.covariance = (polygon.std_dev**2) * eye(2)
                 polygon_feature = cartesian_polygon.to_polar(origin)
 
-            polar_map.features.append(polygon_feature)
+            polar_map.features[polygon_feature.location_type].append(polygon_feature)
 
 
         uam = polar_map.to_cartesian()

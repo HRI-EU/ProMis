@@ -16,7 +16,7 @@ from matplotlib.colors import CenteredNorm
 from shapely import points, STRtree
 
 # ProMis
-from promis.geo import CartesianGeometry, CartesianMap, CartesianRasterBand
+from promis.geo import CartesianGeometry, CartesianRasterBand
 from promis.geo.collection import CartesianCollection
 from promis.logic.spatial.relation import ScalarRelation
 
@@ -43,7 +43,7 @@ class Depth(ScalarRelation):
 
     @staticmethod
     def compute_relation(
-        collection: CartesianCollection, r_tree: STRtree, original_geometries: CartesianMap
+        collection: CartesianCollection, r_tree: STRtree, original_geometries: list
     ) -> list[float]:
         """Computes the depth at each location based on the nearest water feature.
 
@@ -52,7 +52,7 @@ class Depth(ScalarRelation):
         Args:
             collection: The locations to compute depth for.
             r_tree: The R-tree of the map geometries for efficient querying.
-            original_geometries: The original map geometries, which contain metadata.
+            original_geometries: The flat list of features indexed by the STRtree.
 
         Returns:
             The depth in meters for each location.
@@ -63,7 +63,7 @@ class Depth(ScalarRelation):
 
         locations = points(collection.coordinates())
         nearest_indices = r_tree.nearest(locations)
-        return [feature_to_depth(original_geometries.features[idx]) for idx in nearest_indices]
+        return [feature_to_depth(original_geometries[idx]) for idx in nearest_indices]
 
     @staticmethod
     def empty_map_parameters() -> list[float]:
@@ -74,12 +74,6 @@ class Depth(ScalarRelation):
         """
 
         return [0, DEFAULT_UNIFORM_VARIANCE]
-
-    @staticmethod
-    def arity() -> int:
-        """Returns the arity of the 'depth' relation, which is 2 (location, feature_type)."""
-
-        return 2
 
     def plot(
         self,
