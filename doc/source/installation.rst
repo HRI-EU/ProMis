@@ -39,7 +39,8 @@ This is the recommended method for most users. It installs the latest stable ver
     # Also enables using the Web GUI
     promis_gui --host 0.0.0.0 --port 8000
 
-If you plan to work with nautical charts, install the necessary extras:
+If you plan to work with nautical charts, install the necessary extras.
+Make sure you have installed GDAL first (see Prerequisites).
 
 .. code-block:: bash
 
