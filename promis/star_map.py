@@ -228,8 +228,8 @@ class StaRMap:
         coords = self._promis._evaluation_points.coordinates()
         timestamp = timestamp if timestamp is not None else time.monotonic()
         for relation_type, location_types in what.items():
-            for location_type in location_types:     
-                # Get relation parameters interpolated onto ProMis evaluation points           
+            for location_type in location_types:
+                # Get relation parameters interpolated onto ProMis evaluation points
                 relation = self.get(relation_type, location_type)
                 params = relation.parameters.get_interpolator(interpolation_method)(coords)
 
