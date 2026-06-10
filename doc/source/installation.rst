@@ -20,7 +20,7 @@ ProMis requires Python 3.10 or newer. You can download it from `python.org <http
 
         # Ubuntu / Debian
         sudo apt-get update
-        sudo apt-get install python3-gdal libgdal-dev
+        sudo apt-get install python3-gdal
 
         # macOS (using Homebrew)
         brew install gdal

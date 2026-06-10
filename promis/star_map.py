@@ -220,7 +220,7 @@ class StaRMap:
         for relation_type, location_types in what.items():
             for location_type in location_types:
                 self.relations[relation_type].pop(location_type)
-        
+
         # Sample all the relevant relations on the given points
         self.sample(sample_points, number_of_random_maps, what=what)
 
@@ -228,8 +228,8 @@ class StaRMap:
         coords = self._promis._evaluation_points.coordinates()
         timestamp = timestamp if timestamp is not None else time.monotonic()
         for relation_type, location_types in what.items():
-            for location_type in location_types:     
-                # Get relation parameters interpolated onto ProMis evaluation points           
+            for location_type in location_types:
+                # Get relation parameters interpolated onto ProMis evaluation points
                 relation = self.get(relation_type, location_type)
                 params = relation.parameters.get_interpolator(interpolation_method)(coords)
 
@@ -242,7 +242,7 @@ class StaRMap:
                     writer.write("normal", [means, stds], timestamp)
                 else:
                     writer.write(params[:, 0].ravel(), timestamp)
-            
+
     def get(self, relation: str, location_type: str) -> Relation:
         """Get the computed data for a relation to a location type.
 

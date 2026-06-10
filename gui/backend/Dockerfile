@@ -1,8 +1,8 @@
-FROM ubuntu:22.04
+FROM ubuntu:26.04
 
 # APT installs and settings
 RUN apt-get update -qq
-RUN apt-get install -qy git curl xz-utils python3-pip python3-gdal libgdal-dev cython3
+RUN apt-get install -qy git curl xz-utils python3-pip python3-gdal
 
 # Locales settings for Sphinx to work
 RUN apt-get install -qy locales
@@ -21,7 +21,6 @@ WORKDIR /backend
 
 COPY ./ /backend/
 
-RUN pip install "fastapi[standard]"
-RUN pip install geojson-pydantic 
+RUN pip install 'fastapi[standard]' geojson-pydantic
 
 CMD ["fastapi", "run", "main.py"]

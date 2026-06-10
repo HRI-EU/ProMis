@@ -75,6 +75,10 @@ setuptools.setup(
         "requests",
     ],
     extras_require={
+        # Loading nautical chart data into ProMis
+        "nautical": [
+            "fiona",
+        ],
         # Building the documentation locally with sphinx
         "doc": [
             "sphinx",
@@ -83,11 +87,6 @@ setuptools.setup(
             "sphinx_rtd_theme",
             "sphinxcontrib-programoutput",
         ],
-        # Loading nautical chart data into ProMis
-        # Requires GDAL to be installed on the system
-        "nautical": [
-            "gdal",
-        ],
         # Development tools for quality assurance
         "dev": [
             # static code analysis
@@ -95,6 +94,9 @@ setuptools.setup(
             "ruff",
             # dynamic code analysis
             "pytest",
+            # visualization and debugging tools
+            "graphviz",
+            "ipykernel",
         ],
     },
     entry_points={

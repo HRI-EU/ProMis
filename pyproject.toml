@@ -41,7 +41,7 @@ ignore-names = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-v --color=yes --cov=promis --doctest-modules"
+addopts = "-v --color=yes --cov=promis --doctest-modules --ignore=promis/gui"
 testpaths = [
     # for the doctests:
     "promis",

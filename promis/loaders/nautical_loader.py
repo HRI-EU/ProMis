@@ -1,18 +1,9 @@
 """Allows to find and read nautical charts. Currently, this only supports IHO S-57 charts.
 
-Ideas:
-    - Maybe use `Fiona <https://pypi.org/project/Fiona/>`__ as an alternative?
-
 Resources:
-    - Documentation on the S-57 file format and the relevant parts of GDAL:
-        - https://gdal.org/python/osgeo.ogr-module.html
+    - Documentation on the S-57 file format:
         - https://gdal.org/drivers/vector/s57.html
         - https://www.teledynecaris.com/s-57/frames/S57catalog.htm (the entire object catalogue!)
-        - https://gdal.org/api/python_gotchas.html (!)
-    - Examples and Cookbooks:
-        - https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html
-        - and more general: https://pcjericks.github.io/py-gdalogr-cookbook/index.html
-        - https://lists.osgeo.org/pipermail/gdal-dev/2008-April/016767.html
     - Helpers:
         - The program QGIS is very helpful because it can open S-57 files visually.
 """
@@ -29,17 +20,17 @@ Resources:
 import os
 import os.path
 import sys
-from collections.abc import Generator, Mapping
+from collections.abc import Generator
 from functools import partial
 from hashlib import sha1
 from multiprocessing import Pool
 from pathlib import Path
-from warnings import catch_warnings, simplefilter
+from typing import Any
 
 # Third Party
 from numpy import array
 from shapely import intersection
-from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, Polygon
+from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, Polygon, shape
 
 # ProMis
 from promis.geo import (
@@ -55,20 +46,15 @@ from promis.geo import (
 )
 from promis.loaders.spatial_loader import SpatialLoader
 
-# Allow osgeo to be missing
-# Set to True if the osgeo is available, or False if not
-_OSGEO_PRESENT: bool
+# Allow fiona to be missing
+# Set to True if fiona is available, or False if not
+_FIONA_PRESENT: bool
 try:
-    # This emits warnings (at least on Python 3.8)
-    with catch_warnings():
-        simplefilter("ignore", DeprecationWarning, lineno=8)
-        from osgeo import gdal, ogr
-except ImportError as _error:  # pragma: no cover
-    _OSGEO_PRESENT = False
-    del _error
+    import fiona
+except ImportError:  # pragma: no cover
+    _FIONA_PRESENT = False
 else:
-    _OSGEO_PRESENT = True
-    ogr.UseExceptions()
+    _FIONA_PRESENT = True
 
 
 class S57ChartHandler:
@@ -90,19 +76,19 @@ class S57ChartHandler:
     ``{chart file name}#{chart-unique alphanumeric identifier} ({human-readable type}): "{common name}"``.
 
     Raises:
-        ImportError: If the :mod:`osgeo` package is missing
+        ImportError: If the :mod:`fiona` package is missing
     """
 
     def __init__(self):
-        if not _OSGEO_PRESENT:  # pragma: no cover
+        if not _FIONA_PRESENT:  # pragma: no cover
             raise ImportError(
-                "Could not import package osgeo. "
-                "If you woud like to load nautical charts, please install it as described in the README."
+                "Could not import package fiona. "
+                "If you would like to load nautical charts, please install it as described in the README."
             )
 
     #: This maps layer names to the corresponding parameters for S57ChartHandler._create_obstacle(...)
     #: These are not all possible objects but merely the ones which are trivial to read out.
-    _SIMPLE_MAPPINGS: Mapping[str, tuple[str, str]] = {
+    _SIMPLE_MAPPINGS: dict[str, tuple[str, str]] = {
         "LNDARE": ("land", "Landmass"),
         #
         "BOYCAR": ("obstruction", "Buoy (BOYCAR)"),
@@ -143,7 +129,7 @@ class S57ChartHandler:
 
     @staticmethod
     def find_chart_files(search_path: str | os.PathLike[str]) -> Generator[Path, None, None]:
-        for root, _, files in os.walk(search_path, followlinks=True):
+        for root, _, files in os.walk(str(search_path), followlinks=True):
             for file in files:
                 if file.endswith(".000"):
                     # assume it is an IHO S-57 file
@@ -168,45 +154,47 @@ class S57ChartHandler:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"cannot open dataset: {file_path}")
 
-        # open database
-        dataset = ogr.Open(file_path, gdal.GA_ReadOnly)
-        if not dataset:
-            raise OSError(f"cannot open dataset (invalid file): {file_path}")
-
         file_name = os.path.splitext(os.path.basename(file_path))[0]
         file_name_bytes = file_name.encode()
 
-        # read contents
-        for i in range(int(dataset.GetLayerCount())):
-            layer = dataset.GetLayerByIndex(i)
-            for geometry, feature_id in S57ChartHandler._convert_layer_to_obstacles(layer):
-                # prepend the name of the file to make it unique and ease lookup of objects in the source
-                # this is also required because the LNAM field is not guaranteed to be unique across files
-                geometry.name = f"{file_name}#{geometry.name}"
+        # Fiona lists available layers; iterate over each one
+        try:
+            layer_names = fiona.listlayers(file_path)
+        except Exception as exc:
+            raise OSError(f"cannot open dataset (invalid file): {file_path}") from exc
 
-                # hash a combination of file name and feature identifier as that together is globally unique
-                hashed_id = sha1(file_name_bytes + feature_id.encode()).digest()
-                # truncate to 64 bit and create an int from it
-                identifier = int.from_bytes(hashed_id[-8:], sys.byteorder, signed=True)
-                # cut off the most-significant bit to arrive at 63 bits
-                geometry.identifier = identifier & 0x7F_FF_FF_FF_FF_FF_FF_FF
+        for layer_name in layer_names:
+            with fiona.open(file_path, layer=layer_name) as layer:
+                for geometry, feature_id in S57ChartHandler._convert_layer_to_obstacles(
+                    layer_name, layer
+                ):
+                    # prepend the name of the file to make it unique and ease lookup of objects in the source
+                    # this is also required because the LNAM field is not guaranteed to be unique across files
+                    geometry.name = f"{file_name}#{geometry.name}"
 
-                yield geometry
+                    # hash a combination of file name and feature identifier as that together is globally unique
+                    hashed_id = sha1(file_name_bytes + feature_id.encode()).digest()
+                    # truncate to 64 bit and create an int from it
+                    identifier = int.from_bytes(hashed_id[-8:], sys.byteorder, signed=True)
+                    # cut off the most-significant bit to arrive at 63 bits
+                    geometry.identifier = identifier & 0x7F_FF_FF_FF_FF_FF_FF_FF
+
+                    yield geometry
 
     @staticmethod
     def _convert_layer_to_obstacles(
-        layer: "ogr.Layer",
+        layer_name: str,
+        layer: "fiona.Collection",
     ) -> Generator[tuple[PolarGeometry, str], None, None]:
         """Converts the relevant obstacles of a layer into polar geometries.
 
         Args:
-            layer: The layer to search in
+            layer_name: The name of the layer
+            layer: The opened Fiona collection for this layer
 
         Returns:
-            For each relevant feature in the layer: a polygon and a feature ID (32 bit)
+            For each relevant feature in the layer: a geometry and a feature ID (32 bit)
         """
-
-        layer_name = layer.GetName()
 
         # we first do the more complicated stuff and then convert using S57ChartHandler.SIMPLE_MAPPINGS
 
@@ -214,7 +202,7 @@ class S57ChartHandler:
             for feature in layer:
                 # Warning: we assume these depths are given in meters, which could be wrong in some cases but
                 # worked in our tests
-                depth_max = feature["DRVAL2"]
+                depth_max = feature["properties"]["DRVAL2"]
                 yield from S57ChartHandler._create_obstacle(feature, f"Depth={depth_max}m", "water")
         else:
             if layer_name in S57ChartHandler._SIMPLE_MAPPINGS:
@@ -226,14 +214,14 @@ class S57ChartHandler:
 
     @staticmethod
     def _create_obstacle(
-        feature: "ogr.Feature",
+        feature: dict[str, Any],
         human_readable_type: str,
         location_type: str,
     ) -> Generator[tuple[PolarGeometry, str], None, None]:
         """Creates a point or area obstacle from a given feature.
 
         Args:
-            feature: The feature to transform
+            feature: A Fiona feature dict with 'geometry' and 'properties' keys
             human_readable_type: A human-readable string describing what this is, like ``"landmass"``
             location_type: The location type to be used
 
@@ -242,18 +230,15 @@ class S57ChartHandler:
             (2) A (not necessarily unique) feature ID (32 bit) for that obstacle; but unique per chart file
         """
 
+        props = feature["properties"]
+
         # This ID is guaranteed to be unique within the chart file and composed of AGEN, FIDN, and FIDS
-        # It is not nessesarily unique even within one chart file since we support multi-part geometries.
-        feature_id: str = feature["LNAM"]
+        # It is not necessarily unique even within one chart file since we support multi-part geometries.
+        feature_id: str = props["LNAM"]
         assert feature_id is not None, "the LNAM field is mandatory for all objects"
 
-        # Remark: feature.IsFieldSetAndNotNull("OBJNAM") seems to work but logs tons of errors to syserr
         # It is not mandatory for all types of chart objects
-        object_name: str | None
-        try:
-            object_name = feature["OBJNAM"]  # might be None
-        except (ValueError, KeyError):
-            object_name = None
+        object_name: str | None = props.get("OBJNAM")
 
         if object_name is None:
             object_name = "---"
@@ -264,45 +249,38 @@ class S57ChartHandler:
         # Construct the obstacle's name
         name = f'{feature_id} ({human_readable_type}): "{object_name}"'
 
-        # Extract the geometries (as the feature may or may not contain a geometry collection)
-        geometry = feature.GetGeometryRef()
-        geometry_type = geometry.GetGeometryType()
+        # Convert Fiona geometry dict to a Shapely geometry
+        geom_dict = feature["geometry"]
+        if geom_dict is None:
+            return  # pragma: no cover
 
-        match geometry_type:
-            case ogr.wkbPoint:
-                point = PolarLocation(
-                    latitude=geometry.GetY(),
-                    longitude=geometry.GetX(),
+        geom = shape(geom_dict)
+
+        match geom.geom_type:
+            case "Point":
+                yield PolarLocation(
+                    latitude=geom.y,
+                    longitude=geom.x,
                     name=name,
                     location_type=location_type,
-                )
-                yield point, feature_id
+                ), feature_id
 
-            case ogr.wkbLineString:
-                points = [
-                    PolarLocation(latitude=lat, longitude=lon) for lon, lat in geometry.GetPoints()
-                ]
+            case "LineString":
+                points = [PolarLocation(latitude=lat, longitude=lon) for lon, lat in geom.coords]
                 yield PolarPolyLine(points, name=name, location_type=location_type), feature_id
 
-            case ogr.wkbMultiLineString:
-                for i in range(geometry.GetGeometryCount()):
-                    points = [
-                        PolarLocation(latitude=lat, longitude=lon)
-                        for lon, lat in geometry.GetGeometryRef(i).GetPoints()
-                    ]
+            case "MultiLineString":
+                for line in geom.geoms:
+                    points = [PolarLocation(latitude=lat, longitude=lon) for lon, lat in line.coords]
                     yield PolarPolyLine(points, name=name, location_type=location_type), feature_id
 
-            case ogr.wkbPolygon:
-                outer_ring = geometry.GetGeometryRef(0)
+            case "Polygon":
                 outer_points = [
-                    PolarLocation(latitude=lat, longitude=lon)
-                    for lon, lat in outer_ring.GetPoints()
+                    PolarLocation(latitude=lat, longitude=lon) for lon, lat in geom.exterior.coords
                 ]
                 inner_rings = [
-                    [PolarLocation(latitude=lat, longitude=lon) for lon, lat in ring.GetPoints()]
-                    for ring in (
-                        geometry.GetGeometryRef(i) for i in range(1, geometry.GetGeometryCount())
-                    )
+                    [PolarLocation(latitude=lat, longitude=lon) for lon, lat in ring.coords]
+                    for ring in geom.interiors
                 ]
                 yield (
                     PolarPolygon(
@@ -314,11 +292,28 @@ class S57ChartHandler:
                     feature_id,
                 )
 
+            case "MultiPolygon":
+                for polygon in geom.geoms:
+                    outer_points = [
+                        PolarLocation(latitude=lat, longitude=lon)
+                        for lon, lat in polygon.exterior.coords
+                    ]
+                    inner_rings = [
+                        [PolarLocation(latitude=lat, longitude=lon) for lon, lat in ring.coords]
+                        for ring in polygon.interiors
+                    ]
+                    yield (
+                        PolarPolygon(
+                            locations=outer_points,
+                            holes=inner_rings,
+                            name=name,
+                            location_type=location_type,
+                        ),
+                        feature_id,
+                    )
+
             case _:
-                # Apparently, no other geometries appear in charts
-                raise NotImplementedError(
-                    f"Cannot handle geometry type {ogr.GeometryTypeToName(geometry_type)}"
-                )
+                raise NotImplementedError(f"Cannot handle geometry type {geom.geom_type}")
 
 
 class NauticalLoader(SpatialLoader):

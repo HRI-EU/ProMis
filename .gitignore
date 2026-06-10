@@ -285,5 +285,6 @@ examples/**/*.npz
 examples/**/*.gif
 examples/**/*.mp4
 examples/**/*.pdf
-examples/cofi-exports/**
+examples/cofi/cofi-exports/**
+examples/cofi/data/**
 examples/coco/data/**
