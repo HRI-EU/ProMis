@@ -222,8 +222,8 @@ class StaRMap:
         what = self.relation_and_location_types if what is None else what
 
         # Delete all existing, relevant relations
-        for relation_type, location_types in what.items():
-            for location_type in location_types:
+        for relation_type, location_types in sorted(what.items()):
+            for location_type in sorted(location_types):
                 self.relations[relation_type].pop(location_type)
         
         # Sample all the relevant relations on the given points
@@ -232,8 +232,8 @@ class StaRMap:
         # Interpolate to the evaluation grid stored by ProMis and upload to Resin
         coords = self._promis._evaluation_points.coordinates()
         timestamp = timestamp if timestamp is not None else time.monotonic()
-        for relation_type, location_types in what.items():
-            for location_type in location_types:     
+        for relation_type, location_types in sorted(what.items()):
+            for location_type in sorted(location_types):
                 # Get relation parameters interpolated onto ProMis evaluation points.
                 # Read the relation in place; get() would deepcopy it just to be discarded.
                 relation_obj = self.relations[relation_type][location_type]
@@ -324,9 +324,9 @@ class StaRMap:
         """
 
         what = self.relation_and_location_types if what is None else what
-        all_location_types = list(dict.fromkeys(
+        all_location_types = sorted({
             location_type for types in what.values() for location_type in types
-        ))
+        })
 
         # For each location_type we get one set of random maps and RTrees
         for location_type in all_location_types:
@@ -449,9 +449,12 @@ class StaRMap:
         """
 
         what = self.relation_and_location_types if what is None else what
-        all_location_types = list(dict.fromkeys(
+
+        # Sorted, not merely de-duplicated: this loop drives map sampling, so any
+        # dependence on set iteration order would make results vary between processes.
+        all_location_types = sorted({
             location_type for types in what.values() for location_type in types
-        ))
+        })
         coordinates = evaluation_points.coordinates()
         transitions = evaluation_points.transitions()
         n_points = len(evaluation_points.data)
@@ -461,7 +464,7 @@ class StaRMap:
 
             relevant = [
                 (relation, self.relation_name_to_class(relation))
-                for relation, types in what.items()
+                for relation, types in sorted(what.items())
                 if location_type in types
             ]
 
