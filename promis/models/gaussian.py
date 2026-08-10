@@ -13,6 +13,7 @@ from typing import cast
 
 # Third Party
 from numpy import ndarray, vstack
+from numpy.random import multivariate_normal as sample_multivariate_normal
 from scipy.stats import multivariate_normal
 
 
@@ -78,8 +79,23 @@ class Gaussian:
         self.covariance = covariance
         self.weight = weight
 
+        # The scipy distribution is built on first use; see the distribution property below
+        self._distribution = None
+
+    @property
+    def distribution(self):
+        """The underlying scipy distribution, constructed on first access.
+
+        Building it eagerly is wasteful: many Gaussians are attached to geometries that are
+        only ever read for their covariance (e.g. the copies produced while sampling a map),
+        and the factorisation scipy performs up front then never pays off.
+        """
+
         # Abstract away from the scipy implementation
-        self.distribution = multivariate_normal(mean=self.mean.T[0], cov=self.covariance)
+        if self._distribution is None:
+            self._distribution = multivariate_normal(mean=self.mean.T[0], cov=self.covariance)
+
+        return self._distribution
 
     @property
     def x(self) -> ndarray:
@@ -105,9 +121,13 @@ class Gaussian:
 
         assert number_of_samples >= 1, "Number of samples cannot be negative or zero!"
 
-        # Draw samples and ensure shape of [M, #samples]
-        samples = self.distribution.rvs(size=number_of_samples)
-        samples = samples.T if number_of_samples > 1 else vstack(samples)
+        # This is what scipy's rvs() does for a plain covariance matrix, minus the cost of
+        # building a frozen distribution, so it draws the very same numbers from the same
+        # global RNG state. The asserts in __init__ guarantee the parameters it would check.
+        samples = sample_multivariate_normal(self.mean.T[0], self.covariance, number_of_samples)
+
+        # Ensure shape of [M, #samples]
+        samples = samples.T if number_of_samples > 1 else vstack(samples[0])
 
         return cast(ndarray, samples)
 

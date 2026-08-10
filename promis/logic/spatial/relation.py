@@ -179,7 +179,11 @@ class ScalarRelation(Relation):
     ) -> None:
         super().__init__(parameters, location_type)
 
-        self.parameters.data["v1"] = clip(self.parameters.data["v1"], enforced_min_variance, None)
+        if enforced_min_variance is not None:
+            # Clipping the numpy array skips pandas' much heavier Series.clip path
+            self.parameters.data["v1"] = clip(
+                self.parameters.data["v1"].to_numpy(), enforced_min_variance, None
+            )
         self.enforced_min_variance = enforced_min_variance
 
     def __lt__(self, value: float) -> CartesianCollection:

@@ -21,6 +21,7 @@ from warnings import warn
 # Third Party
 from numpy import array, empty, maximum, mean, sqrt, var
 from numpy.typing import NDArray
+from shapely import STRtree
 
 # ProMis
 from promis.geo import CartesianCollection, CartesianMap
@@ -56,6 +57,10 @@ class StaRMap:
             "opposes": {}
         }
         self._promis = None
+
+        # Cache of R-trees for location types whose features carry no uncertainty,
+        # keyed by location type and validated against the feature list's identity
+        self._deterministic_r_trees: dict[str, tuple[list, list, list]] = {}
 
     def initialize(self, evaluation_points: CartesianCollection, number_of_random_maps: int, logic: str):
         """Setup the StaRMap for a given set of support points, number of samples and logic.
@@ -229,13 +234,13 @@ class StaRMap:
         timestamp = timestamp if timestamp is not None else time.monotonic()
         for relation_type, location_types in what.items():
             for location_type in location_types:     
-                # Get relation parameters interpolated onto ProMis evaluation points           
-                relation = self.get(relation_type, location_type)
-                params = relation.parameters.get_interpolator(interpolation_method)(coords)
+                # Get relation parameters interpolated onto ProMis evaluation points.
+                # Read the relation in place; get() would deepcopy it just to be discarded.
+                relation_obj = self.relations[relation_type][location_type]
+                params = relation_obj.parameters.get_interpolator(interpolation_method)(coords)
 
                 # Write to the appropriate Resin channel
                 writer = self._promis.get_star_map_writer(relation_type, location_type)
-                relation_obj = self.relations[relation_type][location_type]
                 if isinstance(relation_obj, ScalarRelation):
                     means = params[:, 0].ravel()
                     stds = sqrt(maximum(params[:, 1], 1e-6)).ravel()
@@ -360,14 +365,29 @@ class StaRMap:
         """
 
         type_features = self.uam.features.get(location_type, [])
-        if type_features:
-            typed_map = CartesianMap(self.uam.origin, {location_type: type_features})
-            random_maps = typed_map.sample(number_of_random_maps)
-            r_trees = [instance.to_rtree() for instance in random_maps]
-            feature_samples = [instance.features[location_type] for instance in random_maps]
-            return r_trees, feature_samples
-        else:
+        if not type_features:
             return None, None
+
+        # Features without a distribution sample to identical copies of themselves, so all
+        # random maps would agree: one R-tree over the originals yields the same relation
+        # values, and a variance of zero either way.
+        if all(feature.distribution is None for feature in type_features):
+            cached = self._deterministic_r_trees.get(location_type)
+            if cached is not None and cached[0] is type_features:
+                return cached[1], cached[2]
+
+            r_trees = [STRtree([feature.geometry for feature in type_features])]
+            feature_samples = [type_features]
+
+            # Holding on to the feature list keeps its identity check above meaningful
+            self._deterministic_r_trees[location_type] = (type_features, r_trees, feature_samples)
+            return r_trees, feature_samples
+
+        typed_map = CartesianMap(self.uam.origin, {location_type: type_features})
+        random_maps = typed_map.sample(number_of_random_maps)
+        r_trees = [instance.to_rtree() for instance in random_maps]
+        feature_samples = [instance.features[location_type] for instance in random_maps]
+        return r_trees, feature_samples
 
     def _compute_parameters(
         self,
