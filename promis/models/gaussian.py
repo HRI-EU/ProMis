@@ -12,9 +12,14 @@
 from typing import cast
 
 # Third Party
-from numpy import ndarray, vstack
+from numpy import allclose, eye, ndarray, sqrt, vstack
 from numpy.random import multivariate_normal as sample_multivariate_normal
+from numpy.random import standard_normal
 from scipy.stats import multivariate_normal
+
+# Relative tolerance used to decide whether a covariance matrix is (numerically) a scalar
+# multiple of the identity, i.e. isotropic.
+_ISOTROPY_TOLERANCE = 1e-8
 
 
 class Gaussian:
@@ -109,6 +114,24 @@ class Gaussian:
     def w(self) -> float:
         return self.weight
 
+    def is_isotropic(self) -> bool:
+        """Whether the covariance is (numerically) a scalar multiple of the identity matrix.
+
+        Isotropic covariances allow sampling in closed form, skipping the general-case
+        decomposition; see :meth:`sample`.
+
+        Returns:
+            Whether ``covariance == variance * I`` for some ``variance >= 0``
+        """
+
+        variance = self.covariance[0, 0]
+        dimension = self.covariance.shape[0]
+
+        return bool(
+            variance >= 0
+            and allclose(self.covariance, variance * eye(dimension), atol=_ISOTROPY_TOLERANCE)
+        )
+
     def sample(self, number_of_samples: int = 1) -> ndarray:
         """Draw a number of samples following this Gaussian's distribution.
 
@@ -121,13 +144,22 @@ class Gaussian:
 
         assert number_of_samples >= 1, "Number of samples cannot be negative or zero!"
 
-        # This is what scipy's rvs() does for a plain covariance matrix, minus the cost of
-        # building a frozen distribution, so it draws the very same numbers from the same
-        # global RNG state. The asserts in __init__ guarantee the parameters it would check.
-        samples = sample_multivariate_normal(self.mean.T[0], self.covariance, number_of_samples)
+        # Isotropic covariances (sigma^2 * I) allow a closed-form draw that skips the
+        # decomposition numpy.random.multivariate_normal performs on every single call.
+        # This is a very common case (e.g. uniform positional uncertainty) and dominates the
+        # cost of repeated sampling when it applies.
+        if self.is_isotropic():
+            dimension = self.covariance.shape[0]
+            sigma = sqrt(self.covariance[0, 0])
+            samples = self.mean + sigma * standard_normal((dimension, number_of_samples))
+        else:
+            # This is what scipy's rvs() does for a plain covariance matrix, minus the cost of
+            # building a frozen distribution, so it draws the very same numbers from the same
+            # global RNG state. The asserts in __init__ guarantee the parameters it would check.
+            samples = sample_multivariate_normal(self.mean.T[0], self.covariance, number_of_samples)
 
-        # Ensure shape of [M, #samples]
-        samples = samples.T if number_of_samples > 1 else vstack(samples[0])
+            # Ensure shape of [M, #samples]
+            samples = samples.T if number_of_samples > 1 else vstack(samples[0])
 
         return cast(ndarray, samples)
 
