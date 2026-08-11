@@ -62,11 +62,24 @@ class Polygon(Geospatial):
 
     @property
     def covariance(self) -> ndarray:
-        return self.distribution.covariance if self.distribution is not None else None
+        return self._covariance
 
     @covariance.setter
     def covariance(self, value: ndarray | None) -> None:
-        self.distribution = Gaussian(vstack([0.0, 0.0]), value) if value is not None else None
+        self._covariance = value
+        self._distribution = None
+
+    @property
+    def distribution(self) -> Gaussian | None:
+        """The Gaussian this shape's translation is sampled from, or None if it is exact.
+
+        Built on first access; see :attr:`promis.geo.location.Location.distribution`.
+        """
+
+        if self._distribution is None and self._covariance is not None:
+            self._distribution = Gaussian(vstack([0.0, 0.0]), self._covariance)
+
+        return self._distribution
 
     @property
     def __geo_interface__(self) -> dict[str, Any]:

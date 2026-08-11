@@ -12,6 +12,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from copy import deepcopy
+from functools import lru_cache
 from pickle import dump, load
 from typing import Any
 
@@ -23,6 +24,7 @@ from numpy import (
     array,
     atleast_2d,
     concatenate,
+    empty,
     histogram,
     isnan,
     ndarray,
@@ -33,7 +35,7 @@ from numpy import (
 )
 from numpy.linalg import norm
 from numpy.typing import NDArray
-from pandas import DataFrame, concat
+from pandas import DataFrame, Index, concat
 from scipy.interpolate import CloughTocher2DInterpolator, LinearNDInterpolator, NearestNDInterpolator
 from scipy.spatial import distance_matrix
 from scipy.stats import entropy as shannon_entropy
@@ -44,6 +46,19 @@ from sklearn.neighbors import NearestNeighbors
 # ProMis
 from promis.geo.location import CartesianLocation, PolarLocation
 from promis.models import GaussianProcess
+
+
+@lru_cache(maxsize=None)
+def _column_index(columns: tuple[str, ...]) -> Index:
+    """Get a shared, immutable column index for the given column names.
+
+    Building a pandas Index from a list of strings costs far more than the rest of an
+    empty DataFrame's construction, and collections are created with the same handful of
+    column layouts over and over. Index objects are immutable, so sharing one across
+    frames is safe: adding or renaming a column replaces the index rather than mutating it.
+    """
+
+    return Index(columns)
 
 
 class Collection(ABC):
@@ -65,8 +80,10 @@ class Collection(ABC):
         self.origin = origin
         self.basemap = None
 
-        # Initialize the data frame
-        self.data = DataFrame(columns=columns)
+        # Initialize the data frame, empty but already typed as the float data it will hold
+        self.data = DataFrame(
+            empty((0, len(columns))), columns=_column_index(tuple(columns)), copy=False
+        )
 
     @staticmethod
     def load(path) -> "Collection":
@@ -123,12 +140,30 @@ class Collection(ABC):
 
         return west, east, south, north
 
+    def _block(self) -> NDArray[Any] | None:
+        """Get the whole data frame as a single numpy block, if it is homogeneously numeric.
+
+        Slicing columns off this block is orders of magnitude cheaper than indexing the
+        data frame by column labels, which dominates runtime when the collection is small
+        and the accessors below are called in a tight loop.
+
+        Returns:
+            The frame as a numpy array, or ``None`` if it holds non-numeric columns.
+        """
+
+        block = self.data.to_numpy()
+        return None if block.dtype == object else block
+
     def values(self) -> NDArray[Any]:
         """Unpack the location values as numpy array.
 
         Returns:
             The values of this Collection as numpy array.
         """
+
+        block = self._block()
+        if block is not None:
+            return block[:, -self.number_of_values:]
 
         value_columns = self.data.columns[-self.number_of_values:]
         return self.data[value_columns].to_numpy()
@@ -140,6 +175,10 @@ class Collection(ABC):
             An (N, 3) array with columns [delta_x, delta_y, delta_time] for each point.
         """
 
+        block = self._block()
+        if block is not None:
+            return block[:, 2:5]
+
         return self.data.iloc[:, 2:5].to_numpy()
 
     def coordinates(self) -> NDArray[Any]:
@@ -148,6 +187,10 @@ class Collection(ABC):
         Returns:
             The values of this Collection as numpy array.
         """
+
+        block = self._block()
+        if block is not None:
+            return block[:, :2]
 
         location_columns = self.data.columns[:2]
         return self.data[location_columns].to_numpy()

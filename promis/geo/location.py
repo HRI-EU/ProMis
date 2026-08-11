@@ -17,6 +17,7 @@ from typing import Any, TypeVar, cast
 from geopy.distance import GeodesicDistance, GreatCircleDistance
 from numpy import array, isfinite, ndarray, vstack
 from pyproj import Proj
+from shapely import points
 from shapely.geometry import Point
 
 # ProMis
@@ -55,11 +56,26 @@ class Location(Geospatial):
 
     @property
     def covariance(self) -> ndarray | None:
-        return self.distribution.covariance if self.distribution is not None else None
+        return self._covariance
 
     @covariance.setter
     def covariance(self, value: ndarray | None) -> None:
-        self.distribution = Gaussian(vstack([self.x, self.y]), value) if value is not None else None
+        self._covariance = value
+        self._distribution = None
+
+    @property
+    def distribution(self) -> Gaussian | None:
+        """The Gaussian this location is sampled from, or None if it is exact.
+
+        Built on first access: sampling a map produces many locations that are only ever
+        read for their geometry, and paying for their distribution up front dominates the
+        cost of drawing the sample in the first place.
+        """
+
+        if self._distribution is None and self._covariance is not None:
+            self._distribution = Gaussian(vstack([self.x, self.y]), self._covariance)
+
+        return self._distribution
 
     @property
     def __geo_interface__(self) -> dict[str, Any]:
@@ -337,6 +353,9 @@ class CartesianLocation(Location):
         identifier: An optional unique identifier for this object, in :math:`[0, 2**63)`
         uncertainty: An optional value representing the variance of this location's
             east and north coordinates respectively
+        geometry: The shapely point for ``(east, north)``, if it was already built. Lets
+            callers that create many locations at once construct their points in one
+            vectorized call; see :meth:`~sample`.
     """
 
     def __init__(
@@ -348,15 +367,47 @@ class CartesianLocation(Location):
         identifier: int | None = None,
         covariance: ndarray | None = None,
         origin: "PolarLocation | None" = None,
+        geometry: Point | None = None,
     ) -> None:
         # Set attribute
         self.origin = origin
-        self.geometry = Point(east, north)
+        self.geometry = Point(east, north) if geometry is None else geometry
 
         # Initialize the super class
         Location.__init__(
             self, self.geometry.x, self.geometry.y, location_type, name, identifier, covariance
         )
+
+    def sample(self, number_of_samples: int = 1) -> list["CartesianLocation"]:
+        """Sample locations given this location's distribution.
+
+        Args:
+            number_of_samples: How many samples to draw
+
+        Returns:
+            The set of sampled locations with identical name, identifier etc.
+        """
+
+        # Check if a distribution is given
+        if self.distribution is None:
+            return super().sample(number_of_samples)
+
+        # Building the points in one vectorized call is far cheaper than one Point per sample
+        samples = self.distribution.sample(number_of_samples).T
+        geometries = points(samples)
+
+        return [
+            CartesianLocation(
+                sample[0],
+                sample[1],
+                self.location_type,
+                self.name,
+                self.identifier,
+                self.covariance,
+                geometry=geometry,
+            )
+            for sample, geometry in zip(samples, geometries)
+        ]
 
     @property
     def east(self) -> float:
