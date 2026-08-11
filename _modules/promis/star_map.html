@@ -97,6 +97,7 @@
 <span class="c1"># Third Party</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">empty</span><span class="p">,</span> <span class="n">maximum</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">var</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">STRtree</span>
 
 <span class="c1"># ProMis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianMap</span>
@@ -134,6 +135,10 @@
             <span class="s2">&quot;opposes&quot;</span><span class="p">:</span> <span class="p">{}</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_promis</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Cache of R-trees for location types whose features carry no uncertainty,</span>
+        <span class="c1"># keyed by location type and validated against the feature list&#39;s identity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deterministic_r_trees</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
 <div class="viewcode-block" id="StaRMap.initialize">
 <a class="viewcode-back" href="../../api.html#promis.star_map.StaRMap.initialize">[docs]</a>
@@ -312,6 +317,7 @@
         <span class="n">what</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_and_location_types</span> <span class="k">if</span> <span class="n">what</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">what</span>
 
         <span class="c1"># Delete all existing, relevant relations</span>
+        <span class="c1"># Deletion is order-independent</span>
         <span class="k">for</span> <span class="n">relation_type</span><span class="p">,</span> <span class="n">location_types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">location_types</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">location_type</span><span class="p">)</span>
@@ -322,15 +328,15 @@
         <span class="c1"># Interpolate to the evaluation grid stored by ProMis and upload to Resin</span>
         <span class="n">coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_promis</span><span class="o">.</span><span class="n">_evaluation_points</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
         <span class="n">timestamp</span> <span class="o">=</span> <span class="n">timestamp</span> <span class="k">if</span> <span class="n">timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">relation_type</span><span class="p">,</span> <span class="n">location_types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">location_types</span><span class="p">:</span>     
-                <span class="c1"># Get relation parameters interpolated onto ProMis evaluation points           </span>
-                <span class="n">relation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">relation_type</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
-                <span class="n">params</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get_interpolator</span><span class="p">(</span><span class="n">interpolation_method</span><span class="p">)(</span><span class="n">coords</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">relation_type</span><span class="p">,</span> <span class="n">location_types</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">what</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">location_types</span><span class="p">):</span>
+                <span class="c1"># Get relation parameters interpolated onto ProMis evaluation points.</span>
+                <span class="c1"># Read the relation in place; get() would deepcopy it just to be discarded.</span>
+                <span class="n">relation_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="n">relation_obj</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get_interpolator</span><span class="p">(</span><span class="n">interpolation_method</span><span class="p">)(</span><span class="n">coords</span><span class="p">)</span>
 
                 <span class="c1"># Write to the appropriate Resin channel</span>
                 <span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_promis</span><span class="o">.</span><span class="n">get_star_map_writer</span><span class="p">(</span><span class="n">relation_type</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
-                <span class="n">relation_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relations</span><span class="p">[</span><span class="n">relation_type</span><span class="p">][</span><span class="n">location_type</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">relation_obj</span><span class="p">,</span> <span class="n">ScalarRelation</span><span class="p">):</span>
                     <span class="n">means</span> <span class="o">=</span> <span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
                     <span class="n">stds</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">maximum</span><span class="p">(</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">1e-6</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -423,9 +429,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">what</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_and_location_types</span> <span class="k">if</span> <span class="n">what</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">what</span>
-        <span class="n">all_location_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
+        <span class="n">all_location_types</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span>
             <span class="n">location_type</span> <span class="k">for</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span>
-        <span class="p">))</span>
+        <span class="p">})</span>
 
         <span class="c1"># For each location_type we get one set of random maps and RTrees</span>
         <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">all_location_types</span><span class="p">:</span>
@@ -465,14 +471,29 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">type_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uam</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">location_type</span><span class="p">,</span> <span class="p">[])</span>
-        <span class="k">if</span> <span class="n">type_features</span><span class="p">:</span>
-            <span class="n">typed_map</span> <span class="o">=</span> <span class="n">CartesianMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uam</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="p">{</span><span class="n">location_type</span><span class="p">:</span> <span class="n">type_features</span><span class="p">})</span>
-            <span class="n">random_maps</span> <span class="o">=</span> <span class="n">typed_map</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">number_of_random_maps</span><span class="p">)</span>
-            <span class="n">r_trees</span> <span class="o">=</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">to_rtree</span><span class="p">()</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">random_maps</span><span class="p">]</span>
-            <span class="n">feature_samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">location_type</span><span class="p">]</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">random_maps</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">feature_samples</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">type_features</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="c1"># Features without a distribution sample to identical copies of themselves, so all</span>
+        <span class="c1"># random maps would agree: one R-tree over the originals yields the same relation</span>
+        <span class="c1"># values, and a variance of zero either way.</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">distribution</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">type_features</span><span class="p">):</span>
+            <span class="n">cached</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deterministic_r_trees</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">location_type</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cached</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cached</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="n">type_features</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">cached</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cached</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="n">r_trees</span> <span class="o">=</span> <span class="p">[</span><span class="n">STRtree</span><span class="p">([</span><span class="n">feature</span><span class="o">.</span><span class="n">geometry</span> <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">type_features</span><span class="p">])]</span>
+            <span class="n">feature_samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">type_features</span><span class="p">]</span>
+
+            <span class="c1"># Holding on to the feature list keeps its identity check above meaningful</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_deterministic_r_trees</span><span class="p">[</span><span class="n">location_type</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">type_features</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">feature_samples</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">feature_samples</span>
+
+        <span class="n">typed_map</span> <span class="o">=</span> <span class="n">CartesianMap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">uam</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="p">{</span><span class="n">location_type</span><span class="p">:</span> <span class="n">type_features</span><span class="p">})</span>
+        <span class="n">random_maps</span> <span class="o">=</span> <span class="n">typed_map</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">number_of_random_maps</span><span class="p">)</span>
+        <span class="n">r_trees</span> <span class="o">=</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">to_rtree</span><span class="p">()</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">random_maps</span><span class="p">]</span>
+        <span class="n">feature_samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">location_type</span><span class="p">]</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">random_maps</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">feature_samples</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_parameters</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -536,9 +557,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">what</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_and_location_types</span> <span class="k">if</span> <span class="n">what</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">what</span>
-        <span class="n">all_location_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span>
+
+        <span class="c1"># Sorted, not merely de-duplicated: this loop drives map sampling, so any</span>
+        <span class="c1"># dependence on set iteration order would make results vary between processes.</span>
+        <span class="n">all_location_types</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span>
             <span class="n">location_type</span> <span class="k">for</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span>
-        <span class="p">))</span>
+        <span class="p">})</span>
         <span class="n">coordinates</span> <span class="o">=</span> <span class="n">evaluation_points</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
         <span class="n">transitions</span> <span class="o">=</span> <span class="n">evaluation_points</span><span class="o">.</span><span class="n">transitions</span><span class="p">()</span>
         <span class="n">n_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">evaluation_points</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -548,7 +572,7 @@
 
             <span class="n">relevant</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="p">(</span><span class="n">relation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_name_to_class</span><span class="p">(</span><span class="n">relation</span><span class="p">))</span>
-                <span class="k">for</span> <span class="n">relation</span><span class="p">,</span> <span class="n">types</span> <span class="ow">in</span> <span class="n">what</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">relation</span><span class="p">,</span> <span class="n">types</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">what</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
                 <span class="k">if</span> <span class="n">location_type</span> <span class="ow">in</span> <span class="n">types</span>
             <span class="p">]</span>
 

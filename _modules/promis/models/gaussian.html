@@ -88,8 +88,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast</span>
 
 <span class="c1"># Third Party</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">vstack</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">allclose</span><span class="p">,</span> <span class="n">eye</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">vstack</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.random</span><span class="w"> </span><span class="kn">import</span> <span class="n">multivariate_normal</span> <span class="k">as</span> <span class="n">sample_multivariate_normal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.random</span><span class="w"> </span><span class="kn">import</span> <span class="n">standard_normal</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">multivariate_normal</span>
+
+<span class="c1"># Relative tolerance used to decide whether a covariance matrix is (numerically) a scalar</span>
+<span class="c1"># multiple of the identity, i.e. isotropic.</span>
+<span class="n">_ISOTROPY_TOLERANCE</span> <span class="o">=</span> <span class="mf">1e-8</span>
 
 
 <div class="viewcode-block" id="Gaussian">
@@ -156,8 +162,23 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
 
+        <span class="c1"># The scipy distribution is built on first use; see the distribution property below</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_distribution</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The underlying scipy distribution, constructed on first access.</span>
+
+<span class="sd">        Building it eagerly is wasteful: many Gaussians are attached to geometries that are</span>
+<span class="sd">        only ever read for their covariance (e.g. the copies produced while sampling a map),</span>
+<span class="sd">        and the factorisation scipy performs up front then never pays off.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># Abstract away from the scipy implementation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="o">=</span> <span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cov</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distribution</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_distribution</span> <span class="o">=</span> <span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cov</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distribution</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
@@ -170,6 +191,27 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">w</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span>
+
+<div class="viewcode-block" id="Gaussian.is_isotropic">
+<a class="viewcode-back" href="../../../api.html#promis.models.Gaussian.is_isotropic">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_isotropic</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether the covariance is (numerically) a scalar multiple of the identity matrix.</span>
+
+<span class="sd">        Isotropic covariances allow sampling in closed form, skipping the general-case</span>
+<span class="sd">        decomposition; see :meth:`sample`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Whether ``covariance == variance * I`` for some ``variance &gt;= 0``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">variance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">dimension</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span>
+            <span class="n">variance</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="n">allclose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">,</span> <span class="n">variance</span> <span class="o">*</span> <span class="n">eye</span><span class="p">(</span><span class="n">dimension</span><span class="p">),</span> <span class="n">atol</span><span class="o">=</span><span class="n">_ISOTROPY_TOLERANCE</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="Gaussian.sample">
 <a class="viewcode-back" href="../../../api.html#promis.models.Gaussian.sample">[docs]</a>
@@ -185,9 +227,22 @@
 
         <span class="k">assert</span> <span class="n">number_of_samples</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Number of samples cannot be negative or zero!&quot;</span>
 
-        <span class="c1"># Draw samples and ensure shape of [M, #samples]</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">number_of_samples</span><span class="p">)</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">T</span> <span class="k">if</span> <span class="n">number_of_samples</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">vstack</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+        <span class="c1"># Isotropic covariances (sigma^2 * I) allow a closed-form draw that skips the</span>
+        <span class="c1"># decomposition numpy.random.multivariate_normal performs on every single call.</span>
+        <span class="c1"># This is a very common case (e.g. uniform positional uncertainty) and dominates the</span>
+        <span class="c1"># cost of repeated sampling when it applies.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_isotropic</span><span class="p">():</span>
+            <span class="n">dimension</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">standard_normal</span><span class="p">((</span><span class="n">dimension</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># This is what scipy&#39;s rvs() does for a plain covariance matrix, minus the cost of</span>
+            <span class="c1"># building a frozen distribution, so it draws the very same numbers from the same</span>
+            <span class="c1"># global RNG state. The asserts in __init__ guarantee the parameters it would check.</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">sample_multivariate_normal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">)</span>
+
+            <span class="c1"># Ensure shape of [M, #samples]</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">T</span> <span class="k">if</span> <span class="n">number_of_samples</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">vstack</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span></div>
 
