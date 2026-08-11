@@ -222,8 +222,9 @@ class StaRMap:
         what = self.relation_and_location_types if what is None else what
 
         # Delete all existing, relevant relations
-        for relation_type, location_types in sorted(what.items()):
-            for location_type in sorted(location_types):
+        # Deletion is order-independent
+        for relation_type, location_types in what.items():
+            for location_type in location_types:
                 self.relations[relation_type].pop(location_type)
         
         # Sample all the relevant relations on the given points
