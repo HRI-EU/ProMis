@@ -82,7 +82,7 @@ frontend_path_dev = os.path.join(resources_path_dev, "gui", "frontend", "build")
 
 if os.path.isdir(frontend_path):
     app.mount("/gui", StaticFiles(directory=frontend_path, html=True), name="static")
-else:
+elif os.path.isdir(frontend_path_dev):
     app.mount("/gui", StaticFiles(directory=frontend_path_dev, html=True), name="static")
 
 
@@ -278,7 +278,13 @@ def load_map_data(req: RunRequest):
         has_cache = False
 
     if (not has_cache):
-        uam = OsmLoader(mission_center, (width, height), feature_description).to_polar_map()
+        try:
+            uam = OsmLoader(mission_center, (width, height), feature_description).to_polar_map()
+        except Exception as e:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Failed to retrieve map data from OpenStreetMap: {e}",
+            )
 
         uam.save(path)
 
@@ -319,82 +325,88 @@ def calculate_star_map(req: RunRequest, hash_val: int):
             star_map = StaRMap.load(path)
 
     except FileNotFoundError:
-        # create polar map
-        # apply uncertainty to all osm fetched map feature
-        loc_type_table = _get_location_type_table()
-        loc_to_uncertainty = dict()
-        for entry in loc_type_table:
-            if entry.std_dev != 0:
-                loc_to_uncertainty[entry.location_type] = (entry.std_dev**2) * eye(2)
+        try:
+            # create polar map
+            # apply uncertainty to all osm fetched map feature
+            loc_type_table = _get_location_type_table()
+            loc_to_uncertainty = dict()
+            for entry in loc_type_table:
+                if entry.std_dev != 0:
+                    loc_to_uncertainty[entry.location_type] = (entry.std_dev**2) * eye(2)
 
-        carte_map = polar_map.to_cartesian()
-        carte_map.apply_covariance(loc_to_uncertainty)
+            carte_map = polar_map.to_cartesian()
+            carte_map.apply_covariance(loc_to_uncertainty)
 
-        polar_map = carte_map.to_polar()
+            polar_map = carte_map.to_polar()
 
-        # create all markers, lines and polygons to uam
-        for marker in markers:
-            if marker.location_type == "":
-                continue
+            # create all markers, lines and polygons to uam
+            for marker in markers:
+                if marker.location_type == "":
+                    continue
 
-            polar_marker = PolarLocation(marker.latlng[1],
-                                            marker.latlng[0],
-                                            location_type=marker.location_type)
-            if marker.std_dev != 0:
-                cartesian_marker = polar_marker.to_cartesian(origin)
-                cartesian_marker.covariance = (marker.std_dev**2) * eye(2)
-                polar_marker = cartesian_marker.to_polar(origin)
+                polar_marker = PolarLocation(marker.latlng[1],
+                                                marker.latlng[0],
+                                                location_type=marker.location_type)
+                if marker.std_dev != 0:
+                    cartesian_marker = polar_marker.to_cartesian(origin)
+                    cartesian_marker.covariance = (marker.std_dev**2) * eye(2)
+                    polar_marker = cartesian_marker.to_polar(origin)
 
-            polar_map.features[polar_marker.location_type].append(polar_marker)
+                polar_map.features[polar_marker.location_type].append(polar_marker)
 
-        for polyline in polylines:
-            if polyline.location_type == "":
-                continue
-            locations = []
-            for location in polyline.latlngs:
-                locations.append(PolarLocation(location[1], location[0]))
+            for polyline in polylines:
+                if polyline.location_type == "":
+                    continue
+                locations = []
+                for location in polyline.latlngs:
+                    locations.append(PolarLocation(location[1], location[0]))
 
-            polyline_feature = PolarPolyLine(locations, location_type=polyline.location_type)
+                polyline_feature = PolarPolyLine(locations, location_type=polyline.location_type)
 
-            if polyline.std_dev != 0:
-                cartesian_polyline = polyline_feature.to_cartesian(origin)
-                cartesian_polyline.covariance = (polyline.std_dev**2) * eye(2)
-                polyline_feature = cartesian_polyline.to_polar(origin)
+                if polyline.std_dev != 0:
+                    cartesian_polyline = polyline_feature.to_cartesian(origin)
+                    cartesian_polyline.covariance = (polyline.std_dev**2) * eye(2)
+                    polyline_feature = cartesian_polyline.to_polar(origin)
 
-            polar_map.features[polyline_feature.location_type].append(polyline_feature)
+                polar_map.features[polyline_feature.location_type].append(polyline_feature)
 
-        for polygon in polygons:
-            if polygon.location_type == "":
-                continue
-            locations = []
-            for location in polygon.latlngs:
-                locations.append(PolarLocation(location[1], location[0]))
+            for polygon in polygons:
+                if polygon.location_type == "":
+                    continue
+                locations = []
+                for location in polygon.latlngs:
+                    locations.append(PolarLocation(location[1], location[0]))
 
-            polygon_feature = PolarPolygon(locations, location_type=polygon.location_type)
+                polygon_feature = PolarPolygon(locations, location_type=polygon.location_type)
 
-            if polygon.std_dev != 0:
-                cartesian_polygon = polygon_feature.to_cartesian(origin)
-                cartesian_polygon.covariance = (polygon.std_dev**2) * eye(2)
-                polygon_feature = cartesian_polygon.to_polar(origin)
+                if polygon.std_dev != 0:
+                    cartesian_polygon = polygon_feature.to_cartesian(origin)
+                    cartesian_polygon.covariance = (polygon.std_dev**2) * eye(2)
+                    polygon_feature = cartesian_polygon.to_polar(origin)
 
-            polar_map.features[polygon_feature.location_type].append(polygon_feature)
+                polar_map.features[polygon_feature.location_type].append(polygon_feature)
 
 
-        uam = polar_map.to_cartesian()
+            uam = polar_map.to_cartesian()
 
-        # Setting up the probabilistic spatial relations from the UAM
-        star_map = StaRMap(uam)
+            # Setting up the probabilistic spatial relations from the UAM
+            star_map = StaRMap(uam)
 
-        # Initializing the StaR Map on a raster of points evenly spaced out across the mission area,
-        # sampling 25 random variants of the UAM for estimating the spatial relation parameters
-        support_resolutions = req.support_resolutions
-        evaluation_points = CartesianRasterBand(origin, support_resolutions, width, height)
+            # Initializing the StaR Map on a raster of points evenly spaced out across the mission area,
+            # sampling 25 random variants of the UAM for estimating the spatial relation parameters
+            support_resolutions = req.support_resolutions
+            evaluation_points = CartesianRasterBand(origin, support_resolutions, width, height)
 
-        star_map.initialize(evaluation_points, sample_size, logic)
+            star_map.initialize(evaluation_points, sample_size, logic)
 
-        # origin, width, height, num_iteration, num_improvement
+            # origin, width, height, num_iteration, num_improvement
 
-        star_map.save(path)
+            star_map.save(path)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate StaR map: {e}",
+            )
 
     app.star_map = star_map
 
@@ -410,7 +422,9 @@ def inference(req: RunRequest, hash_val: int, cache_latest_pml=True):
     #except FileNotFoundError:
     #    raise HTTPException(status_code=404, detail="No star map found on this request.")
 
-    star_map = app.star_map
+    star_map = getattr(app, "star_map", None)
+    if star_map is None:
+        raise HTTPException(status_code=400, detail="No star map found. Please compute the star map first.")
 
     program = req.source
     origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
@@ -420,28 +434,49 @@ def inference(req: RunRequest, hash_val: int, cache_latest_pml=True):
     target_resolutions = req.resolutions
     interpolation = req.interpolation
 
-    evaluation = CartesianRasterBand(origin, support_resolution, width, height)
-    dimension = support_resolution[0] * support_resolution[1]
-
     try:
+        evaluation = CartesianRasterBand(origin, support_resolution, width, height)
+        dimension = support_resolution[0] * support_resolution[1]
         promis = ProMis(star_map, program, dimension)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to initialize ProMis: {e}",
+        )
 
-    promis.initialize(evaluation)
-    landscape = promis.update()
+    try:
+        promis.initialize(evaluation)
+        landscape = promis.update()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate PML landscape: {e}",
+        )
 
     if landscape is None:
         raise HTTPException(status_code=500, detail="Reactive circuit produced no output.")
 
-    landscape = landscape.into(CartesianRasterBand(origin, target_resolutions, width, height), interpolation)
+    try:
+        landscape = landscape.into(
+            CartesianRasterBand(origin, target_resolutions, width, height), interpolation
+        )
 
-    if cache_latest_pml:
-        path = path_of_cache_or_config("pml_latest.pickle")
-        landscape.save(path)
+        if cache_latest_pml:
+            path = path_of_cache_or_config("pml_latest.pickle")
+            landscape.save(path)
 
-    polar_pml = landscape.to_polar()
-    return [[row["latitude"], row["longitude"], row["v0"]] for _, row in polar_pml.data.iterrows()]
+        polar_pml = landscape.to_polar()
+        return [
+            [row["latitude"], row["longitude"], row["v0"]]
+            for _, row in polar_pml.data.iterrows()
+        ]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process PML landscape: {e}",
+        )
 
 
 @app.post("/update_total_layer_config", include_in_schema=False)
