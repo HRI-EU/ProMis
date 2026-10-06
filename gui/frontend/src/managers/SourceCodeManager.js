@@ -194,16 +194,23 @@ class SourceCodeManager {
       });
       if (!response.ok) {
         console.log(body);
-        const result = await response.json();
+        let errorDetails;
+        try {
+          const result = await response.json();
+          errorDetails =
+            typeof result.detail === "string"
+              ? result.detail
+              : JSON.stringify(result);
+        } catch {
+          errorDetails = await response.text();
+        }
         throw new Error(
-          "error during calling:" +
+          "error during calling: " +
             response.url +
             "\nreport error: " +
             response.status +
-            "\n" +
-            "result:" +
-            "\n" +
-            JSON.stringify(result),
+            "\nresult: " +
+            errorDetails,
         );
       }
       if (endpoint !== "inference") {
