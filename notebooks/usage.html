@@ -112,8 +112,8 @@
 <section id="Imports">
 <h2>Imports<a class="headerlink" href="#Imports" title="Link to this heading"></a></h2>
 <p>Next, we import some of ProMis’ core packages and third party dependencies.</p>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Python Standard Library</span>
@@ -133,12 +133,21 @@
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/Volumes/Vault/Repositories/Resin/downstream_repos/ProMis/venv/lib/python3.14/site-packages/torch/jit/_script.py:1485: FutureWarning: `torch.jit.script` is not supported in Python 3.14+ and may break. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+</pre></div></div>
+</div>
 </section>
 <section id="Uncertainty-Annotated-Maps">
 <h2>Uncertainty Annotated Maps<a class="headerlink" href="#Uncertainty-Annotated-Maps" title="Link to this heading"></a></h2>
 <p>Probabilistic missions are built on an uncertainty aware environment representation we call Uncertainty Annotated Maps (UAM). Here, to obtain a UAM, we query crowd-sourced data from OpenStreetMap (OSM) using ProMis’ OsmLoader class. The OsmLoader expects a feature description consisting of a location type that identifies the respective set of features and a ‘filter’ describing the OSM tags and their values to be selected.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The features we will load from OpenStreetMap</span>
@@ -160,7 +169,7 @@
 <p>Since we do not know how noisy the OSM data actually is, we define some noise ourselves for demonstration purposes. In an actual application, you would insert your (neural) sensors and mapping modules’ accuracy information here.</p>
 <p>Here, the environment features will be assumed to be placed where we expect them with a random translation sampled from a Gaussian with one of the following covariance matrices.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Covariance matrices for some of the features</span>
@@ -177,7 +186,7 @@
 </div>
 <p>As a last piece of information before the UAM can be queried, we need to define the area in which our agent’s mission will take place in.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The mission area's origin in polar coordinates as well as area extends in meters</span>
@@ -188,7 +197,7 @@
 </div>
 <p>Finally, we can load the relevant environment features from the local OSM file. We also apply our uncertainties in the data, place the position of the agent’s operator at the center of the mission area, and store the resulting UAM to disk.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Setting up the Uncertainty Annotated Map from a local OSM file</span>
@@ -207,7 +216,7 @@
 <p>Resin is a reactive probabilistic logic language where rules are written over spatial relation <em>sources</em>. Each source declares a relation (e.g. <code class="docutils literal notranslate"><span class="pre">distance</span></code>, <code class="docutils literal notranslate"><span class="pre">over</span></code>) and a location type, along with whether it carries a bare <code class="docutils literal notranslate"><span class="pre">Probability</span></code> or a continuous <code class="docutils literal notranslate"><span class="pre">Density</span></code> (for which Resin evaluates the CDF at any threshold used in rule bodies).</p>
 <p>Rules use <code class="docutils literal notranslate"><span class="pre">if</span></code> for disjunctive clauses and <code class="docutils literal notranslate"><span class="pre">and</span></code> for conjunction. A final <code class="docutils literal notranslate"><span class="pre">-&gt;</span> <span class="pre">target(...)</span></code> declaration names the output we want to query. Comments start with <code class="docutils literal notranslate"><span class="pre">#</span></code>.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">resin_program</span> <span class="o">=</span> <span class="s2">"""</span>
@@ -244,7 +253,7 @@
 </div>
 <p>Now its time to compute the StaR Map. For this, we load the UAM from disk, define some points in the mission area to compute the StaR Map for and initialize it for the rules we defined above.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Setting up the probabilistic spatial relations from the UAM we previously computed</span>
@@ -263,7 +272,7 @@
 </div>
 <p>Let’s inspect the parameters of the StaR Map relations by visualizing the estimated values. We do so by accessing the parameters (a <code class="docutils literal notranslate"><span class="pre">promis.geo.Collection</span></code> holding mean and variances for each sampled point), and interpolating to a more fine-granular grid over the mission area.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Visualize the spatial relations with an OSM basemap in the background</span>
@@ -293,7 +302,7 @@
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the StaR Map data and prepare the figure</span>
@@ -328,7 +337,7 @@
 <p>We can now employ ProMis’ core functionality: computing a Probabilistic Mission Landscape (PML). A PML is a scalar field expressing at each point in the agent’s state space how probable it is that all stated rules are satisfied.</p>
 <p><code class="docutils literal notranslate"><span class="pre">ProMis</span></code> takes the StaRMap, the Resin program, and the number of evaluation points. Calling <code class="docutils literal notranslate"><span class="pre">initialize</span></code> writes all map-derived relation parameters into the reactive circuit, and <code class="docutils literal notranslate"><span class="pre">update</span></code> runs inference to produce the landscape.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Evaluation raster for the mission landscape</span>
@@ -347,7 +356,7 @@
 </div>
 <p>Let’s inspect the resulting landscape! Blue regions indicate high probability of satisfying all constraints, and red areas should be avoided.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Show the Probabilistic Mission Landscape</span>
