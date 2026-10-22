@@ -9,8 +9,9 @@
 #
 
 # ProMis
+from promis.loaders.ais_loader import AisLoader
 from promis.loaders.nautical_loader import NauticalLoader
 from promis.loaders.osm_loader import LocalOsmLoader, OsmLoader
 from promis.loaders.spatial_loader import SpatialLoader
 
-__all__ = ["LocalOsmLoader", "NauticalLoader", "OsmLoader", "SpatialLoader"]
+__all__ = ["AisLoader", "LocalOsmLoader", "NauticalLoader", "OsmLoader", "SpatialLoader"]

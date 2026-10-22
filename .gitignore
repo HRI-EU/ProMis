@@ -285,8 +285,11 @@ examples/**/*.npz
 examples/**/*.gif
 examples/**/*.mp4
 examples/**/*.pdf
-examples/cofi-exports/**
-examples/coco/data/**
 
 # Agentic Coding
 .claude/*local*
+
+# Documentation built locally (see README.md), with the notebooks copied from examples/
+_build/
+doc/build/
+doc/source/notebooks/

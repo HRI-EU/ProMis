@@ -225,7 +225,7 @@ class StaRMap:
         # Deletion is order-independent
         for relation_type, location_types in what.items():
             for location_type in location_types:
-                self.relations[relation_type].pop(location_type)
+                self.relations[relation_type].pop(location_type, None)
         
         # Sample all the relevant relations on the given points
         self.sample(sample_points, number_of_random_maps, what=what)

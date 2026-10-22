@@ -1,4 +1,13 @@
+"""A reactive mission landscape for drones over New York City, with live vessels and drones.
+
+Run interactively, or record a GIF of the simulation with a simulated clock:
+
+    python examples/streaming.py
+    python examples/streaming.py --record images/streaming.gif --seconds 120
+"""
+
 # Standard Library
+from argparse import ArgumentParser
 from pathlib import Path
 import time
 
@@ -166,21 +175,34 @@ agent_safety if distance(vessel) > 100.0 and distance(uas) > 100.0.
 
 landscape if distance(hospital) > 200.0 and road_safety and agent_safety.
 landscape if permitted and agent_safety.
-landscape -> target("/reactive_mission_landscape").
+landscape -> target("/landscape").
 """
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser(description="A reactive mission landscape over New York City.")
+    parser.add_argument("--record", type=Path, help="Render the simulation to this GIF instead of showing it")
+    parser.add_argument("--seconds", type=float, default=120.0, help="Simulated seconds to record")
+    parser.add_argument("--speedup", type=float, default=10.0, help="Simulated seconds per recorded second")
+    args = parser.parse_args()
+    if args.record:
+        plt.switch_backend("Agg")
+        np.random.seed(2024)
+
     # Simulation parameters
     NUM_DRONES = 10
     DRONE_SPEED = 30.0  # m/s
     SIMULATION_FREQUENCY = 2.0  # Hz
     dt = 1.0 / SIMULATION_FREQUENCY
+    if args.record:
+        # Each recorded frame advances the simulated clock by the same step
+        RECORD_FPS = 10
+        dt = args.speedup / RECORD_FPS
 
     # Inference settings
     origin, dimensions, bbox = get_environment()
-    resolution = (200, 200)
-    hd_resolution = (600, 600)
+    resolution = (400, 400)
+    hd_resolution = (800, 800)
     raster = CartesianRasterBand(origin, resolution, dimensions[0], dimensions[1])
     hd_raster = CartesianRasterBand(origin, hd_resolution, dimensions[0], dimensions[1])
     print(f"Reactive Mission Landscape on {dimensions[0]:.2f}m x {dimensions[1]:.2f}m")
@@ -201,25 +223,25 @@ if __name__ == "__main__":
         uam.features[v.location_type].append(v)
 
     # Spatial relations
-    star_map = get_starmap(data_path / "streaming_star_map.pkl", uam=uam, evaluation_points=raster, recompute=False)
+    star_map = get_starmap(data_path / f"streaming_star_map_{resolution[0]}x{resolution[1]}.pkl", uam=uam, evaluation_points=raster, recompute=False)
     # AIS data from NOAA
     ais = get_ais(data_path / "AIS_2024_02_24.pkl", bbox=bbox)
     # ProMis itself
-    promis = ProMis(star_map, resin_program, resolution[0] * resolution[1], False)
+    promis = ProMis(star_map, resin_program, resolution[0] * resolution[1])
 
     # We adapt the Reactive Circuit (internal inference engine) for the scenario by hand
     # Alternatively, run inference for some time and rc.adapt() instead for automatic restructuring
     rc = promis.get_reactive_circuit()    
-    # Specific leaf names depend on comparison operators
+    # Comparisons over a density are leaves for the intervals between their thresholds
     names = promis.get_names()
-    drone_index = names.index("distance_uas_gt_100")
-    vessel_index = names.index("distance_vessel_gt_100")
-    # We know that these two are in a higher frequency band than the rest
-    rc.lift_leaf(drone_index)
-    rc.lift_leaf(drone_index + 1)
-    rc.lift_leaf(vessel_index)
-    rc.lift_leaf(vessel_index + 1)
+    # We know that the distances to other agents are in a higher frequency band than the rest
+    for location_type in ("uas", "vessel"):
+        for interval in (0, 1):
+            rc.lift_leaf(names.index(f"u_distance_{location_type}_{interval}"))
 
+    if args.record:
+        plt.rcParams.update({"font.family": "sans-serif", "font.size": 11, "xtick.labelsize": 10, "ytick.labelsize": 10})
+        plt.figure(figsize=(7, 7))
     lscatter = plt.scatter([], [], c=[], marker='s', edgecolors='none', s=1.0, cmap="coolwarm_r", vmin=0.0, vmax=1.0)
 
     plt.xlabel("Easting / m")
@@ -227,10 +249,26 @@ if __name__ == "__main__":
     plt.xlim(-dimensions[0] / 2.0, dimensions[0] / 2.0)
     plt.ylim(-dimensions[1] / 2.0, dimensions[1] / 2.0)
 
-    plt.gcf().canvas.draw()
-    plt.ion()
-    plt.tight_layout()
-    plt.show()
+    if args.record:
+        plt.gca().set_aspect("equal")
+        vessel_markers = plt.scatter([], [], marker="^", s=30, c="#f1c40f", edgecolors="black", linewidths=0.5, label="Vessels (AIS)")
+        drone_markers = plt.scatter([], [], marker="o", s=9, c="white", edgecolors="black", linewidths=0.6, label="Drones")
+        plt.scatter([v.x for v in vertiports], [v.y for v in vertiports], marker="s", s=40, c="black", label="Vertiports")
+        plt.legend(loc="upper left", fontsize=9, framealpha=0.85)
+        clock = plt.title("New York City, 00:00:00")
+        cbar = plt.colorbar(lscatter, fraction=0.046, pad=0.02)
+        cbar.set_label("P(mission rules are satisfied)")
+        plt.tight_layout()
+
+        from matplotlib.animation import FFMpegWriter
+        recorder = FFMpegWriter(fps=RECORD_FPS)
+        video_path = args.record.with_suffix(".mp4")
+        recorder.setup(plt.gcf(), str(video_path), dpi=100)
+    else:
+        plt.gcf().canvas.draw()
+        plt.ion()
+        plt.tight_layout()
+        plt.show()
 
     coords = raster.coordinates()
 
@@ -275,7 +313,12 @@ if __name__ == "__main__":
     try:
         while ais_index < len(ais) - 1:
             loop_start_time = time.monotonic()
-            current_sim_time_offset = loop_start_time - simulation_start_time
+            if args.record:
+                current_sim_time_offset = iteration * dt
+                if current_sim_time_offset > args.seconds:
+                    break
+            else:
+                current_sim_time_offset = loop_start_time - simulation_start_time
 
             # AIS update
             ais_updated = False
@@ -295,7 +338,7 @@ if __name__ == "__main__":
                     vessel_locations.append_with_default(
                         np.vstack([normal([l.x, l.y], 150.0, [50, 2]) for l in vessels]), 0.0
                     )
-                    dynamic_star_map.update("distance", "vessel", vessel_locations, 25)
+                    dynamic_star_map.update(vessel_locations, 25, what={"distance": ["vessel"]}, timestamp=simulation_start_time + current_sim_time_offset)
 
             # UAS update
             while len(drones) < NUM_DRONES:
@@ -333,13 +376,24 @@ if __name__ == "__main__":
             uas_locations.append_with_default(
                 np.vstack([normal([d["position"][0], d["position"][1]], 150.0, [50, 2]) for d in drones]), 0.0
             )
-            dynamic_star_map.update("distance", "uas", uas_locations, 25)
+            dynamic_star_map.update(uas_locations, 25, what={"distance": ["uas"]}, timestamp=simulation_start_time + current_sim_time_offset)
 
+            if args.record:
+                time.sleep(0.05)  # writers deliver values asynchronously; keep each frame consistent
             landscape = promis.update()
 
             if landscape is not None:
                 lscatter.set_offsets(hd_raster.coordinates())
                 lscatter.set_array(landscape.into(hd_raster).data["v0"])
+
+            if args.record:
+                vessels = list(dynamic_features.values())
+                vessel_markers.set_offsets([[v.x, v.y] for v in vessels] if vessels else np.empty((0, 2)))
+                drone_markers.set_offsets([d["position"] for d in drones])
+                clock.set_text((ais_start_time + pd.Timedelta(seconds=current_sim_time_offset)).strftime("New York City, %H:%M:%S"))
+                recorder.grab_frame()
+                iteration += 1
+                continue
 
             plt.gcf().canvas.draw_idle()
 
@@ -356,3 +410,14 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         pass
+
+    if args.record:
+        recorder.finish()
+        palette = (
+            "fps=10,scale=700:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];"
+            "[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
+        )
+        import subprocess
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(video_path), "-vf", palette, str(args.record)], check=True)
+        video_path.unlink()
+        print(f"Saved {args.record}")

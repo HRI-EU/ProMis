@@ -33,7 +33,7 @@ setuptools.setup(
     url="",
     packages=setuptools.find_packages(),
     package_data={
-        "promis": ["py.typed"],  # https://www.python.org/dev/peps/pep-0561/
+        "promis": ["py.typed", "loaders/data/*.json"],  # https://www.python.org/dev/peps/pep-0561/
     },
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -60,7 +60,6 @@ setuptools.setup(
         "osmium",
         "geojson_pydantic",
         # probabilistic modelling
-        "nflows",
         "torch",
         "gpytorch",
         # reactive probabilistic inference

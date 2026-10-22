@@ -1,2 +1,3 @@
 recursive-include promis/gui/data *.json
 recursive-include promis/gui/frontend *
+recursive-include promis/loaders/data *.json
