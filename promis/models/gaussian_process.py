@@ -10,12 +10,18 @@
 
 # Standard Library
 from time import time
-
-import gpytorch
-import torch
-from gpytorch.kernels import MaternKernel, ScaleKernel
+from warnings import catch_warnings, filterwarnings
 
 # Third Party
+import torch
+
+# linear_operator (used by gpytorch) applies torch.jit.script at import time,
+# which emits a FutureWarning on Python 3.14+
+with catch_warnings():
+    filterwarnings("ignore", message=r"`torch\.jit\.script` is not supported", category=FutureWarning)
+    import gpytorch
+    from gpytorch.kernels import MaternKernel, ScaleKernel
+
 from numpy import column_stack
 from numpy.typing import NDArray
 from sklearn.preprocessing import StandardScaler
