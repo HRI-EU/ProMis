@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.geo.geospatial &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>promis.geo.geospatial &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="../../../_static/documentation_options.js?v=3304f9e4"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,7 +74,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.geo.geospatial</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module contains base classes for geospatial objects like polygons, routes and points.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""This module contains base classes for geospatial objects like polygons, routes and points."""</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -98,7 +98,7 @@
 <a class="viewcode-back" href="../../../api.html#promis.geo.Geospatial">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Geospatial</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The common abstract base class for both polar and cartesian geospatial objects.</span>
+<span class="w">    </span><span class="sd">"""The common abstract base class for both polar and cartesian geospatial objects.</span>
 
 <span class="sd">    See :meth:`~Geospatial.to_geo_json` on how this class can be used for visualizing geometries.</span>
 
@@ -106,7 +106,7 @@
 <span class="sd">        location_type: The type of this polygon</span>
 <span class="sd">        name: An optional name of this polygon</span>
 <span class="sd">        identifier: A unique identifier for this object, in :math:`[0, 2^{63})`, i.e. 64 signed bits</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -114,7 +114,7 @@
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span> <span class="o">=</span> <span class="n">location_type</span> <span class="k">if</span> <span class="n">location_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;UNKNOWN&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span> <span class="o">=</span> <span class="n">location_type</span> <span class="k">if</span> <span class="n">location_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">"UNKNOWN"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span> <span class="o">=</span> <span class="n">identifier</span> <span class="k">if</span> <span class="n">identifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">int</span> <span class="o">%</span> <span class="mi">2</span><span class="o">**</span><span class="mi">63</span>
 
@@ -122,16 +122,16 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The numerical identifier of this object.</span>
+<span class="w">        </span><span class="sd">"""The numerical identifier of this object.</span>
 
 <span class="sd">        Must be `None` or in :math:`[0, 2^{63})`, i.e. 64 signed bits.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span>
 
     <span class="nd">@identifier</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">63</span><span class="p">,</span> <span class="s2">&quot;Identifiers must be in [0, 2**63) or None&quot;</span>
+        <span class="k">assert</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">63</span><span class="p">,</span> <span class="s2">"Identifiers must be in [0, 2**63) or None"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_identifier</span> <span class="o">=</span> <span class="n">value</span>
 
@@ -140,7 +140,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">to_geo_json</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">indent</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">properties</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the GeoJSON representation of the geometry embedded into a feature.</span>
+<span class="w">        </span><span class="sd">"""Returns the GeoJSON representation of the geometry embedded into a feature.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            indent: The number of levels to indent or ``None`` (see :func:`json.dumps`)</span>
@@ -167,17 +167,17 @@
 <span class="sd">            &gt;&gt;&gt; darmstadt = PolarLocation(latitude=49.878091, longitude=8.654052, identifier=0)</span>
 <span class="sd">            &gt;&gt;&gt; print(darmstadt.to_geo_json(indent=4))</span>
 <span class="sd">            {</span>
-<span class="sd">                &quot;type&quot;: &quot;Feature&quot;,</span>
-<span class="sd">                &quot;id&quot;: 0,</span>
-<span class="sd">                &quot;geometry&quot;: {</span>
-<span class="sd">                    &quot;type&quot;: &quot;Point&quot;,</span>
-<span class="sd">                    &quot;coordinates&quot;: [</span>
+<span class="sd">                "type": "Feature",</span>
+<span class="sd">                "id": 0,</span>
+<span class="sd">                "geometry": {</span>
+<span class="sd">                    "type": "Point",</span>
+<span class="sd">                    "coordinates": [</span>
 <span class="sd">                        8.654052,</span>
 <span class="sd">                        49.878091</span>
 <span class="sd">                    ]</span>
 <span class="sd">                },</span>
-<span class="sd">                &quot;properties&quot;: {</span>
-<span class="sd">                    &quot;location_type&quot;: &quot;UNKNOWN&quot;</span>
+<span class="sd">                "properties": {</span>
+<span class="sd">                    "location_type": "UNKNOWN"</span>
 <span class="sd">                }</span>
 <span class="sd">            }</span>
 
@@ -185,7 +185,7 @@
 <span class="sd">            - `GeoJSON on Wikipedia &lt;https://en.wikipedia.org/wiki/GeoJSON&gt;`__</span>
 <span class="sd">            - `geojson.io &lt;https://geojson.io/&gt;`__</span>
 <span class="sd">            - `QGIS (Desktop) &lt;https://www.qgis.org/de/site/&gt;`__</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># this relies on the inheriting instance to provide __geo_interface__ property/attribute</span>
         <span class="k">if</span> <span class="n">properties</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -197,7 +197,7 @@
                 <span class="n">Feature</span><span class="p">(</span>
                     <span class="n">geometry</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                     <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="p">,</span>
-                    <span class="n">properties</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;location_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="p">}</span> <span class="o">|</span> <span class="n">properties</span><span class="p">,</span>
+                    <span class="n">properties</span><span class="o">=</span><span class="p">{</span><span class="s2">"location_type"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="p">}</span> <span class="o">|</span> <span class="n">properties</span><span class="p">,</span>
                 <span class="p">),</span>
                 <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -207,8 +207,8 @@
 
 <div class="viewcode-block" id="Geospatial.send_to_gui">
 <a class="viewcode-back" href="../../../api.html#promis.geo.Geospatial.send_to_gui">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">send_to_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8000</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Send an HTTP POST-request to the GUI backend.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send_to_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"localhost"</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8000</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Send an HTTP POST-request to the GUI backend.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            ip: the IP address of the backend</span>
@@ -218,10 +218,10 @@
 <span class="sd">        Raise:</span>
 <span class="sd">            :class:`~requests.HTTPError`: When the HTTP request returned an unsuccessful status code</span>
 <span class="sd">            :class:`~requests.ConnectionError`: If the request fails due to connection issues</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_geo_json</span><span class="p">()</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;http://</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">/add_geojson&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">"http://</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">/add_geojson"</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
         <span class="n">r</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span></div>
 
 
@@ -232,7 +232,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_repr_extras</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a string representation of the extra attributes for use in :meth:`~__repr__`.</span>
+<span class="w">        </span><span class="sd">"""Create a string representation of the extra attributes for use in :meth:`~__repr__`.</span>
 
 <span class="sd">        Examples:</span>
 <span class="sd">            The output is suited to be directly inlucded before the final closing</span>
@@ -240,28 +240,28 @@
 
 <span class="sd">            &gt;&gt;&gt; from promis.geo.location import PolarLocation</span>
 <span class="sd">            &gt;&gt;&gt; PolarLocation(0, 0, identifier=12)._repr_extras</span>
-<span class="sd">            &#39;, identifier=12&#39;</span>
-<span class="sd">            &gt;&gt;&gt; PolarLocation(0, 0, name=&quot;&quot;, identifier=12)._repr_extras</span>
-<span class="sd">            &#39;, name=&quot;&quot;, identifier=12&#39;</span>
+<span class="sd">            ', identifier=12'</span>
+<span class="sd">            &gt;&gt;&gt; PolarLocation(0, 0, name="", identifier=12)._repr_extras</span>
+<span class="sd">            ', name="", identifier=12'</span>
 <span class="sd">            &gt;&gt;&gt; PolarLocation(</span>
-<span class="sd">            ...    0, 0, location_type=&quot;water_vehicle&quot;, identifier=12</span>
+<span class="sd">            ...    0, 0, location_type="water_vehicle", identifier=12</span>
 <span class="sd">            ... )._repr_extras</span>
-<span class="sd">            &#39;, location_type=water_vehicle, identifier=12&#39;</span>
+<span class="sd">            ', location_type=water_vehicle, identifier=12'</span>
 
 <span class="sd">            The class :class:`promis.geo.location.PolarLocation` was only chosen as an example.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The arguments in the syntax of keyword arguments, as is common for :meth:`~__repr__`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
-        <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="s2">""</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span> <span class="o">!=</span> <span class="s2">&quot;UNKNOWN&quot;</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, location_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span> <span class="o">!=</span> <span class="s2">"UNKNOWN"</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">", location_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;, name=&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">', name="</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">"'</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, identifier=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">", identifier=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="k">return</span> <span class="n">result</span>
 

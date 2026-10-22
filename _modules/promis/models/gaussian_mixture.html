@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.models.gaussian_mixture &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>promis.models.gaussian_mixture &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="../../../_static/documentation_options.js?v=3304f9e4"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,7 +74,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.models.gaussian_mixture</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module implements Gaussian Mixture Models (GMM).&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""This module implements Gaussian Mixture Models (GMM)."""</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -99,11 +99,11 @@
 <a class="viewcode-back" href="../../../api.html#promis.models.GaussianMixture">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">GaussianMixture</span><span class="p">:</span>
 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The Gaussian Mixture Model (GMM) for representing multi-modal probability distribution.</span>
+<span class="w">    </span><span class="sd">"""The Gaussian Mixture Model (GMM) for representing multi-modal probability distribution.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        components: An initial list of components to consider in this GMM</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">components</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Gaussian</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="c1"># Setup attributes</span>
@@ -118,17 +118,17 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;GaussianMixture&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;GaussianMixture&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">"GaussianMixture"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"GaussianMixture"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">GaussianMixture</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
 
 <div class="viewcode-block" id="GaussianMixture.append">
 <a class="viewcode-back" href="../../../api.html#promis.models.GaussianMixture.append">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Appends a new Gaussian to this Mixture&#39;s list of components.</span>
+<span class="w">        </span><span class="sd">"""Appends a new Gaussian to this Mixture's list of components.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            component: The new Gaussian to append</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">component</span><span class="p">)</span></div>
 
@@ -136,14 +136,14 @@
 <div class="viewcode-block" id="GaussianMixture.modes">
 <a class="viewcode-back" href="../../../api.html#promis.models.GaussianMixture.modes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">modes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract all modes of the mixture model that are above a set threshold.</span>
+<span class="w">        </span><span class="sd">"""Extract all modes of the mixture model that are above a set threshold.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            threshold: Weight that a component needs to have to be considered</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The locations of all modes with weight larger than the threshold</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Memory for all estimated modes</span>
         <span class="n">modes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -161,13 +161,13 @@
 <div class="viewcode-block" id="GaussianMixture.prune">
 <a class="viewcode-back" href="../../../api.html#promis.models.GaussianMixture.prune">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">prune</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">merge_distance</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_components</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reduces the number of gaussian mixture components.</span>
+<span class="w">        </span><span class="sd">"""Reduces the number of gaussian mixture components.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            threshold: Truncation threshold s.t. components with weight &lt; threshold are removed</span>
-<span class="sd">            merge_distance: Merging threshold s.t. components &#39;close enough&#39; will be merged</span>
+<span class="sd">            merge_distance: Merging threshold s.t. components 'close enough' will be merged</span>
 <span class="sd">            max_components: Maximum number of gaussians after pruning</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Select a subset of components to be pruned</span>
         <span class="n">selected</span> <span class="o">=</span> <span class="p">[</span><span class="n">component</span> <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">component</span><span class="o">.</span><span class="n">w</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">]</span>

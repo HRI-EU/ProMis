@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.loaders.spatial_loader &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>promis.loaders.spatial_loader &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="../../../_static/documentation_options.js?v=3304f9e4"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,7 +74,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.loaders.spatial_loader</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module contains a base-class for spatial data loaders from various sources.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""This module contains a base-class for spatial data loaders from various sources."""</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -96,12 +96,12 @@
 <div class="viewcode-block" id="SpatialLoader">
 <a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SpatialLoader</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A base class for loaders of geospatial objects from different sources and interfaces.</span>
+<span class="w">    </span><span class="sd">"""A base class for loaders of geospatial objects from different sources and interfaces.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        origin: The polar coordinates of the map&#39;s center.</span>
+<span class="sd">        origin: The polar coordinates of the map's center.</span>
 <span class="sd">        dimensions: The (width, height) of the map in meters.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
@@ -111,11 +111,11 @@
 <div class="viewcode-block" id="SpatialLoader.to_polar_map">
 <a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader.to_polar_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_polar_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarMap</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a PolarMap from the loaded features.</span>
+<span class="w">        </span><span class="sd">"""Creates a PolarMap from the loaded features.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            A PolarMap centered at the loader&#39;s origin containing all loaded features.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            A PolarMap centered at the loader's origin containing all loaded features.</span>
+<span class="sd">        """</span>
         <span class="n">grouped</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarGeometry</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">:</span>
             <span class="n">grouped</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">location_type</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -125,15 +125,15 @@
 <div class="viewcode-block" id="SpatialLoader.to_cartesian_map">
 <a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader.to_cartesian_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian_map</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CartesianMap</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a CartesianMap from the loaded features.</span>
+<span class="w">        </span><span class="sd">"""Creates a CartesianMap from the loaded features.</span>
 
 <span class="sd">        This is a convenience method that first creates a polar map and then converts it</span>
 <span class="sd">        to Cartesian coordinates.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A CartesianMap containing all loaded features, with (0, 0) corresponding to the</span>
-<span class="sd">            loader&#39;s origin.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            loader's origin.</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_polar_map</span><span class="p">()</span><span class="o">.</span><span class="n">to_cartesian</span><span class="p">()</span></div>
 
 
@@ -141,12 +141,12 @@
 <a class="viewcode-back" href="../../../api.html#promis.loaders.SpatialLoader.load">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_description</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Populates :attr:`~SpatialLoader.features` with from a source.</span>
+<span class="w">        </span><span class="sd">"""Populates :attr:`~SpatialLoader.features` with from a source.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            feature_description: A mapping of location types to loader specific descriptions.</span>
 <span class="sd">                Passing None can be valid for loaders with a fixed set of features.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="SpatialLoader.compute_polar_bounding_box">
@@ -155,7 +155,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_polar_bounding_box</span><span class="p">(</span>
         <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">dimensions</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the north, east, south and west limits of the area to be loaded.</span>
+<span class="w">        </span><span class="sd">"""Computes the north, east, south and west limits of the area to be loaded.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            origin: A point that defines the center of the map.</span>
@@ -164,7 +164,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            A tuple containing (southern latitude, western longitude, northern latitude,</span>
 <span class="sd">            eastern longitude).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Unpack dimensions</span>
         <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">dimensions</span>

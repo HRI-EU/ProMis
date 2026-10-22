@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.geo.location &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>promis.geo.location &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="../../../_static/documentation_options.js?v=3304f9e4"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,8 +74,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.geo.location</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module implements abstractions for timestamped</span>
-<span class="sd">geospatial locations in WGS84 and local coordinates.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""This module implements abstractions for timestamped</span>
+<span class="sd">geospatial locations in WGS84 and local coordinates."""</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -107,7 +107,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Gaussian</span>
 
 <span class="c1">#: Helper to define &lt;Polar|Cartesian&gt;Location operatios within base class</span>
-<span class="n">DerivedLocation</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;DerivedLocation&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;Location&quot;</span><span class="p">)</span>
+<span class="n">DerivedLocation</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">"DerivedLocation"</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">"Location"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Location">
@@ -143,12 +143,12 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Gaussian</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;The Gaussian this location is sampled from, or None if it is exact.</span>
+<span class="w">        </span><span class="sd">"""The Gaussian this location is sampled from, or None if it is exact.</span>
 
 <span class="sd">        Built on first access: sampling a map produces many locations that are only ever</span>
 <span class="sd">        read for their geometry, and paying for their distribution up front dominates the</span>
 <span class="sd">        cost of drawing the sample in the first place.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distribution</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_covariance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_distribution</span> <span class="o">=</span> <span class="n">Gaussian</span><span class="p">(</span><span class="n">vstack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_covariance</span><span class="p">)</span>
@@ -157,13 +157,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">__geo_interface__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Point&quot;</span><span class="p">,</span> <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"Point"</span><span class="p">,</span> <span class="s2">"coordinates"</span><span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)}</span>
 
 <div class="viewcode-block" id="Location.from_numpy">
 <a class="viewcode-back" href="../../../api.html#promis.geo.Location.from_numpy">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_numpy</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">DerivedLocation</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedLocation</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a location from a numpy representation.</span>
+<span class="w">        </span><span class="sd">"""Create a location from a numpy representation.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: An array with shape ``(2, 1)``</span>
@@ -178,7 +178,7 @@
 
 <span class="sd">        See also:</span>
 <span class="sd">            :meth:`~to_numpy`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Assert that data is a vertical stack of two finite values</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
@@ -191,14 +191,14 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedLocation</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds a vector to this location.</span>
+<span class="w">        </span><span class="sd">"""Adds a vector to this location.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            vector: A vector with shape ``(2, 1)`` that will be added to this location</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A new location with both components changed according to the given vector</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">vector</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
@@ -210,21 +210,21 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vector</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedLocation</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Subtracts a vector from this location.</span>
+<span class="w">        </span><span class="sd">"""Subtracts a vector from this location.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            vector: A vector with shape ``(2, 1)`` that will be added to this location</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A new location with both components changed according to the given vector</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">return</span> <span class="bp">self</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="n">vector</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Location.to_numpy">
 <a class="viewcode-back" href="../../../api.html#promis.geo.Location.to_numpy">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">DerivedLocation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the coordinates defining this location into a :class:`numpy.ndarray`.</span>
+<span class="w">        </span><span class="sd">"""Converts the coordinates defining this location into a :class:`numpy.ndarray`.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A column vector with shape ``(2, 1)`` containing this locations longitude</span>
@@ -232,26 +232,26 @@
 
 <span class="sd">        See also:</span>
 <span class="sd">            :meth:`~from_numpy`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Return as vertical stack of x and y values</span>
         <span class="k">return</span> <span class="n">vstack</span><span class="p">(</span>
             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">],</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Location.sample">
 <a class="viewcode-back" href="../../../api.html#promis.geo.Location.sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">DerivedLocation</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">DerivedLocation</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample locations given this location&#39;s distribution.</span>
+<span class="w">        </span><span class="sd">"""Sample locations given this location's distribution.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            number_of_samples: How many samples to draw</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The set of sampled locations with identical name, identifier etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Check if a distribution is given</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -277,8 +277,8 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Location(x=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="si">}</span><span class="s2">,&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot; y=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repr_extras</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="sa">f</span><span class="s2">"Location(x=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="si">}</span><span class="s2">,"</span>
+            <span class="sa">f</span><span class="s2">" y=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repr_extras</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span></div>
 
 
@@ -286,7 +286,7 @@
 <div class="viewcode-block" id="PolarLocation">
 <a class="viewcode-back" href="../../../api.html#promis.geo.PolarLocation">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PolarLocation</span><span class="p">(</span><span class="n">Location</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A geospatial location representing a spatial object on earth.</span>
+<span class="w">    </span><span class="sd">"""A geospatial location representing a spatial object on earth.</span>
 
 <span class="sd">    See `here &lt;http://www.movable-type.co.uk/scripts/latlong.html&gt;`__ for a nice</span>
 <span class="sd">    collection of formulas and explanations on geographic transformations and calculations.</span>
@@ -299,9 +299,9 @@
 <span class="sd">        location_type: The type of this polygon</span>
 <span class="sd">        name: An optional name of this polygon</span>
 <span class="sd">        identifier: An optional unique identifier for this object, in :math:`[0, 2**63)`</span>
-<span class="sd">        uncertainty: An optional value representing the variance of this location&#39;s</span>
+<span class="sd">        uncertainty: An optional value representing the variance of this location's</span>
 <span class="sd">            latitude and longitude respectively</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -335,17 +335,17 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">projection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Proj</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Derive a :class:`pyproj.Proj` instance for projecting points.</span>
+<span class="w">        </span><span class="sd">"""Derive a :class:`pyproj.Proj` instance for projecting points.</span>
 
 <span class="sd">        This instance is cached for performance reasons, since its</span>
 <span class="sd">        creation is relatively time consuming.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_projection</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_projection</span> <span class="o">=</span> <span class="n">Proj</span><span class="p">(</span>
-                <span class="n">proj</span><span class="o">=</span><span class="s2">&quot;tmerc&quot;</span><span class="p">,</span>
-                <span class="n">ellps</span><span class="o">=</span><span class="s2">&quot;WGS84&quot;</span><span class="p">,</span>
-                <span class="n">units</span><span class="o">=</span><span class="s2">&quot;m&quot;</span><span class="p">,</span>
+                <span class="n">proj</span><span class="o">=</span><span class="s2">"tmerc"</span><span class="p">,</span>
+                <span class="n">ellps</span><span class="o">=</span><span class="s2">"WGS84"</span><span class="p">,</span>
+                <span class="n">units</span><span class="o">=</span><span class="s2">"m"</span><span class="p">,</span>
                 <span class="n">lon_0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">longitude</span><span class="p">,</span>
                 <span class="n">lat_0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">,</span>
             <span class="p">)</span>
@@ -354,15 +354,15 @@
 
 <div class="viewcode-block" id="PolarLocation.to_cartesian">
 <a class="viewcode-back" href="../../../api.html#promis.geo.PolarLocation.to_cartesian">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="s2">&quot;PolarLocation | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CartesianLocation&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Projects this point to a Cartesian one according to the given global reference.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_cartesian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="s2">"PolarLocation | None"</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"CartesianLocation"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Projects this point to a Cartesian one according to the given global reference.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            origin: The reference by which to project onto the local tangent plane</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The cartesian representation of this point with the given reference point being set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Use self as origin if None was given</span>
         <span class="k">if</span> <span class="n">origin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -390,8 +390,8 @@
 
 <div class="viewcode-block" id="PolarLocation.distance">
 <a class="viewcode-back" href="../../../api.html#promis.geo.PolarLocation.distance">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">&quot;PolarLocation&quot;</span><span class="p">,</span> <span class="n">approximate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the horizontal geodesic distance to another location in meters.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="s2">"PolarLocation"</span><span class="p">,</span> <span class="n">approximate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Calculate the horizontal geodesic distance to another location in meters.</span>
 
 <span class="sd">        This assumes an ellipsoidal earth and converges for any pair of points on earth.</span>
 <span class="sd">        It is accurate to round-off and uses *geographiclib* (https://pypi.org/project/geographiclib/)</span>
@@ -413,7 +413,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The distance to the other point in meters</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># input as latitude, longitude</span>
         <span class="n">this</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">longitude</span><span class="p">)</span>
@@ -430,8 +430,8 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;PolarLocation(latitude=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="si">}</span><span class="s2">,&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot; longitude=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">longitude</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repr_extras</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="sa">f</span><span class="s2">"PolarLocation(latitude=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="si">}</span><span class="s2">,"</span>
+            <span class="sa">f</span><span class="s2">" longitude=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">longitude</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repr_extras</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span></div>
 
 
@@ -439,7 +439,7 @@
 <div class="viewcode-block" id="CartesianLocation">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianLocation">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CartesianLocation</span><span class="p">(</span><span class="n">Location</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A point in the cartesian plane based on local coordinates with an optional global reference.</span>
+<span class="w">    </span><span class="sd">"""A point in the cartesian plane based on local coordinates with an optional global reference.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        east: The easting of the location in meters</span>
@@ -450,12 +450,12 @@
 <span class="sd">        location_type: The type of this polygon</span>
 <span class="sd">        name: An optional name of this polygon</span>
 <span class="sd">        identifier: An optional unique identifier for this object, in :math:`[0, 2**63)`</span>
-<span class="sd">        uncertainty: An optional value representing the variance of this location&#39;s</span>
+<span class="sd">        uncertainty: An optional value representing the variance of this location's</span>
 <span class="sd">            east and north coordinates respectively</span>
 <span class="sd">        geometry: The shapely point for ``(east, north)``, if it was already built. Lets</span>
 <span class="sd">            callers that create many locations at once construct their points in one</span>
 <span class="sd">            vectorized call; see :meth:`~sample`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -465,7 +465,7 @@
         <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">covariance</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">origin</span><span class="p">:</span> <span class="s2">&quot;PolarLocation | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="s2">"PolarLocation | None"</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">geometry</span><span class="p">:</span> <span class="n">Point</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Set attribute</span>
@@ -479,15 +479,15 @@
 
 <div class="viewcode-block" id="CartesianLocation.sample">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianLocation.sample">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="s2">&quot;CartesianLocation&quot;</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample locations given this location&#39;s distribution.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="s2">"CartesianLocation"</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Sample locations given this location's distribution.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            number_of_samples: How many samples to draw</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The set of sampled locations with identical name, identifier etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Check if a distribution is given</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -521,8 +521,8 @@
 
 <div class="viewcode-block" id="CartesianLocation.to_polar">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianLocation.to_polar">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="s2">&quot;PolarLocation | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarLocation</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the polar representation of this point.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_polar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">origin</span><span class="p">:</span> <span class="s2">"PolarLocation | None"</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PolarLocation</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Computes the polar representation of this point.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            origin: The global reference to be used for back-projection, must be set if and only if</span>
@@ -530,18 +530,18 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The global, polar representation of this point</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Decide which origin point to use for projection</span>
         <span class="k">if</span> <span class="n">origin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Need to give an explicit origin when the instance does not have one!&quot;</span>
+                    <span class="s2">"Need to give an explicit origin when the instance does not have one!"</span>
                 <span class="p">)</span>
             <span class="n">origin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">origin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Provided an explicit origin while the instance already has a different one!&quot;</span>
+                <span class="s2">"Provided an explicit origin while the instance already has a different one!"</span>
             <span class="p">)</span>
 
         <span class="c1"># Convert to polar coordinates</span>
@@ -570,12 +570,12 @@
 <div class="viewcode-block" id="CartesianLocation.send_to_gui">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianLocation.send_to_gui">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">send_to_gui</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Cartesian Location does not have geospatial feature to send to gui!&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Cartesian Location does not have geospatial feature to send to gui!"</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="n">origin</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;, origin=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;CartesianLocation(east=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">east</span><span class="si">}</span><span class="s2">, north=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">north</span><span class="si">}{</span><span class="n">origin</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repr_extras</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="n">origin</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">", origin=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"CartesianLocation(east=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">east</span><span class="si">}</span><span class="s2">, north=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">north</span><span class="si">}{</span><span class="n">origin</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_repr_extras</span><span class="si">}</span><span class="s2">)"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="c1"># Required to override shapely.geometry.Point.__str__()</span>

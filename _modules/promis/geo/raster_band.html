@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.geo.raster_band &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>promis.geo.raster_band &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="../../../_static/documentation_options.js?v=3304f9e4"></script>
       <script src="../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,7 +74,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.geo.raster_band</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module contains a class for handling raster-band data.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""This module contains a class for handling raster-band data."""</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -106,13 +106,13 @@
 <div class="viewcode-block" id="RasterBand">
 <a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RasterBand</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A raster-band of spatially referenced data on a regular grid.</span>
+<span class="w">    </span><span class="sd">"""A raster-band of spatially referenced data on a regular grid.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        resolution: The number of horizontal and vertical pixels</span>
 <span class="sd">        width: The width the raster band stretches over in meters</span>
 <span class="sd">        height: The height the raster band stretches over in meters</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -132,7 +132,7 @@
 <div class="viewcode-block" id="RasterBand.append">
 <a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand.append">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">:</span> <span class="n">CartesianLocation</span> <span class="o">|</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> cannot be extended with locations&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> cannot be extended with locations"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="RasterBand.to_graph">
@@ -143,7 +143,7 @@
         <span class="o">-</span> <span class="n">w1</span><span class="p">,</span>
         <span class="n">value_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">node</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Graph</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a RasterBand into a NetworkX Graph for path planning.</span>
+<span class="w">        </span><span class="sd">"""Convert a RasterBand into a NetworkX Graph for path planning.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            cost_model: A function that maps ``(source_node, target_node, source_value, dest_value)``</span>
@@ -153,8 +153,8 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The corresponding graph where the cost of visiting a node is</span>
-<span class="sd">            determined by the RasterBand&#39;s values and cost_model</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            determined by the RasterBand's values and cost_model</span>
+<span class="sd">        """</span>
 
         <span class="c1"># TODO: Despite being defined in the base class, this method only works reliably for</span>
         <span class="c1"># CartesianRasterBand. For PolarRasterBand, it does not correctly compute distances.</span>
@@ -174,7 +174,7 @@
             <span class="n">value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
             <span class="n">dists</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">coordinate</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># 4 + 1 to include itself</span>
-            <span class="k">assert</span> <span class="n">dists</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;KDTree query should return itself first&quot;</span>
+            <span class="k">assert</span> <span class="n">dists</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"KDTree query should return itself first"</span>
 
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)):</span>  <span class="c1"># skip index 0 (self)</span>
                 <span class="n">dist</span> <span class="o">=</span> <span class="n">dists</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
@@ -211,7 +211,7 @@
         <span class="n">value_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">min_cost</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Search the shortest path through this RasterBand using A*.</span>
+<span class="w">        </span><span class="sd">"""Search the shortest path through this RasterBand using A*.</span>
 
 <span class="sd">        Note:</span>
 <span class="sd">            To perform efficient path planning, assumes that all costs are bounded</span>
@@ -228,9 +228,9 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            The shortest path from start to goal given the costs induced by the given</span>
 <span class="sd">            models and RasterBand values</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
-        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">min_cost</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;min_cost must be strictly between 0 and 1&quot;</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">min_cost</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"min_cost must be strictly between 0 and 1"</span>
 
         <span class="c1"># Make sure that we have a graph to work with</span>
         <span class="k">if</span> <span class="n">graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -252,7 +252,7 @@
             <span class="nb">tuple</span><span class="p">([</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">get_nearest_coordinate</span><span class="p">(</span><span class="n">start</span><span class="p">[:</span><span class="mi">2</span><span class="p">]),</span> <span class="o">*</span><span class="n">start</span><span class="p">[</span><span class="mi">2</span><span class="p">:]]),</span>
             <span class="nb">tuple</span><span class="p">([</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">get_nearest_coordinate</span><span class="p">(</span><span class="n">goal</span><span class="p">[:</span><span class="mi">2</span><span class="p">]),</span> <span class="o">*</span><span class="n">goal</span><span class="p">[</span><span class="mi">2</span><span class="p">:]]),</span>
             <span class="n">heuristic</span><span class="o">=</span><span class="n">heuristic</span><span class="p">,</span>
-            <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span>
+            <span class="n">weight</span><span class="o">=</span><span class="s2">"weight"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">array</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
@@ -262,7 +262,7 @@
 <a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand.stack_graphs">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">stack_graphs</span><span class="p">(</span><span class="n">graphs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Graph</span><span class="p">],</span> <span class="n">vertical_weight</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Graph</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new graph containing the data of the old ones with &#39;vertical&#39; connections.</span>
+<span class="w">        </span><span class="sd">"""Create a new graph containing the data of the old ones with 'vertical' connections.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            graphs: A dictionary of graphs to be stacked, where the keys are the labels</span>
@@ -271,7 +271,7 @@
 <span class="sd">                weight ``vertical_weight``.</span>
 <span class="sd">            vertical_weight: The weight of the vertical edges between the graphs.</span>
 <span class="sd">                For simplicity, this is currently assumed to be the same for all graphs.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">stacked_graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
 
@@ -310,15 +310,15 @@
 <div class="viewcode-block" id="CartesianRasterBand">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianRasterBand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CartesianRasterBand</span><span class="p">(</span><span class="n">RasterBand</span><span class="p">,</span> <span class="n">CartesianCollection</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A raster-band of Cartesian referenced data.</span>
+<span class="w">    </span><span class="sd">"""A raster-band of Cartesian referenced data.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        origin: The polar coordinates of this raster-band&#39;s center</span>
+<span class="sd">        origin: The polar coordinates of this raster-band's center</span>
 <span class="sd">        resolution: The number of horizontal and vertical pixels</span>
 <span class="sd">        width: The width the raster band stretches over in meters</span>
 <span class="sd">        height: The height the raster band stretches over in meters</span>
 <span class="sd">        number_of_values: How many values are stored per location</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -356,15 +356,15 @@
 <div class="viewcode-block" id="PolarRasterBand">
 <a class="viewcode-back" href="../../../api.html#promis.geo.PolarRasterBand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PolarRasterBand</span><span class="p">(</span><span class="n">RasterBand</span><span class="p">,</span> <span class="n">PolarCollection</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A raster-band of Polar referenced data.</span>
+<span class="w">    </span><span class="sd">"""A raster-band of Polar referenced data.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        origin: The polar coordinates of this raster-band&#39;s center</span>
+<span class="sd">        origin: The polar coordinates of this raster-band's center</span>
 <span class="sd">        resolution: The number of horizontal and vertical pixels</span>
 <span class="sd">        width: The width the raster band stretches over in meters</span>
 <span class="sd">        height: The height the raster band stretches over in meters</span>
 <span class="sd">        number_of_values: How many values are stored per location</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -397,14 +397,14 @@
 <div class="viewcode-block" id="PolarRasterBand.as_image">
 <a class="viewcode-back" href="../../../api.html#promis.geo.PolarRasterBand.as_image">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">as_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">array</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the RasterBand data into a 2D array for use as image.</span>
+<span class="w">        </span><span class="sd">"""Convert the RasterBand data into a 2D array for use as image.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            value_index: Which value to put into the image</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The RasterBand data as 2D array</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Get values as array and take indexed column</span>
         <span class="c1"># Add two for east/north columns</span>

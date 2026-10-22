@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GUI Quick start &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>GUI Quick start &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="_static/documentation_options.js?v=3304f9e4"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -94,32 +94,32 @@ and require a geojson feature with either point, linestring or polygon geometry 
 <p>Here is a simple example of using the api.</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="err">#</span><span class="w"> </span><span class="err">e</span><span class="kc">nt</span><span class="err">i</span><span class="kc">t</span><span class="err">y.geojso</span><span class="kc">n</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Feature&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;geometry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Point&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;coordinates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">8.65</span><span class="p">,</span><span class="w"> </span><span class="mf">49.87</span><span class="p">]</span>
+<span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Feature"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"geometry"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Point"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"coordinates"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">8.65</span><span class="p">,</span><span class="w"> </span><span class="mf">49.87</span><span class="p">]</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;location_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;civilian&quot;</span>
+<span class="w">    </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"location_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"civilian"</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0&quot;</span>
+<span class="w">    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w">  </span>http://localhost:8000/add_geojson<span class="w"> </span><span class="se">\</span>
-<span class="linenos">2</span><span class="w">    </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="linenos">2</span><span class="w">    </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
 <span class="linenos">3</span><span class="w">    </span>-d<span class="w"> </span>@entity.geojson
 </pre></div>
 </div>
 <p>Alternatively, ProMis also provides functions to push its entity or map to the gui.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1"># push a marker to gui</span>
-<span class="linenos"> 2</span><span class="n">location</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.87</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.65</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="s2">&quot;civilian&quot;</span> <span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 2</span><span class="n">location</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.87</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.65</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="s2">"civilian"</span> <span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="linenos"> 3</span><span class="n">location</span><span class="o">.</span><span class="n">send_to_gui</span><span class="p">()</span>
 <span class="linenos"> 4</span>
 <span class="linenos"> 5</span><span class="c1"># push the entire map to gui</span>
 <span class="linenos"> 6</span><span class="n">feature_description</span> <span class="o">=</span> <span class="p">{</span>
-<span class="linenos"> 7</span>    <span class="s2">&quot;park&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;leisure&#39; = &#39;park&#39;]&quot;</span><span class="p">,</span>
-<span class="linenos"> 8</span>    <span class="s2">&quot;primary&quot;</span><span class="p">:</span> <span class="s2">&quot;[&#39;highway&#39; = &#39;primary&#39;]&quot;</span><span class="p">,</span>
+<span class="linenos"> 7</span>    <span class="s2">"park"</span><span class="p">:</span> <span class="s2">"['leisure' = 'park']"</span><span class="p">,</span>
+<span class="linenos"> 8</span>    <span class="s2">"primary"</span><span class="p">:</span> <span class="s2">"['highway' = 'primary']"</span><span class="p">,</span>
 <span class="linenos"> 9</span><span class="p">}</span>
 <span class="linenos">10</span><span class="n">origin</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.87</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.65</span><span class="p">)</span>
 <span class="linenos">11</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="mf">1000.0</span>

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.logic.spatial.relation &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>promis.logic.spatial.relation &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="../../../../_static/documentation_options.js?v=3304f9e4"></script>
       <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,7 +74,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.logic.spatial.relation</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module implements a distributional predicate of distances to sets of map features.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""This module implements a distributional predicate of distances to sets of map features."""</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -100,13 +100,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">CartesianRasterBand</span>
 
 <span class="c1">#: Helper to define derived relations within base class</span>
-<span class="n">DerivedRelation</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;DerivedRelation&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;Relation&quot;</span><span class="p">)</span>
+<span class="n">DerivedRelation</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">"DerivedRelation"</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">"Relation"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Relation">
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Relation">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Relation</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;An abstract base class for spatial relations.</span>
+<span class="w">    </span><span class="sd">"""An abstract base class for spatial relations.</span>
 
 <span class="sd">    A spatial relation models a probabilistic relationship between points in space and typed map</span>
 <span class="sd">    features. It is typically represented by a distribution (e.g., Gaussian) for each point,</span>
@@ -114,11 +114,11 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        parameters: A collection of points, where each point is associated with parameters</span>
-<span class="sd">            that define the relation&#39;s distribution (e.g., mean and variance).</span>
+<span class="sd">            that define the relation's distribution (e.g., mean and variance).</span>
 <span class="sd">        location_type: A string identifier for the type of map feature this relation pertains to,</span>
-<span class="sd">            such as &quot;buildings&quot; or &quot;roads&quot;. Can be `None` if the relation is not specific to a</span>
+<span class="sd">            such as "buildings" or "roads". Can be `None` if the relation is not specific to a</span>
 <span class="sd">            feature type.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Setup attributes</span>
@@ -129,29 +129,29 @@
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Relation.load">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedRelation</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the relation from a .pkl file.</span>
+<span class="w">        </span><span class="sd">"""Load the relation from a .pkl file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path: The path to the file, including its name and file extension.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The loaded Relation instance</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Relation.save">
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Relation.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the relation to a .pkl file.</span>
+<span class="w">        </span><span class="sd">"""Save the relation to a .pkl file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            path: The path to the file, including its name and file extension.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
             <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span></div>
 
 
@@ -160,11 +160,11 @@
     <span class="nd">@staticmethod</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">empty_map_parameters</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the default parameters for a relation computed on an empty map.</span>
+<span class="w">        </span><span class="sd">"""Create the default parameters for a relation computed on an empty map.</span>
 
 <span class="sd">        These parameters are used as a fallback when no map features are present to compute</span>
 <span class="sd">        the relation from.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="Relation.compute_relation">
@@ -174,7 +174,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
         <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the value of this Relation type for a specific location and map.</span>
+<span class="w">        </span><span class="sd">"""Compute the value of this Relation type for a specific location and map.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.</span>
@@ -184,7 +184,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            The scalar values representing the computed relation (e.g., distance, depth) for all</span>
 <span class="sd">            points in the input collection.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="Relation.compute_parameters">
@@ -196,7 +196,7 @@
         <span class="n">r_trees</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">STRtree</span><span class="p">],</span>
         <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">array</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the parameters of this Relation type for a specific location and set of maps.</span>
+<span class="w">        </span><span class="sd">"""Compute the parameters of this Relation type for a specific location and set of maps.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            collection: The Collection of locations and transitions to evaluate in Cartesian coordinates.</span>
@@ -205,8 +205,8 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A numpy array containing the computed parameters (e.g., mean and variance) of the</span>
-<span class="sd">            relation&#39;s distribution for the given location.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            relation's distribution for the given location.</span>
+<span class="sd">        """</span>
 
         <span class="n">n_maps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">r_trees</span><span class="p">)</span>
         <span class="n">n_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -227,7 +227,7 @@
         <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DerivedRelation</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute relation for a Cartesian collection of points and a set of R-trees.</span>
+<span class="w">        </span><span class="sd">"""Compute relation for a Cartesian collection of points and a set of R-trees.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            collection: The Collection of Cartesian points to compute the relation for.</span>
@@ -237,7 +237,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A new instance of the Relation class, populated with the computed parameters.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Compute relation over support points</span>
         <span class="n">statistical_moments</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">compute_parameters</span><span class="p">(</span><span class="n">collection</span><span class="p">,</span> <span class="n">r_trees</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">)</span>
@@ -245,8 +245,8 @@
         <span class="c1"># Setup parameter collection</span>
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">collection</span><span class="p">)</span>
         <span class="n">parameters</span><span class="o">.</span><span class="n">number_of_values</span> <span class="o">=</span> <span class="mi">2</span>
-        <span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistical_moments</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
-        <span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistical_moments</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v0"</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistical_moments</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v1"</span><span class="p">]</span> <span class="o">=</span> <span class="n">statistical_moments</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span></div>
 </div>
@@ -256,7 +256,7 @@
 <div class="viewcode-block" id="ScalarRelation">
 <a class="viewcode-back" href="../../../../api.html#promis.logic.ScalarRelation">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ScalarRelation</span><span class="p">(</span><span class="n">Relation</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A relation representing a scalar value modeled by a Gaussian distribution.</span>
+<span class="w">    </span><span class="sd">"""A relation representing a scalar value modeled by a Gaussian distribution.</span>
 
 <span class="sd">    This class provides a concrete implementation for relations where the value at each point</span>
 <span class="sd">    can be described by a mean and a variance. It also implements comparison operators (`&lt;`, `&gt;`)</span>
@@ -268,7 +268,7 @@
 <span class="sd">        location_type: The name of the locations this distance relates to.</span>
 <span class="sd">        enforced_min_variance: The minimum variance to enforce for the distribution. Values below</span>
 <span class="sd">            this will be clipped.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -279,14 +279,14 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">enforced_min_variance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Clipping the numpy array skips pandas&#39; much heavier Series.clip path</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">clip</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">enforced_min_variance</span><span class="p">,</span> <span class="kc">None</span>
+            <span class="c1"># Clipping the numpy array skips pandas' much heavier Series.clip path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v1"</span><span class="p">]</span> <span class="o">=</span> <span class="n">clip</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v1"</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(),</span> <span class="n">enforced_min_variance</span><span class="p">,</span> <span class="kc">None</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enforced_min_variance</span> <span class="o">=</span> <span class="n">enforced_min_variance</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CartesianCollection</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the probability that the relation&#39;s value is less than a given value.</span>
+<span class="w">        </span><span class="sd">"""Compute the probability that the relation's value is less than a given value.</span>
 
 <span class="sd">        This is equivalent to calculating the CDF of the</span>
 <span class="sd">        Gaussian distribution at each point for the given value.</span>
@@ -295,11 +295,11 @@
 <span class="sd">            value: The value to compare against.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            A CartesianCollection where each point&#39;s value is the probability</span>
+<span class="sd">            A CartesianCollection where each point's value is the probability</span>
 <span class="sd">            `P(relation &lt; value)`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v0&quot;</span><span class="p">]</span>
-        <span class="n">variances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v1&quot;</span><span class="p">]</span>
+<span class="sd">        """</span>
+        <span class="n">means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v0"</span><span class="p">]</span>
+        <span class="n">variances</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v1"</span><span class="p">]</span>
         <span class="n">cdf</span> <span class="o">=</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">means</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sqrt</span><span class="p">(</span><span class="n">variances</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span> <span class="n">CartesianRasterBand</span><span class="p">):</span>
@@ -310,7 +310,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">width</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">height</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">probabilities</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cdf</span>
+            <span class="n">probabilities</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v0"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cdf</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">probabilities</span> <span class="o">=</span> <span class="n">CartesianCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">origin</span><span class="p">)</span>
             <span class="n">probabilities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">coordinates</span><span class="p">(),</span> <span class="n">vstack</span><span class="p">(</span><span class="n">cdf</span><span class="p">))</span>
@@ -318,7 +318,7 @@
         <span class="k">return</span> <span class="n">probabilities</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CartesianCollection</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the probability that the relation&#39;s value is greater than a given value.</span>
+<span class="w">        </span><span class="sd">"""Compute the probability that the relation's value is greater than a given value.</span>
 
 <span class="sd">        This is equivalent to calculating the survival function (1 - CDF) of the</span>
 <span class="sd">        Gaussian distribution at each point for the given value.</span>
@@ -327,12 +327,12 @@
 <span class="sd">            value: The value to compare against.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            A CartesianCollection where each point&#39;s value is the probability</span>
+<span class="sd">            A CartesianCollection where each point's value is the probability</span>
 <span class="sd">            `P(relation &gt; value)`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Uses the existing __lt__ method to compute the inverse</span>
         <span class="n">probabilities</span> <span class="o">=</span> <span class="bp">self</span> <span class="o">&lt;</span> <span class="n">value</span>
-        <span class="n">probabilities</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">probabilities</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v0&quot;</span><span class="p">]</span>
+        <span class="n">probabilities</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v0"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">probabilities</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v0"</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">probabilities</span></div>
 

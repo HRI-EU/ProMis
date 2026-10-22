@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.logic.spatial.distance &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>promis.logic.spatial.distance &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../../_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="../../../../_static/documentation_options.js?v=3304f9e4"></script>
       <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,7 +74,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.logic.spatial.distance</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;This module implements a distributional relation of distances from locations to map features.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""This module implements a distributional relation of distances from locations to map features."""</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -101,7 +101,7 @@
 <div class="viewcode-block" id="Distance">
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Distance">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Distance</span><span class="p">(</span><span class="n">ScalarRelation</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The distance relation, modeled as a Gaussian distribution.</span>
+<span class="w">    </span><span class="sd">"""The distance relation, modeled as a Gaussian distribution.</span>
 
 <span class="sd">    This relation models the distance from a given location to the nearest map feature of a</span>
 <span class="sd">    specific type. The distance is represented by a Gaussian distribution, defined by a mean</span>
@@ -109,8 +109,8 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        parameters: A collection of points, where each has values for `[mean, variance]`.</span>
-<span class="sd">        location_type: The name of the feature type this distance relates to (e.g., &quot;buildings&quot;).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        location_type: The name of the feature type this distance relates to (e.g., "buildings").</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">location_type</span><span class="p">)</span>
@@ -121,7 +121,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_relation</span><span class="p">(</span>
         <span class="n">collection</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">r_tree</span><span class="p">:</span> <span class="n">STRtree</span><span class="p">,</span> <span class="n">original_geometries</span><span class="p">:</span> <span class="nb">list</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes the distance from a location to the nearest geometry in the map.</span>
+<span class="w">        </span><span class="sd">"""Computes the distance from a location to the nearest geometry in the map.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            collection: The location to check.</span>
@@ -131,7 +131,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The Euclidean distance to the nearest geometry.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">locations</span> <span class="o">=</span> <span class="n">points</span><span class="p">(</span><span class="n">collection</span><span class="o">.</span><span class="n">coordinates</span><span class="p">())</span>
         <span class="n">nearest_geometries</span> <span class="o">=</span> <span class="n">r_tree</span><span class="o">.</span><span class="n">geometries</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">r_tree</span><span class="o">.</span><span class="n">nearest</span><span class="p">(</span><span class="n">locations</span><span class="p">))</span>
@@ -142,11 +142,11 @@
 <a class="viewcode-back" href="../../../../api.html#promis.logic.Distance.empty_map_parameters">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">empty_map_parameters</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the parameters for an empty map.</span>
+<span class="w">        </span><span class="sd">"""Returns the parameters for an empty map.</span>
 
 <span class="sd">        This is a large distance with approximately zero variance, representing an effectively </span>
 <span class="sd">        infinite distance to any feature.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">return</span> <span class="p">[</span><span class="n">DEFAULT_EMPTY_MAP_DISTANCE_MEAN</span><span class="p">,</span> <span class="n">DEFAULT_EMPTY_MAP_DISTANCE_VARIANCE</span><span class="p">]</span></div>
 </div>

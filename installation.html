@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>Installation &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="_static/documentation_options.js?v=3304f9e4"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -116,7 +116,7 @@ promis_gui<span class="w"> </span>--host<span class="w"> </span><span class="m">
 </div>
 <p>If you plan to work with nautical charts, install the necessary extras.
 Make sure you have installed GDAL first (see Prerequisites).</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;promis[nautical]&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"promis[nautical]"</span>
 </pre></div>
 </div>
 </section>
@@ -130,14 +130,14 @@ To install ProMis’ Web GUI, you will need <a class="reference external" href="
 <span class="linenos">3</span><span class="nb">cd</span><span class="w"> </span>ProMis
 <span class="linenos">4</span>
 <span class="linenos">5</span><span class="c1"># 2. Install in editable mode with developer and documentation dependencies</span>
-<span class="linenos">6</span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,doc]&quot;</span>
+<span class="linenos">6</span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev,doc]"</span>
 <span class="linenos">7</span>
 <span class="linenos">8</span><span class="c1"># 3. Optional: Setup the Web GUI</span>
 <span class="linenos">9</span>./scripts/build_gui.sh
 </pre></div>
 </div>
 <p>To also include dependencies for nautical applications, add the <code class="docutils literal notranslate"><span class="pre">nautical</span></code> extra:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev,doc,nautical]&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">".[dev,doc,nautical]"</span>
 </pre></div>
 </div>
 </section>
@@ -155,7 +155,7 @@ This will automatically build the Docker image and configure your environment.</
 <span class="linenos">3</span>
 <span class="linenos">4</span><span class="c1"># Run the container with the local source code mounted.</span>
 <span class="linenos">5</span><span class="c1"># This allows you to edit files on your host machine and run them inside the container.</span>
-<span class="linenos">6</span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">&quot;</span>:/workspaces/ProMis<span class="w"> </span>-w<span class="w"> </span>/workspaces/ProMis<span class="w"> </span>promis<span class="w"> </span>bash
+<span class="linenos">6</span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span><span class="s2">"</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">"</span>:/workspaces/ProMis<span class="w"> </span>-w<span class="w"> </span>/workspaces/ProMis<span class="w"> </span>promis<span class="w"> </span>bash
 </pre></div>
 </div>
 </section>

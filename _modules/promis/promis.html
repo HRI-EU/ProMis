@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>promis.promis &mdash; ProMis 4.0.0.dev2 documentation</title>
+  <title>promis.promis &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
@@ -13,7 +13,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=3ce2c8f7"></script>
+      <script src="../../_static/documentation_options.js?v=3304f9e4"></script>
       <script src="../../_static/doctools.js?v=9bcbadda"></script>
       <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -74,7 +74,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for promis.promis</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;The ProMis engine for reactive probabilistic mission landscapes using Resin.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""The ProMis engine for reactive probabilistic mission landscapes using Resin."""</span>
 
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) Simon Kohaut, Honda Research Institute Europe GmbH, Felix Divo, and contributors</span>
@@ -102,7 +102,7 @@
 <div class="viewcode-block" id="ProMis">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ProMis</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The ProMis engine for reactive Probabilistic Mission Landscapes using Resin.</span>
+<span class="w">    </span><span class="sd">"""The ProMis engine for reactive Probabilistic Mission Landscapes using Resin.</span>
 
 <span class="sd">    Parses a Resin logic program, compiles it, and automatically wires all sources</span>
 <span class="sd">    declared with a known relation type (``over``, ``distance``, ``depth``) to the</span>
@@ -116,9 +116,9 @@
 <span class="sd">            whose atom matches a relation in the StaRMap is wired up automatically.</span>
 <span class="sd">        dimension: The number of spatial evaluation points (pixels / locations).</span>
 <span class="sd">        max_models: The maximum number of models to enumerate when solving the Resin program.</span>
-<span class="sd">            If exceeded, this initializer raises ``RuntimeError(&quot;Stable model limit exceeded: ...&quot;)``.</span>
+<span class="sd">            If exceeded, this initializer raises ``RuntimeError("Stable model limit exceeded: ...")``.</span>
 <span class="sd">        verbose: Whether to enable verbose output from Resin.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -133,17 +133,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span> <span class="o">=</span> <span class="n">dimension</span>
 
         <span class="c1"># Parse and validate the target declaration</span>
-        <span class="n">target_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;landscape\s*-&gt;\s*target\(\&quot;/landscape\&quot;\)\.&#39;</span><span class="p">,</span> <span class="n">logic</span><span class="p">)</span>
+        <span class="n">target_match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">'landscape\s*-&gt;\s*target\(\"/landscape\"\)\.'</span><span class="p">,</span> <span class="n">logic</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">target_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;No target declaration found in Resin program. &quot;</span>
-                <span class="s2">&quot;Define the landscape clause and declar: landscape -&gt; target(</span><span class="se">\&quot;</span><span class="s2">/landscape</span><span class="se">\&quot;</span><span class="s2">).&quot;</span>
+                <span class="s2">"No target declaration found in Resin program. "</span>
+                <span class="s2">"Define the landscape clause and declar: landscape -&gt; target(</span><span class="se">\"</span><span class="s2">/landscape</span><span class="se">\"</span><span class="s2">)."</span>
             <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_target_name</span> <span class="o">=</span> <span class="s2">&quot;/landscape&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target_name</span> <span class="o">=</span> <span class="s2">"/landscape"</span>
 
         <span class="c1"># Parse source declarations from paths: atom -&gt; (relation_type, location_type, source_type)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sources</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">loc</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">rel</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">loc</span><span class="si">}</span><span class="s2">)"</span><span class="p">:</span> <span class="p">(</span><span class="n">rel</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">rel</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">src</span> <span class="ow">in</span> <span class="n">StaRMap</span><span class="o">.</span><span class="n">_parse_sources</span><span class="p">(</span><span class="n">logic</span><span class="p">)</span>
         <span class="p">}</span>
 
@@ -163,13 +163,13 @@
 <div class="viewcode-block" id="ProMis.set_evaluation_points">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.set_evaluation_points">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_evaluation_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evaluation_points</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets a new target set of points to run inference for. </span>
+<span class="w">        </span><span class="sd">"""Sets a new target set of points to run inference for. </span>
 <span class="sd">        </span>
 <span class="sd">        All directly written data will be associated with these points.</span>
 <span class="sd">        The StaR Map relations are interpolated onto this collection.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_evaluation_points</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">,</span> <span class="s2">&quot;The number of evaluation points must match the ProMis inference dimension!&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_evaluation_points</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimension</span><span class="p">,</span> <span class="s2">"The number of evaluation points must match the ProMis inference dimension!"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_evaluation_points</span> <span class="o">=</span> <span class="n">evaluation_points</span></div>
 
 
@@ -178,9 +178,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">initialize</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">evaluation_points</span><span class="p">:</span> <span class="n">CartesianCollection</span><span class="p">,</span>
-        <span class="n">interpolation_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;hybrid&quot;</span><span class="p">,</span>
+        <span class="n">interpolation_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"hybrid"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write StaRMap data to all auto-linked sources.</span>
+<span class="w">        </span><span class="sd">"""Write StaRMap data to all auto-linked sources.</span>
 
 <span class="sd">        Call this once (or whenever the set of evaluation points changes) to push</span>
 <span class="sd">        the static, map-derived distributions into the reactive circuit before</span>
@@ -190,8 +190,8 @@
 <span class="sd">            evaluation_points: The spatial locations for which to evaluate and</span>
 <span class="sd">                write relation parameters.</span>
 <span class="sd">            interpolation_method: Interpolation method forwarded to the StaRMap</span>
-<span class="sd">                interpolators (e.g. ``&quot;hybrid&quot;``, ``&quot;linear&quot;``).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">                interpolators (e.g. ``"hybrid"``, ``"linear"``).</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_evaluation_points</span> <span class="o">=</span> <span class="n">evaluation_points</span>
         <span class="n">coords</span> <span class="o">=</span> <span class="n">evaluation_points</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
@@ -208,49 +208,49 @@
             <span class="n">interp</span> <span class="o">=</span> <span class="n">relation</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get_interpolator</span><span class="p">(</span><span class="n">interpolation_method</span><span class="p">)</span>
             <span class="n">params</span> <span class="o">=</span> <span class="n">interp</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">source_type</span> <span class="o">==</span> <span class="s2">&quot;Probability&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">source_type</span> <span class="o">==</span> <span class="s2">"Probability"</span><span class="p">:</span>
                 <span class="n">probs</span> <span class="o">=</span> <span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_writers</span><span class="p">[</span><span class="n">atom</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">probs</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">())</span>
-            <span class="k">elif</span> <span class="n">source_type</span> <span class="o">==</span> <span class="s2">&quot;Density&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">source_type</span> <span class="o">==</span> <span class="s2">"Density"</span><span class="p">:</span>
                 <span class="n">means</span> <span class="o">=</span> <span class="n">params</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                 <span class="n">stds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">params</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="mf">1e-6</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_writers</span><span class="p">[</span><span class="n">atom</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">())</span></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_writers</span><span class="p">[</span><span class="n">atom</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"normal"</span><span class="p">,</span> <span class="p">[</span><span class="n">means</span><span class="p">,</span> <span class="n">stds</span><span class="p">],</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="ProMis.update">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.update">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CartesianCollection</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trigger a reactive circuit update and return the landscape as a collection.</span>
+<span class="w">        </span><span class="sd">"""Trigger a reactive circuit update and return the landscape as a collection.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A :class:`~promis.geo.CartesianCollection` with the same coordinates</span>
 <span class="sd">            as the evaluation points passed to :meth:`initialize`, where</span>
-<span class="sd">            ``data[&quot;v0&quot;]`` holds the per-point landscape probabilities.</span>
+<span class="sd">            ``data["v0"]`` holds the per-point landscape probabilities.</span>
 <span class="sd">            Returns ``None`` when the reactive circuit has no new output yet.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rc</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_evaluation_points</span><span class="p">)</span>
-        <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;v0&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_name</span><span class="p">])</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"v0"</span><span class="p">]</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_name</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">result</span></div>
 
 
 <div class="viewcode-block" id="ProMis.adapt">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.adapt">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">adapt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bin_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">number_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adapt the reactive circuit by automatically lifting and dropping leaves.</span>
+<span class="w">        </span><span class="sd">"""Adapt the reactive circuit by automatically lifting and dropping leaves.</span>
 
-<span class="sd">        Delegates to the underlying reactive circuit&#39;s ``adapt`` method, which</span>
+<span class="sd">        Delegates to the underlying reactive circuit's ``adapt`` method, which</span>
 <span class="sd">        decides internally which leaves to lift or drop based on the provided</span>
 <span class="sd">        frequency-binning parameters.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            bin_size: Width of each frequency bin used for the adaptation heuristic.</span>
 <span class="sd">            number_bins: Number of frequency bins to consider.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_rc</span><span class="o">.</span><span class="n">adapt</span><span class="p">(</span><span class="n">bin_size</span><span class="p">,</span> <span class="n">number_bins</span><span class="p">)</span></div>
 
@@ -258,14 +258,14 @@
 <div class="viewcode-block" id="ProMis.get_star_map_writer">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.get_star_map_writer">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_star_map_writer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relation_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the Resin writer for the given StaR Map relation and location type.</span>
+<span class="w">        </span><span class="sd">"""Return the Resin writer for the given StaR Map relation and location type.</span>
 
 <span class="sd">        Use this to push dynamic (runtime-varying) data into a source that is</span>
 <span class="sd">        not automatically wired from the StaRMap, e.g. moving vessels or UAS.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            relation_type: The relation name, e.g. ``&quot;distance&quot;``.</span>
-<span class="sd">            location_type: The location type, e.g. ``&quot;vessel&quot;``.</span>
+<span class="sd">            relation_type: The relation name, e.g. ``"distance"``.</span>
+<span class="sd">            location_type: The location type, e.g. ``"vessel"``.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A Resin writer object with a ``write(...)`` method.</span>
@@ -273,24 +273,24 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            KeyError: If no source for the given relation and location type was</span>
 <span class="sd">                declared in the Resin program.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
-        <span class="n">atom</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">relation_type</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="n">atom</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">relation_type</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">location_type</span><span class="si">}</span><span class="s2">)"</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_writers</span><span class="p">[</span><span class="n">atom</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="ProMis.make_writer">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.make_writer">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">make_writer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is used to create a writer for non-StaR Map topics.</span>
+<span class="w">        </span><span class="sd">"""This is used to create a writer for non-StaR Map topics.</span>
 
 <span class="sd">        When declaring a channel in a resin program, i.e.,</span>
-<span class="sd">        `atom &lt;- source(&quot;/channel/name&quot;, DataType).`,</span>
-<span class="sd">        this method can be used to obtain a writer for channel = &quot;/channel/name&quot;.</span>
+<span class="sd">        `atom &lt;- source("/channel/name", DataType).`,</span>
+<span class="sd">        this method can be used to obtain a writer for channel = "/channel/name".</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">            channel: The channel of the ground atom to write to.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resin</span><span class="o">.</span><span class="n">make_writer</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span></div>
 
@@ -298,15 +298,15 @@
 <div class="viewcode-block" id="ProMis.make_writer_for">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.make_writer_for">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">make_writer_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is used to create a writer for non-StaR Map topics.</span>
+<span class="w">        </span><span class="sd">"""This is used to create a writer for non-StaR Map topics.</span>
 
 <span class="sd">        When declaring a channel in a resin program, i.e.,</span>
-<span class="sd">        `atom &lt;- source(&quot;/channel/name&quot;, DataType).`,</span>
-<span class="sd">        this method can be used to obtain a writer for atom = &quot;atom&quot;.</span>
+<span class="sd">        `atom &lt;- source("/channel/name", DataType).`,</span>
+<span class="sd">        this method can be used to obtain a writer for atom = "atom".</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            atom: The name of the ground atom to write to.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resin</span><span class="o">.</span><span class="n">make_writer_for</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span></div>
 
@@ -314,7 +314,7 @@
 <div class="viewcode-block" id="ProMis.get_reactive_circuit">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.get_reactive_circuit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_reactive_circuit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the underlying Resin reactive circuit.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return the underlying Resin reactive circuit."""</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rc</span></div>
 
@@ -322,7 +322,7 @@
 <div class="viewcode-block" id="ProMis.get_names">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.get_names">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the canonical leaf names used by the reactive circuit.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return the canonical leaf names used by the reactive circuit."""</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resin</span><span class="o">.</span><span class="n">get_names</span><span class="p">()</span></div>
 
@@ -330,7 +330,7 @@
 <div class="viewcode-block" id="ProMis.get_frequencies">
 <a class="viewcode-back" href="../../api.html#promis.promis.ProMis.get_frequencies">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_frequencies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the current update frequencies of the reactive circuit leaves.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return the current update frequencies of the reactive circuit leaves."""</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resin</span><span class="o">.</span><span class="n">get_frequencies</span><span class="p">()</span></div>
 </div>
