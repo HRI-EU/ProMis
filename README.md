@@ -58,7 +58,7 @@ See [LICENSE.md](https://github.com/HRI-EU/ProMis/blob/main/LICENSE.md) for deta
 
 ## Citation
 
-If you use CoFi, please cite the paper below.
+If you use ProMis, please cite the paper below.
 
 ```bibtex
 @ARTICLE{11193664,
