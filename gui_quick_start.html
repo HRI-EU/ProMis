@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GUI Quick start &mdash; ProMis 4.0.0 documentation</title>
+  <title>GUI Guide &mdash; ProMis 4.0.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
@@ -64,7 +64,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">GUI Quick start</li>
+      <li class="breadcrumb-item active">GUI Guide</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/gui_quick_start.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -74,70 +74,219 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="gui-quick-start">
-<h1>GUI Quick start<a class="headerlink" href="#gui-quick-start" title="Link to this heading"></a></h1>
-<p>This document will walks you through some of the GUI key features.</p>
-<section id="setup-geographical-entities">
-<h2>Setup Geographical Entities<a class="headerlink" href="#setup-geographical-entities" title="Link to this heading"></a></h2>
-<p>To work with ProMis framework, we need to setup the geographical environment, in which it will use to do calculation and make inference on.
-There are 3 ways to set this up, which all have it’s advantages and disadvantages.</p>
-<p><strong>Manual Entities Creation</strong></p>
-<p>Entities can be created manually through the left side interface of the gui. Users can create Marker, Polyline and Polygon on the map.
-Interacting with these object with double-click to reveal a information panel, which can be use to change its location type as well as uncertainty’s standard deviation.</p>
-<img alt="_images/left_side_interface.png" src="_images/left_side_interface.png" />
-<p><strong>Loading From OSM</strong></p>
-<p>Manually creating entities can be tedious and time-consuming so entities can also be loaded by providing the gui with a osm tag filters (see <a class="reference external" href="https://wiki.openstreetmap.org/wiki/Overpass_API/Language_Guide#Tag_request_clauses_(or_%22tag_filters%22)">overpass query language docs</a>)</p>
-<img alt="_images/osm_filter.png" src="_images/osm_filter.png" />
-<p><strong>Backend API</strong></p>
-<p>Additionally the backend also provide an HTTP endpoint to add/update geographical entities. It is available as <code class="docutils literal notranslate"><span class="pre">POST</span></code> endpoint under <code class="docutils literal notranslate"><span class="pre">localhost:8000/add_geojson</span></code>
-and require a geojson feature with either point, linestring or polygon geometry as the http request body.</p>
-<p>Here is a simple example of using the api.</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="err">#</span><span class="w"> </span><span class="err">e</span><span class="kc">nt</span><span class="err">i</span><span class="kc">t</span><span class="err">y.geojso</span><span class="kc">n</span>
-<span class="p">{</span>
+  <section id="gui-guide">
+<h1>GUI Guide<a class="headerlink" href="#gui-guide" title="Link to this heading"></a></h1>
+<p>This guide walks through the parts of the GUI in the order of a mission design:
+the rules, the mission area, the map features the rules refer to, and running the computation.
+See <a class="reference internal" href="gui.html"><span class="doc">Graphical User Interface</span></a> for how to start the GUI and a first example run.</p>
+<section id="rules">
+<h2>Rules<a class="headerlink" href="#rules" title="Link to this heading"></a></h2>
+<p>The <strong>Rules</strong> tab of the mission panel holds the mission rules, written in Resin.
+You can type them in the editor, or load a <code class="docutils literal notranslate"><span class="pre">.pl</span></code> file with <strong>Import source</strong>.
+<strong>Collapse</strong> shrinks the editor to see more of the map.</p>
+<img alt="The Rules tab with the example rules in the editor" src="_images/rules_editor.png" />
+<p>A program has three parts:</p>
+<ul>
+<li><p><strong>Sources</strong> bring the spatial relations of map features into the rules.
+<code class="docutils literal notranslate"><span class="pre">distance(primary)</span></code> is the distance to the nearest primary road, and <code class="docutils literal notranslate"><span class="pre">over(park)</span></code> whether a location lies within a park.
+Both are estimated by ProMis as StaR Maps, under the uncertainty of the map data.
+Each relation used by the rules is declared as a source, with a channel <code class="docutils literal notranslate"><span class="pre">/star_map/&lt;relation&gt;/&lt;location</span> <span class="pre">type&gt;</span></code>:</p>
+<div class="highlight-prolog notranslate"><div class="highlight"><pre><span></span><span class="nf">distance</span><span class="p">(</span><span class="s s-Atom">primary</span><span class="p">)</span> <span class="s s-Atom">&lt;-</span> <span class="nf">source</span><span class="p">(</span><span class="s2">"/star_map/distance/primary"</span><span class="p">,</span> <span class="nv">Density</span><span class="p">).</span>
+<span class="nf">over</span><span class="p">(</span><span class="s s-Atom">park</span><span class="p">)</span> <span class="s s-Atom">&lt;-</span> <span class="nf">source</span><span class="p">(</span><span class="s2">"/star_map/over/park"</span><span class="p">,</span> <span class="nv">Probability</span><span class="p">).</span>
+</pre></div>
+</div>
+<p>The supported relations are <code class="docutils literal notranslate"><span class="pre">distance</span></code>, <code class="docutils literal notranslate"><span class="pre">over</span></code> and <code class="docutils literal notranslate"><span class="pre">depth</span></code>.
+<code class="docutils literal notranslate"><span class="pre">distance</span></code> and <code class="docutils literal notranslate"><span class="pre">depth</span></code> are declared as <code class="docutils literal notranslate"><span class="pre">Density</span></code>, <code class="docutils literal notranslate"><span class="pre">over</span></code> as <code class="docutils literal notranslate"><span class="pre">Probability</span></code>.</p>
+</li>
+<li><p><strong>Rules</strong> combine relations with <code class="docutils literal notranslate"><span class="pre">if</span></code>, <code class="docutils literal notranslate"><span class="pre">and</span></code>, <code class="docutils literal notranslate"><span class="pre">not</span></code> and comparisons:</p>
+<div class="highlight-prolog notranslate"><div class="highlight"><pre><span></span><span class="s s-Atom">landscape</span> <span class="s s-Atom">if</span> <span class="nf">over</span><span class="p">(</span><span class="s s-Atom">park</span><span class="p">).</span>
+<span class="s s-Atom">landscape</span> <span class="s s-Atom">if</span> <span class="nf">distance</span><span class="p">(</span><span class="s s-Atom">primary</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">15.0</span> <span class="s s-Atom">and</span> <span class="o">not</span> <span class="nf">over</span><span class="p">(</span><span class="s s-Atom">water</span><span class="p">).</span>
+</pre></div>
+</div>
+<p>Several rules for the same atom are alternatives, i.e., any one of them suffices.</p>
+</li>
+<li><p><strong>Target</strong>: one atom is sent to the landscape channel, and its probability at each location becomes the mission landscape:</p>
+<div class="highlight-prolog notranslate"><div class="highlight"><pre><span></span><span class="s s-Atom">landscape</span> <span class="s s-Atom">-&gt;</span> <span class="nf">target</span><span class="p">(</span><span class="s2">"/landscape"</span><span class="p">).</span>
+</pre></div>
+</div>
+<p>The atom can have any name, e.g., <code class="docutils literal notranslate"><span class="pre">permits</span> <span class="pre">-&gt;</span> <span class="pre">target(&quot;/landscape&quot;).</span></code></p>
+</li>
+</ul>
+<p>Hovering the info icon next to <strong>Collapse</strong> shows a short version of this syntax:</p>
+<img alt="The hint of the Rules tab, explaining sources, rules and the target" src="_images/hint.png" />
+</section>
+<section id="mission-area">
+<h2>Mission area<a class="headerlink" href="#mission-area" title="Link to this heading"></a></h2>
+<p>The <strong>Mission area</strong> tab sets where the landscape is computed, and how finely.
+While one of its fields is selected, the map outlines the mission area with the inference grid (green) and the finer display grid.</p>
+<img alt="The Mission area tab, with the mission area and its grids outlined on the map" src="_images/mission_area.png" />
+<ul class="simple">
+<li><p><strong>Mission area</strong>: the rectangle in which map features are loaded and the landscape is computed.
+It is centered on an <strong>Origin</strong>, a marker of the location type <code class="docutils literal notranslate"><span class="pre">ORIGIN</span></code>, and spans <strong>Width</strong> and <strong>Height</strong> in meters.
+The GUI starts with the marker <code class="docutils literal notranslate"><span class="pre">Default</span> <span class="pre">origin</span></code>.
+To use another one, place a marker on the map and give it the type <code class="docutils literal notranslate"><span class="pre">ORIGIN</span></code>, see <a class="reference internal" href="#drawing-objects">Drawing objects</a>.</p></li>
+<li><p><strong>Inference</strong>: the grid of <strong>Columns</strong> and <strong>Rows</strong> on which the spatial relations and the landscape are computed.
+<strong>Sampled maps</strong> is the number of randomly varied versions of the map that the relations are estimated from.
+Finer grids and more samples are more accurate but slower.</p></li>
+<li><p><strong>Display</strong>: the finer grid that the landscape is interpolated onto for display, and the <strong>Interpolation</strong> method:
+<code class="docutils literal notranslate"><span class="pre">Linear</span></code> blends between neighboring cells, <code class="docutils literal notranslate"><span class="pre">Nearest</span></code> copies the closest cell and is fastest, and <code class="docutils literal notranslate"><span class="pre">Gaussian</span> <span class="pre">process</span></code> gives a smooth fit but is slowest.</p></li>
+</ul>
+<p>More on how the relations are estimated can be found in the paper <a class="reference external" href="https://arxiv.org/abs/2412.18356">StaR Maps: Unveiling Uncertainty in Geospatial Relations</a>.</p>
+</section>
+<section id="map-features">
+<h2>Map features<a class="headerlink" href="#map-features" title="Link to this heading"></a></h2>
+<p>The <strong>Map features</strong> tab lists the location types, one per tab.
+A location type is the name that the rules use for a kind of map feature, e.g., <code class="docutils literal notranslate"><span class="pre">primary</span></code> in <code class="docutils literal notranslate"><span class="pre">distance(primary)</span></code>.
+Each one has</p>
+<ul class="simple">
+<li><p>a <strong>Name</strong>, as used in the rules,</p></li>
+<li><p>a <strong>Map filter</strong>, which selects the features loaded from map data, see <a class="reference internal" href="#map-filters">Map filters</a>,</p></li>
+<li><p>an <strong>Uncertainty</strong>, the standard deviation in meters by which the loaded features are randomly shifted when the relations are estimated,</p></li>
+<li><p>a <strong>Color</strong>, used for its objects on the map.</p></li>
+</ul>
+<p><strong>New type</strong> adds a location type, <strong>Edit</strong> changes the selected one, and <strong>Delete</strong> removes it.
+<strong>Pick on map</strong> assigns objects that you have drawn to the selected type: click it, then click the objects on the map, and click <strong>Done picking</strong> when finished.
+The built-in types <code class="docutils literal notranslate"><span class="pre">UNKNOWN</span></code>, <code class="docutils literal notranslate"><span class="pre">ORIGIN</span></code> and <code class="docutils literal notranslate"><span class="pre">VERTIPORT</span></code> have no filter and only contain objects drawn or picked on the map.</p>
+<img alt="Editing the map filter of the location type primary, with suggested filters" src="_images/map_features.png" />
+<section id="map-filters">
+<h3>Map filters<a class="headerlink" href="#map-filters" title="Link to this heading"></a></h3>
+<p>By default, features are loaded from <a class="reference external" href="https://overturemaps.org">Overture Maps</a>.
+A filter names an Overture type, followed by optional conditions on its properties in brackets:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Filter</p></th>
+<th class="head"><p>Loads</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">building</span></code></p></td>
+<td><p>all buildings</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">segment[subtype=road][class=primary]</span></code></p></td>
+<td><p>primary roads</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">segment[subtype=rail][class=standard_gauge]</span></code></p></td>
+<td><p>railways</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">segment[subtype=road][class=footway][subclass=crosswalk]</span></code></p></td>
+<td><p>crosswalks</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">land_use[subtype=park]</span></code></p></td>
+<td><p>parks</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">water</span></code></p></td>
+<td><p>all water bodies</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">place[basic_category=restaurant]</span></code></p></td>
+<td><p>restaurants</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">place[taxonomy.primary=art_museum]</span></code></p></td>
+<td><p>art museums, using a dotted key for a nested property</p></td>
+</tr>
+</tbody>
+</table>
+<p>The types are <code class="docutils literal notranslate"><span class="pre">building</span></code>, <code class="docutils literal notranslate"><span class="pre">segment</span></code>, <code class="docutils literal notranslate"><span class="pre">land_use</span></code>, <code class="docutils literal notranslate"><span class="pre">land_cover</span></code>, <code class="docutils literal notranslate"><span class="pre">water</span></code>, <code class="docutils literal notranslate"><span class="pre">place</span></code> and the others of the <a class="reference external" href="https://docs.overturemaps.org/schema/">Overture schema</a>, which also lists the properties and values of each type.
+Conditions are written as <code class="docutils literal notranslate"><span class="pre">[key]</span></code> (the property exists), <code class="docutils literal notranslate"><span class="pre">[key=value]</span></code>, <code class="docutils literal notranslate"><span class="pre">[key!=value]</span></code> or <code class="docutils literal notranslate"><span class="pre">[key~regex]</span></code>, and all conditions of a filter must hold.</p>
+<p>Filters that start with a bracket are loaded from OpenStreetMap instead, using its tag filters, e.g., <code class="docutils literal notranslate"><span class="pre">[highway=primary]</span></code> or <code class="docutils literal notranslate"><span class="pre">[leisure=park]</span></code>
+(see the <a class="reference external" href="https://wiki.openstreetmap.org/wiki/Overpass_API/Language_Guide#Tag_request_clauses_(or_%22tag_filters%22)">Overpass query language</a>).</p>
+<p>While editing, the filter field suggests examples, and a chip next to it shows where the features will come from.
+Invalid filters are explained below the field and cannot be saved.</p>
+<p>Only the location types that the rules use are loaded, and only within the mission area.</p>
+</section>
+</section>
+<section id="drawing-objects">
+<h2>Drawing objects<a class="headerlink" href="#drawing-objects" title="Link to this heading"></a></h2>
+<p>Besides loading map data, you can draw objects yourself, e.g., an operator position, a landing site or an area to avoid.
+The toolbar on the left draws lines, polygons, markers, landing sites and drones, moves objects, and erases them.
+Double-click an object to open its info box, where you can set its <strong>Location Type</strong> and the uncertainty of its position <strong>σ (m)</strong>.
+Newly drawn objects have the type <code class="docutils literal notranslate"><span class="pre">UNKNOWN</span></code> until you give them a type, either in the info box or with <strong>Pick on map</strong>.</p>
+<img alt="The drawing tools and the info box of the default origin marker" src="_images/drawing_tools.png" />
+<p>Objects of a location type are combined with the features loaded by its filter, so drawn objects can add to map data or replace it.</p>
+</section>
+<section id="sending-objects-from-python">
+<h2>Sending objects from Python<a class="headerlink" href="#sending-objects-from-python" title="Link to this heading"></a></h2>
+<p>Objects can also be sent to a running GUI, either from ProMis or over HTTP.
+In ProMis, locations, lines, polygons and whole maps have a <code class="docutils literal notranslate"><span class="pre">send_to_gui</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolarLocation</span>
+<span class="linenos"> 2</span><span class="kn">from</span><span class="w"> </span><span class="nn">promis.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">OvertureLoader</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span><span class="c1"># send a marker to the GUI</span>
+<span class="linenos"> 5</span><span class="n">location</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.87</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.65</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="s2">"operator"</span><span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="linenos"> 6</span><span class="n">location</span><span class="o">.</span><span class="n">send_to_gui</span><span class="p">()</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span><span class="c1"># send all features of a map to the GUI</span>
+<span class="linenos"> 9</span><span class="n">feature_description</span> <span class="o">=</span> <span class="p">{</span>
+<span class="linenos">10</span>    <span class="s2">"park"</span><span class="p">:</span> <span class="s2">"land_use[subtype=park]"</span><span class="p">,</span>
+<span class="linenos">11</span>    <span class="s2">"primary"</span><span class="p">:</span> <span class="s2">"segment[subtype=road][class=primary]"</span><span class="p">,</span>
+<span class="linenos">12</span><span class="p">}</span>
+<span class="linenos">13</span><span class="n">origin</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.87</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.65</span><span class="p">)</span>
+<span class="linenos">14</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="mf">1000.0</span>
+<span class="linenos">15</span><span class="n">uam</span> <span class="o">=</span> <span class="n">OvertureLoader</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span> <span class="n">feature_description</span><span class="p">)</span><span class="o">.</span><span class="n">to_polar_map</span><span class="p">()</span>
+<span class="linenos">16</span><span class="n">uam</span><span class="o">.</span><span class="n">send_to_gui</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Over HTTP, the endpoint <code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/add_geojson</span></code> adds or updates an object from a GeoJSON feature with a point, line string or polygon geometry.
+Its <code class="docutils literal notranslate"><span class="pre">location_type</span></code> property sets the location type, and its <code class="docutils literal notranslate"><span class="pre">id</span></code> identifies the object for later updates:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">    </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Feature"</span><span class="p">,</span>
 <span class="w">    </span><span class="nt">"geometry"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Point"</span><span class="p">,</span>
 <span class="w">        </span><span class="nt">"coordinates"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">8.65</span><span class="p">,</span><span class="w"> </span><span class="mf">49.87</span><span class="p">]</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">"location_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"civilian"</span>
+<span class="w">        </span><span class="nt">"location_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"operator"</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0"</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w">  </span>http://localhost:8000/add_geojson<span class="w"> </span><span class="se">\</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>http://localhost:8000/add_geojson<span class="w"> </span><span class="se">\</span>
 <span class="linenos">2</span><span class="w">    </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
 <span class="linenos">3</span><span class="w">    </span>-d<span class="w"> </span>@entity.geojson
 </pre></div>
 </div>
-<p>Alternatively, ProMis also provides functions to push its entity or map to the gui.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="c1"># push a marker to gui</span>
-<span class="linenos"> 2</span><span class="n">location</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.87</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.65</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="s2">"civilian"</span> <span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="linenos"> 3</span><span class="n">location</span><span class="o">.</span><span class="n">send_to_gui</span><span class="p">()</span>
-<span class="linenos"> 4</span>
-<span class="linenos"> 5</span><span class="c1"># push the entire map to gui</span>
-<span class="linenos"> 6</span><span class="n">feature_description</span> <span class="o">=</span> <span class="p">{</span>
-<span class="linenos"> 7</span>    <span class="s2">"park"</span><span class="p">:</span> <span class="s2">"['leisure' = 'park']"</span><span class="p">,</span>
-<span class="linenos"> 8</span>    <span class="s2">"primary"</span><span class="p">:</span> <span class="s2">"['highway' = 'primary']"</span><span class="p">,</span>
-<span class="linenos"> 9</span><span class="p">}</span>
-<span class="linenos">10</span><span class="n">origin</span> <span class="o">=</span> <span class="n">PolarLocation</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">49.87</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="mf">8.65</span><span class="p">)</span>
-<span class="linenos">11</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="mf">1000.0</span>
-<span class="linenos">12</span><span class="n">uam</span> <span class="o">=</span> <span class="n">OsmLoader</span><span class="p">(</span><span class="n">origin</span><span class="p">,</span> <span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">),</span> <span class="n">feature_description</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span><span class="o">.</span><span class="n">to_polar_map</span><span class="p">()</span>
-<span class="linenos">13</span><span class="n">uam</span><span class="o">.</span><span class="n">send_to_gui</span><span class="p">()</span>
+</section>
+<section id="running">
+<h2>Running<a class="headerlink" href="#running" title="Link to this heading"></a></h2>
+<p><strong>Run</strong> first checks that everything needed is filled in.
+Empty or invalid fields are outlined in red, and their tabs are marked with a red dot, here a missing origin and an empty width:</p>
+<img alt="The Mission area tab with the origin and width outlined in red after clicking Run" src="_images/validation.png" />
+<p>Otherwise, the run proceeds in three steps, which the button shows while they run:</p>
+<ol class="arabic simple">
+<li><p><strong>Loading Map Data</strong>: the features of the location types used by the rules are loaded within the mission area.</p></li>
+<li><p><strong>Calculating StarMap</strong>: the spatial relations used by the rules are estimated on the inference grid, from the loaded features and the drawn objects.</p></li>
+<li><p><strong>Inference</strong>: the rules are evaluated in each cell, and the landscape is interpolated onto the display grid.</p></li>
+</ol>
+<p>The result is added as a layer and shown on the map.
+Each step is cached, and is only repeated when something it depends on has changed.
+For example, changing a threshold in the rules only repeats the inference, while adding a relation also computes its StaR Map.</p>
+</section>
+<section id="layers">
+<h2>Layers<a class="headerlink" href="#layers" title="Link to this heading"></a></h2>
+<p>Computed landscapes are listed as layers in the sidebar that opens with the button in the top right corner.
+Each layer has buttons to</p>
+<ul class="simple">
+<li><p>move it up or down, changing which layer is drawn on top,</p></li>
+<li><p>center the map on it,</p></li>
+<li><p>rename it,</p></li>
+<li><p>change its color and opacity; the saturation of each cell follows its value,</p></li>
+<li><p>open its settings: the render mode (<code class="docutils literal notranslate"><span class="pre">Heatmap</span> <span class="pre">(Squares)</span></code>, <code class="docutils literal notranslate"><span class="pre">Heatmap</span> <span class="pre">(Circles)</span></code>, <code class="docutils literal notranslate"><span class="pre">Voronoi</span></code>, <code class="docutils literal notranslate"><span class="pre">SVG</span> <span class="pre">Image</span></code> or <code class="docutils literal notranslate"><span class="pre">PNG</span> <span class="pre">Image</span></code>), the radius of the points, the range of values that is shown, exporting it as GeoJSON, and deleting it.</p></li>
+</ul>
+<p>The eye icon next to <strong>Collections</strong> shows or hides all layers.</p>
+<p><strong>Add layer</strong> imports a CSV file as a new layer, e.g., data exported from ProMis or from other applications.
+The file needs a column each for the latitude, longitude and value of the points:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>latitude,longitude,value
+49.8821815378995,8.647164642182332,7.211102772335674
+49.87696708632973,8.658434392066596,0.528400372434818
+49.87759650141061,8.65231293292399,57.450293181169556
 </pre></div>
 </div>
 </section>
-<section id="setup-computation-boundary-and-settings">
-<h2>Setup Computation Boundary and Settings<a class="headerlink" href="#setup-computation-boundary-and-settings" title="Link to this heading"></a></h2>
-<p>Computation boundary for the model can be set in the bottom bar by choosing a reference center marker (of type ORIGIN) and set the width and height of the boundary.</p>
-<img alt="_images/landscape_setting.png" src="_images/landscape_setting.png" />
-</section>
-<section id="setup-rules-and-models">
-<h2>Setup Rules and Models<a class="headerlink" href="#setup-rules-and-models" title="Link to this heading"></a></h2>
-<p>Rules and models for the computation can be edited in the code editor in the bottom bar.
-Make sure to have a landscape rules to yield meaningful result</p>
-<img alt="_images/models.png" src="_images/models.png" />
+<section id="projects">
+<h2>Projects<a class="headerlink" href="#projects" title="Link to this heading"></a></h2>
+<p>The project menu in the top left corner saves and restores your work:
+<strong>Export project</strong> saves all layers as a JSON file, which <strong>Import project</strong> loads again later.
+<strong>Export GeoJSON</strong> saves all layers and drawn objects as one GeoJSON file, and <strong>Clear all layers</strong> removes all layers.</p>
 </section>
 </section>
 

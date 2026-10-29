@@ -93,8 +93,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="c1"># Third Party</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">smopy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="c1"># Plotting (matplotlib, smopy), clustering (sklearn) and Gaussian processes (torch) are optional</span>
+<span class="c1"># and slow to load, so they are imported where they are used</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">argsort</span><span class="p">,</span>
     <span class="n">array</span><span class="p">,</span>
@@ -116,12 +116,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial</span><span class="w"> </span><span class="kn">import</span> <span class="n">distance_matrix</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">entropy</span> <span class="k">as</span> <span class="n">shannon_entropy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats.qmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">LatinHypercube</span><span class="p">,</span> <span class="n">scale</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.cluster</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgglomerativeClustering</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="n">NearestNeighbors</span>
 
 <span class="c1"># ProMis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo.location</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">PolarLocation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">promis.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianProcess</span>
 
 
 <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
@@ -404,6 +401,8 @@
 <span class="sd">            The basemap image.</span>
 <span class="sd">        """</span>
 
+        <span class="kn">import</span><span class="w"> </span><span class="nn">smopy</span>
+
         <span class="c1"># Would cause circular import if done at module scope</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">promis.loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">OsmLoader</span>
 
@@ -488,7 +487,11 @@
 <span class="sd">                Supported methods are "entropy" and "gaussian_process".</span>
 <span class="sd">        """</span>
 
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="n">NearestNeighbors</span>
+
         <span class="k">if</span> <span class="n">acquisition_method</span> <span class="o">==</span> <span class="s2">"gaussian_process"</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">promis.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianProcess</span>
+
             <span class="n">gp</span> <span class="o">=</span> <span class="n">GaussianProcess</span><span class="p">()</span>
             <span class="n">gp</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">()[:,</span> <span class="n">value_index</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="mi">50</span><span class="p">)</span>
 
@@ -547,6 +550,8 @@
 <span class="sd">            The local entropy for each point.</span>
 <span class="sd">        """</span>
 
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="n">NearestNeighbors</span>
+
         <span class="n">coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
         <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">()[:,</span> <span class="n">value_index</span><span class="p">]</span>
 
@@ -578,6 +583,8 @@
 <span class="sd">            zoom: The zoom level of the OSM basemap, default 16.</span>
 <span class="sd">            **kwargs: Args passed to the matplotlib scatter function.</span>
 <span class="sd">        """</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
 
         <span class="c1"># Either render with given axis or default context</span>
         <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -805,6 +812,8 @@
             <span class="k">case</span> <span class="s2">"hybrid"</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">HybridInterpolator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
             <span class="k">case</span> <span class="s2">"gaussian_process"</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">promis.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianProcess</span>
+
                 <span class="n">gp</span> <span class="o">=</span> <span class="n">GaussianProcess</span><span class="p">()</span>
                 <span class="n">gp</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
@@ -832,6 +841,8 @@
 <span class="sd">        Args:</span>
 <span class="sd">            threshold: The maximum distance between points to be considered in the same cluster.</span>
 <span class="sd">        """</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.cluster</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgglomerativeClustering</span>
 
         <span class="n">coordinates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
         <span class="n">clusters</span> <span class="o">=</span> <span class="n">AgglomerativeClustering</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">distance_threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>

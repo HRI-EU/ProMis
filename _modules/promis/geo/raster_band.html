@@ -85,13 +85,12 @@
 <span class="c1">#</span>
 
 <span class="c1"># Standard Library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">product</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">NoReturn</span>
-
-<span class="c1"># Plotting</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="kn">import</span> <span class="n">Graph</span><span class="p">,</span> <span class="n">astar_path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">NoReturn</span>
 
 <span class="c1"># Third Party</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">concatenate</span><span class="p">,</span> <span class="n">linspace</span><span class="p">,</span> <span class="n">meshgrid</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">ravel</span><span class="p">,</span> <span class="n">vstack</span><span class="p">,</span> <span class="n">zeros</span>
@@ -101,6 +100,24 @@
 
 <span class="c1"># ProMis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">promis.geo</span><span class="w"> </span><span class="kn">import</span> <span class="n">CartesianCollection</span><span class="p">,</span> <span class="n">CartesianLocation</span><span class="p">,</span> <span class="n">PolarCollection</span><span class="p">,</span> <span class="n">PolarLocation</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="c1"># Path planning is optional and networkx is slow to load, so it is imported where it is used</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiGraph</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_default_cost_model</span><span class="p">(</span>
+    <span class="n">source</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">dest</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">source_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dest_value</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The default edge weight for path planning, preferring to enter nodes with high values."""</span>
+
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">dest_value</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_default_value_filter</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The default node filter for path planning, keeping all nodes."""</span>
+
+    <span class="k">return</span> <span class="kc">True</span>
 
 
 <div class="viewcode-block" id="RasterBand">
@@ -129,6 +146,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">center_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">center_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">node_spacing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The distance between neighboring raster coordinates along x and y in meters."""</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span>
+
 <div class="viewcode-block" id="RasterBand.append">
 <a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand.append">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">:</span> <span class="n">CartesianLocation</span> <span class="o">|</span> <span class="n">PolarLocation</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
@@ -139,63 +162,58 @@
 <a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand.to_graph">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_graph</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">cost_model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">source</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">w1</span><span class="p">,</span> <span class="n">w2</span><span class="p">:</span> <span class="mi">1</span>
-        <span class="o">-</span> <span class="n">w1</span><span class="p">,</span>
-        <span class="n">value_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">node</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Graph</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Convert a RasterBand into a NetworkX Graph for path planning.</span>
+        <span class="n">cost_model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default_cost_model</span><span class="p">,</span>
+        <span class="n">value_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default_value_filter</span><span class="p">,</span>
+        <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiGraph</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Convert a RasterBand into a directed NetworkX graph for path planning.</span>
+
+<span class="sd">        Each node is connected to its axis-aligned neighbors by one edge per direction,</span>
+<span class="sd">        so moving between two nodes can cost differently depending on the direction.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            cost_model: A function that maps ``(source_node, target_node, source_value, dest_value)``</span>
-<span class="sd">                to edge weights</span>
-<span class="sd">            value_filter: A function that is applied to ``(node, value)`` to decide if they</span>
-<span class="sd">                should become nodes in the graph</span>
+<span class="sd">                to the weight of the edge from source to target</span>
+<span class="sd">            value_filter: A function that is applied to ``(node, value)`` to decide if the node</span>
+<span class="sd">                may be entered, i.e., if edges lead to it</span>
+<span class="sd">            value_index: Which value of the RasterBand is passed to cost_model and value_filter</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            The corresponding graph where the cost of visiting a node is</span>
+<span class="sd">            The corresponding graph where the cost of moving between nodes is</span>
 <span class="sd">            determined by the RasterBand's values and cost_model</span>
 <span class="sd">        """</span>
 
         <span class="c1"># TODO: Despite being defined in the base class, this method only works reliably for</span>
         <span class="c1"># CartesianRasterBand. For PolarRasterBand, it does not correctly compute distances.</span>
-        <span class="c1"># On a cartesian grid, the entire implementation is correct, but could be much faster</span>
-        <span class="c1"># by avoiding the KDTree altogether and using the fact that the graph is a regular grid.</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiGraph</span>
 
         <span class="c1"># Create graph with nodes with cost from own data</span>
-        <span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
-        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">()</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">()[:,</span> <span class="n">value_index</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">coordinate</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="k">for</span> <span class="n">coordinate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()]</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">coordinate</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coordinates</span><span class="p">):</span>
-            <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">coordinate</span><span class="p">)</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
 
-        <span class="c1"># Connect each node to k nearest actual neighbors</span>
-        <span class="n">tree</span> <span class="o">=</span> <span class="n">KDTree</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">coordinate</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coordinates</span><span class="p">):</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="c1"># Find the 4 nearest neighbors of all nodes at once (5 to include the node itself)</span>
+        <span class="n">all_dists</span><span class="p">,</span> <span class="n">all_indices</span> <span class="o">=</span> <span class="n">KDTree</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">all_dists</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="s2">"KDTree query should return each node itself first"</span>
+        <span class="n">all_dists</span><span class="p">,</span> <span class="n">all_indices</span> <span class="o">=</span> <span class="n">all_dists</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">all_indices</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
-            <span class="n">dists</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">coordinate</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># 4 + 1 to include itself</span>
-            <span class="k">assert</span> <span class="n">dists</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"KDTree query should return itself first"</span>
+        <span class="c1"># Skip neighbors that are not axis-parallel. E.g., diagonal can sneak in here</span>
+        <span class="c1"># at the edges of the grid where there are not enough neighbors.</span>
+        <span class="c1"># We assume that resolution is uniform in both directions</span>
+        <span class="n">max_neighbor_distance</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_spacing</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.1</span>
 
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">)):</span>  <span class="c1"># skip index 0 (self)</span>
-                <span class="n">dist</span> <span class="o">=</span> <span class="n">dists</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">edges</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">coordinate</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">coordinates</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">dist</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">all_dists</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">all_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="k">if</span> <span class="n">dist</span> <span class="o">&gt;</span> <span class="n">max_neighbor_distance</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">value_filter</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">values</span><span class="p">[</span><span class="n">j</span><span class="p">]):</span>
+                        <span class="k">continue</span>
 
-                <span class="c1"># Skip neighbors that are not axis-parallel. E.g., diagonal can sneak in here</span>
-                <span class="c1"># at the edges of the grid where there are not enough neighbors.</span>
-                <span class="c1"># We assume that resolution is uniform in both directions</span>
-                <span class="k">if</span> <span class="n">dist</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.1</span><span class="p">:</span>
-                    <span class="k">continue</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="n">cost_model</span><span class="p">(</span><span class="n">coordinate</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">values</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="k">yield</span> <span class="n">coordinate</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="p">{</span><span class="s2">"weight"</span><span class="p">:</span> <span class="n">weight</span><span class="p">,</span> <span class="s2">"dist"</span><span class="p">:</span> <span class="n">dist</span><span class="p">}</span>
 
-                <span class="n">neighbor_coord</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span>
-                <span class="n">neighbor_value</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span>
-
-                <span class="k">if</span> <span class="n">value_filter</span><span class="p">(</span><span class="n">neighbor_coord</span><span class="p">,</span> <span class="n">neighbor_value</span><span class="p">):</span>
-                    <span class="n">weight</span> <span class="o">=</span> <span class="n">cost_model</span><span class="p">(</span>
-                        <span class="n">coordinate</span><span class="p">,</span>
-                        <span class="n">neighbor_coord</span><span class="p">,</span>
-                        <span class="n">value</span><span class="p">,</span>
-                        <span class="n">neighbor_value</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">coordinate</span><span class="p">,</span> <span class="n">neighbor_coord</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="n">dist</span><span class="p">)</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">edges</span><span class="p">())</span>
 
         <span class="k">return</span> <span class="n">graph</span></div>
 
@@ -206,10 +224,11 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">start</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
         <span class="n">goal</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
-        <span class="n">graph</span><span class="p">:</span> <span class="n">Graph</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">cost_model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">x</span><span class="p">,</span>  <span class="c1"># TODO this is an odd API</span>
-        <span class="n">value_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">graph</span><span class="p">:</span> <span class="n">DiGraph</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cost_model</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default_cost_model</span><span class="p">,</span>
+        <span class="n">value_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default_value_filter</span><span class="p">,</span>
         <span class="n">min_cost</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+        <span class="n">value_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Search the shortest path through this RasterBand using A*.</span>
 
@@ -221,9 +240,14 @@
 <span class="sd">        Args:</span>
 <span class="sd">            start: The starting location (clipped to the nearest RasterBand pixel)</span>
 <span class="sd">            goal: The goal location (clipped to the nearest RasterBand pixel)</span>
-<span class="sd">            cost_model: A function that maps RasterBand values to edge weights</span>
-<span class="sd">            value_filter: A function that is applied to RasterBand values to decide if they</span>
-<span class="sd">                should become edges in the graph</span>
+<span class="sd">            graph: A graph to search in, e.g., from :meth:`stack_graphs`, built with</span>
+<span class="sd">                :meth:`to_graph` if not given</span>
+<span class="sd">            cost_model: A function that maps ``(source_node, target_node, source_value, dest_value)``</span>
+<span class="sd">                to edge weights, see :meth:`to_graph`</span>
+<span class="sd">            value_filter: A function that is applied to ``(node, value)`` to decide if they</span>
+<span class="sd">                should become nodes in the graph, see :meth:`to_graph`</span>
+<span class="sd">            min_cost: A lower bound on the weight of every edge, which keeps the heuristic admissible</span>
+<span class="sd">            value_index: Which value of the RasterBand is passed to cost_model and value_filter</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The shortest path from start to goal given the costs induced by the given</span>
@@ -234,17 +258,21 @@
 
         <span class="c1"># Make sure that we have a graph to work with</span>
         <span class="k">if</span> <span class="n">graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_graph</span><span class="p">(</span><span class="n">cost_model</span><span class="p">,</span> <span class="n">value_filter</span><span class="p">)</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_graph</span><span class="p">(</span><span class="n">cost_model</span><span class="p">,</span> <span class="n">value_filter</span><span class="p">,</span> <span class="n">value_index</span><span class="p">)</span>
 
         <span class="c1"># Define Manhattan distance as heuristic for A*</span>
         <span class="c1"># The distance is rescaled such that one axis-aligned hop in any direction</span>
         <span class="c1"># (horizontal or vertical) is equal to 1.0.</span>
         <span class="c1"># After that, to be admissible, the heuristic is multiplied by the minimum cost</span>
         <span class="c1"># of the path, which is assumed to be between 0 and 1.</span>
+        <span class="n">spacing_x</span><span class="p">,</span> <span class="n">spacing_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_spacing</span>
+
         <span class="k">def</span><span class="w"> </span><span class="nf">heuristic</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">b</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-            <span class="n">dx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_width</span>
-            <span class="n">dy</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_height</span>
+            <span class="n">dx</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">spacing_x</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">spacing_y</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">dx</span> <span class="o">+</span> <span class="n">dy</span><span class="p">)</span> <span class="o">*</span> <span class="n">min_cost</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="kn">import</span> <span class="n">astar_path</span>
 
         <span class="c1"># Search path from approximate start and goal positions</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">astar_path</span><span class="p">(</span>
@@ -261,7 +289,7 @@
 <div class="viewcode-block" id="RasterBand.stack_graphs">
 <a class="viewcode-back" href="../../../api.html#promis.geo.RasterBand.stack_graphs">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">stack_graphs</span><span class="p">(</span><span class="n">graphs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Graph</span><span class="p">],</span> <span class="n">vertical_weight</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Graph</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stack_graphs</span><span class="p">(</span><span class="n">graphs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">DiGraph</span><span class="p">],</span> <span class="n">vertical_weight</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiGraph</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Create a new graph containing the data of the old ones with 'vertical' connections.</span>
 
 <span class="sd">        Args:</span>
@@ -273,32 +301,32 @@
 <span class="sd">                For simplicity, this is currently assumed to be the same for all graphs.</span>
 <span class="sd">        """</span>
 
-        <span class="n">stacked_graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">()</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiGraph</span>
+
+        <span class="n">stacked_graph</span> <span class="o">=</span> <span class="n">DiGraph</span><span class="p">()</span>
 
         <span class="n">previous_label</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Not a tuple, so discernable from (None,)</span>
 
         <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">graph</span> <span class="ow">in</span> <span class="n">graphs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="c1"># Add nodes</span>
-            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
-                <span class="n">stacked_graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">((</span><span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">label</span><span class="p">))</span>
+            <span class="n">stacked_graph</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">((</span><span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">label</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
 
-            <span class="c1"># Add normal edges</span>
-            <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
-                <span class="n">stacked_graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span>
-                    <span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">label</span><span class="p">),</span>
-                    <span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">label</span><span class="p">),</span>
-                    <span class="c1"># copy all edge attributes</span>
-                    <span class="o">**</span><span class="n">graph</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
-                <span class="p">)</span>
+            <span class="c1"># Add normal edges, keeping their direction and copying all edge attributes</span>
+            <span class="n">stacked_graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span>
+                <span class="p">((</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">label</span><span class="p">),</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">label</span><span class="p">),</span> <span class="n">attributes</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">attributes</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">previous_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># Add vertical edges</span>
-                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
-                    <span class="n">n0</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">label</span><span class="p">)</span>
-                    <span class="n">n1</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">previous_label</span><span class="p">)</span>
-                    <span class="c1"># Add forward and reverse edges between the two graphs</span>
-                    <span class="n">stacked_graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">n0</span><span class="p">,</span> <span class="n">n1</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">vertical_weight</span><span class="p">)</span>
-                    <span class="n">stacked_graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">n1</span><span class="p">,</span> <span class="n">n0</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">vertical_weight</span><span class="p">)</span>
+                <span class="c1"># Add vertical edges, forward and reverse between the two graphs</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">vertical_edges</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                        <span class="n">n0</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">label</span><span class="p">)</span>
+                        <span class="n">n1</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">previous_label</span><span class="p">)</span>
+                        <span class="k">yield</span> <span class="n">n0</span><span class="p">,</span> <span class="n">n1</span><span class="p">,</span> <span class="p">{</span><span class="s2">"weight"</span><span class="p">:</span> <span class="n">vertical_weight</span><span class="p">}</span>
+                        <span class="k">yield</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n0</span><span class="p">,</span> <span class="p">{</span><span class="s2">"weight"</span><span class="p">:</span> <span class="n">vertical_weight</span><span class="p">}</span>
+
+                <span class="n">stacked_graph</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">vertical_edges</span><span class="p">())</span>
 
             <span class="n">previous_label</span> <span class="o">=</span> <span class="n">label</span>
 
@@ -342,6 +370,19 @@
             <span class="p">(</span><span class="n">raster_coordinates</span><span class="p">,</span> <span class="n">zeros</span><span class="p">((</span><span class="n">n_points</span><span class="p">,</span> <span class="n">n_meta</span> <span class="o">+</span> <span class="n">number_of_values</span><span class="p">))),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">raster_entries</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">node_spacing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The distance between neighboring raster coordinates along x and y in meters.</span>
+
+<span class="sd">        The coordinates span the whole width and height including the borders,</span>
+<span class="sd">        so neighbors are slightly further apart than the pixel size.</span>
+<span class="sd">        """</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_x_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>

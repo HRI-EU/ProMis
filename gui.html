@@ -48,7 +48,13 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notebooks/usage.html">Usage</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Graphical User Interface</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Graphical User Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#starting-the-gui">Starting the GUI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#your-first-mission-landscape">Your first mission landscape</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#next-steps">Next steps</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 </ul>
 
@@ -78,23 +84,66 @@
              
   <section id="graphical-user-interface">
 <h1>Graphical User Interface<a class="headerlink" href="#graphical-user-interface" title="Link to this heading"></a></h1>
-<p>ProMis comes with a GUI that provides an interactive interface to its features.
-To employ the GUI, make sure that you have installed ProMis according to the instructions above.
-Then, first run the following commands to start the gui.</p>
+<p>ProMis comes with a browser-based GUI to design missions interactively.
+You write the mission rules, choose the map features they refer to, and see the resulting mission landscape on the map, without writing any Python.</p>
+<section id="starting-the-gui">
+<h2>Starting the GUI<a class="headerlink" href="#starting-the-gui" title="Link to this heading"></a></h2>
+<p>Once ProMis is installed as described above, start the GUI with</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="linenos">1</span>promis_gui
 </pre></div>
 </div>
-<p>You can now open <a class="reference external" href="http://localhost:8000/gui">http://localhost:8000/gui</a> in a browser of your choice to start interacting with ProMis.</p>
-<p>Once you have opened the GUI in your browser, you can check that everything works by doing an example run.
-First, from the top-left, click the drone icon and place a marker where you would like to center the mission area.
-Second, click the button at the bottom to open the mission design interface.
-Here, you can either import ProMis code from disk using the <cite>Import Source</cite> button, or type the code in the code editor.
-You may further configure your run by selecting an origin, height, width (in meters) and a resolution of the mission landscape.
-Afterwards, you can click the <cite>Run</cite> button and wait for the mission landscape to show on the map.</p>
-<p>The following shows an example of entering the simple model <cite>landscape(X) :- distance(X, building) &gt; 10; distance(X, primary) &lt; 5.</cite>:</p>
-<img alt="_images/gui_example.png" src="_images/gui_example.png" />
-<p>For a quick-start guide, visit <a class="reference internal" href="gui_quick_start.html"><span class="doc">GUI Quick Start</span></a></p>
-<p>For more detailed information, consult the GUI’s own <a class="reference external" href="https://github.com/HRI-EU/ProMis/blob/main/gui/README.md">README</a>.</p>
+<p>and open <a class="reference external" href="http://localhost:8000/gui">http://localhost:8000/gui</a> in a browser of your choice.
+The options <code class="docutils literal notranslate"><span class="pre">--host</span></code> and <code class="docutils literal notranslate"><span class="pre">--port</span></code> change where the GUI is served, e.g., <code class="docutils literal notranslate"><span class="pre">promis_gui</span> <span class="pre">--host</span> <span class="pre">127.0.0.1</span> <span class="pre">--port</span> <span class="pre">8080</span></code>.
+The backend also documents its HTTP endpoints under <a class="reference external" href="http://localhost:8000/docs">http://localhost:8000/docs</a>.</p>
+<p>The GUI keeps its state in the folder <code class="docutils literal notranslate"><span class="pre">.promis_gui</span></code> in your home directory:
+<code class="docutils literal notranslate"><span class="pre">config</span></code> holds the drawn objects, location types and layers, so that they are restored on the next start,
+and <code class="docutils literal notranslate"><span class="pre">cache</span></code> holds downloaded map data and computed StaR Maps, so that repeated runs are fast.
+Both can be deleted at any time to start over.</p>
+</section>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<img alt="The GUI after computing a mission landscape over the Herrngarten park in Darmstadt" src="_images/overview.png" />
+<p>The GUI consists of four parts around the map:</p>
+<ul>
+<li><p><strong>Mission panel</strong> (bottom): opened with the arrow button at the bottom of the screen. Its three tabs hold everything needed for a run:</p>
+<ul class="simple">
+<li><p><strong>Rules</strong>: the mission rules, written in Resin.</p></li>
+<li><p><strong>Mission area</strong>: the area around an origin marker in which the landscape is computed, and how finely.</p></li>
+<li><p><strong>Map features</strong>: the location types used by the rules, e.g., <code class="docutils literal notranslate"><span class="pre">primary</span></code> in <code class="docutils literal notranslate"><span class="pre">distance(primary)</span></code>, and where their map features come from.</p></li>
+</ul>
+<p>The <strong>Run</strong> button computes the mission landscape, and the button next to it hides the panel.</p>
+</li>
+<li><p><strong>Drawing tools</strong> (left): draw lines, polygons and markers, e.g., an operator or a no-fly zone, and move or erase them.
+The lightbulb toggles whether drawn objects are shown on top of the computed layers.</p></li>
+<li><p><strong>Layers</strong> (right): opened with the button in the top right corner. It lists the computed landscapes and imported CSV layers, and sets how each one is rendered.</p></li>
+<li><p><strong>Project menu</strong> (top left): import or export the whole project, export all layers as GeoJSON, or clear all layers.</p></li>
+</ul>
+<p>Most labels have an info icon next to them, which explains the element when hovered.</p>
+</section>
+<section id="your-first-mission-landscape">
+<h2>Your first mission landscape<a class="headerlink" href="#your-first-mission-landscape" title="Link to this heading"></a></h2>
+<p>The GUI starts with an example mission that permits flights over parks and close to roads, railways and crosswalks around the Herrngarten park in Darmstadt.
+To compute it:</p>
+<ol class="arabic simple">
+<li><p>Click the arrow button at the bottom of the screen to open the mission panel.
+The <strong>Rules</strong> tab shows the example rules.</p></li>
+<li><p>Open the <strong>Mission area</strong> tab.
+The origin is <code class="docutils literal notranslate"><span class="pre">Default</span> <span class="pre">origin</span></code>, the gray marker in the park, which is chosen automatically as long as it is the only origin marker.
+The area is 1024 m wide and high by default.</p></li>
+<li><p>Open the <strong>Map features</strong> tab to see the location types of the example.
+For instance, <code class="docutils literal notranslate"><span class="pre">primary</span></code> loads primary roads from <a class="reference external" href="https://overturemaps.org">Overture Maps</a> with the filter <code class="docutils literal notranslate"><span class="pre">segment[subtype=road][class=primary]</span></code>.</p></li>
+<li><p>Click <strong>Run</strong>.
+The button shows the progress while the GUI loads the map features, estimates the spatial relations of the rules and computes the landscape.
+The result appears as a new layer on the map.</p></li>
+</ol>
+<p>The first run downloads the map features of the area, which takes a while.
+Later runs reuse what is still valid: changing a threshold in the rules or the display settings reuses the computed spatial relations, and adding a location type only downloads its own features.</p>
+<p>If a field is empty or invalid, <strong>Run</strong> outlines it in red and marks its tab with a red dot instead of starting, see <a class="reference internal" href="gui_quick_start.html"><span class="doc">the guide</span></a>.</p>
+</section>
+<section id="next-steps">
+<h2>Next steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
+<p>The <a class="reference internal" href="gui_quick_start.html"><span class="doc">GUI guide</span></a> explains each part in detail: writing rules, choosing the mission area, loading map features from Overture Maps or OpenStreetMap, drawing your own objects, sending objects to the GUI from Python, and working with layers and projects.</p>
+</section>
 </section>
 
 

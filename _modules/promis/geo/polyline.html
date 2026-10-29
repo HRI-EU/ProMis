@@ -91,6 +91,7 @@
 
 <span class="c1"># Third Party</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span><span class="p">,</span> <span class="n">isfinite</span><span class="p">,</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">vstack</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_coordinates</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">transform</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">shapely.geometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">LineString</span>
 
 <span class="c1"># ProMis</span>
@@ -125,6 +126,31 @@
 
         <span class="c1"># Setup Geospatial</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">location_type</span><span class="o">=</span><span class="n">location_type</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="n">identifier</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">locations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span> <span class="o">|</span> <span class="n">CartesianLocation</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The points that make up this polyline."""</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations_from_geometry</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span>
+
+    <span class="nd">@locations</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">locations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span> <span class="o">|</span> <span class="n">CartesianLocation</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_locations</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_locations_from_geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PolarLocation</span> <span class="o">|</span> <span class="n">CartesianLocation</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Builds the locations of a polyline that was created from its geometry."""</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> is always created from its locations"</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Pickles may store the locations as a plain attribute</span>
+        <span class="k">if</span> <span class="s2">"locations"</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+            <span class="n">state</span><span class="p">[</span><span class="s2">"_locations"</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"locations"</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">covariance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ndarray</span><span class="p">:</span>
@@ -350,6 +376,85 @@
 
         <span class="c1"># Setup PolyLine</span>
         <span class="n">PolyLine</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locations</span><span class="p">,</span> <span class="n">location_type</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">identifier</span><span class="p">,</span> <span class="n">covariance</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CartesianPolyLine.from_geometry">
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianPolyLine.from_geometry">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_geometry</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">geometry</span><span class="p">:</span> <span class="n">LineString</span><span class="p">,</span>
+        <span class="n">location_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">identifier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">covariance</span><span class="p">:</span> <span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">origin</span><span class="p">:</span> <span class="n">PolarLocation</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"CartesianPolyLine"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Create a polyline from a shapely line string.</span>
+
+<span class="sd">        The polyline's :attr:`~locations` are only built from the geometry when they are first</span>
+<span class="sd">        accessed, which keeps creating many polylines cheap.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            geometry: The shapely line string in local coordinates</span>
+<span class="sd">            location_type: The type of this polyline</span>
+<span class="sd">            name: The name of this polyline</span>
+<span class="sd">            identifier: The polyline's optional unique identifier, in :math:`[0, 2**63)`</span>
+<span class="sd">            covariance: An optional value representing the variance of this polyline's</span>
+<span class="sd">                east and north coordinates respectively</span>
+<span class="sd">            origin: A reference that can be used to project this cartesian representation (back)</span>
+<span class="sd">                into a polar one</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The polyline with the given geometry and other parameters</span>
+<span class="sd">        """</span>
+
+        <span class="n">polyline</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">polyline</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="n">origin</span>
+        <span class="n">polyline</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="n">geometry</span>
+        <span class="n">polyline</span><span class="o">.</span><span class="n">_locations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">polyline</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">covariance</span>
+        <span class="n">Geospatial</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">polyline</span><span class="p">,</span> <span class="n">location_type</span><span class="o">=</span><span class="n">location_type</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">identifier</span><span class="o">=</span><span class="n">identifier</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">polyline</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_locations_from_geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">CartesianLocation</span><span class="p">]:</span>
+        <span class="n">coordinates</span> <span class="o">=</span> <span class="n">get_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">CartesianLocation</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">point</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">point</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">coordinates</span><span class="p">,</span> <span class="n">points</span><span class="p">(</span><span class="n">coordinates</span><span class="p">))</span>
+        <span class="p">]</span>
+
+<div class="viewcode-block" id="CartesianPolyLine.sample">
+<a class="viewcode-back" href="../../../api.html#promis.geo.CartesianPolyLine.sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number_of_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="s2">"CartesianPolyLine"</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Sample polylines given this polyline's uncertainty.</span>
+
+<span class="sd">        Each sample translates the whole geometry at once, and builds its locations only</span>
+<span class="sd">        when they are accessed, since spatial relations only need the geometry.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            number_of_samples: How many samples to draw</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The set of sampled polylines, each with same name, identifier etc.</span>
+<span class="sd">        """</span>
+
+        <span class="c1"># Check if a distribution is given</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">number_of_samples</span><span class="p">)</span>
+
+        <span class="n">sampled_polylines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">translation</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">distribution</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">number_of_samples</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">:</span>
+            <span class="n">geometry</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">coordinates</span> <span class="o">+</span> <span class="n">translation</span><span class="p">)</span>
+            <span class="n">sampled_polylines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">CartesianPolyLine</span><span class="o">.</span><span class="n">from_geometry</span><span class="p">(</span>
+                    <span class="n">geometry</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">location_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">origin</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sampled_polylines</span></div>
+
 
 <div class="viewcode-block" id="CartesianPolyLine.to_polar">
 <a class="viewcode-back" href="../../../api.html#promis.geo.CartesianPolyLine.to_polar">[docs]</a>
