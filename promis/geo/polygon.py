@@ -14,10 +14,9 @@ from math import degrees, radians
 from typing import Any, TypeVar
 
 # Third Party
-from matplotlib.collections import PatchCollection
-from matplotlib.patches import PathPatch
-from matplotlib.path import Path
 from numpy import array, asarray, isfinite, ndarray, vstack
+from shapely import get_coordinates, points, transform
+from shapely.geometry import LinearRing
 from shapely.geometry import Polygon as ShapelyPolygon
 
 # ProMis
@@ -28,6 +27,16 @@ from promis.models import Gaussian
 
 #: Helper to define <Polar|Cartesian>Location operatios within base class
 DerivedPolygon = TypeVar("DerivedPolygon", bound="Polygon")
+
+
+def _ring_to_locations(ring: LinearRing) -> list[CartesianLocation]:
+    """Creates the locations along a ring of a shapely polygon, building their points at once."""
+
+    coordinates = get_coordinates(ring)
+
+    return [
+        CartesianLocation(x, y, geometry=point) for (x, y), point in zip(coordinates, points(coordinates))
+    ]
 
 
 class Polygon(Geospatial):
@@ -59,6 +68,48 @@ class Polygon(Geospatial):
 
         # Setup Geospatial
         super().__init__(location_type=location_type, name=name, identifier=identifier)
+
+    @property
+    def locations(self) -> list[PolarLocation | CartesianLocation]:
+        """The points that make up the border of this polygon, with the first one repeated last."""
+
+        if self._locations is None:
+            self._locations, self._holes = self._locations_from_geometry()
+
+        return self._locations
+
+    @locations.setter
+    def locations(self, value: list[PolarLocation | CartesianLocation]) -> None:
+        self._locations = value
+
+    @property
+    def holes(self) -> list[list[PolarLocation | CartesianLocation]]:
+        """The points that make up the holes in this polygon, each with the first one repeated last."""
+
+        if self._holes is None:
+            self._locations, self._holes = self._locations_from_geometry()
+
+        return self._holes
+
+    @holes.setter
+    def holes(self, value: list[list[PolarLocation | CartesianLocation]]) -> None:
+        self._holes = value
+
+    def _locations_from_geometry(
+        self,
+    ) -> tuple[list[PolarLocation | CartesianLocation], list[list[PolarLocation | CartesianLocation]]]:
+        """Builds the border and hole locations of a polygon that was created from its geometry."""
+
+        raise NotImplementedError(f"{type(self).__name__} is always created from its locations")
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        # Pickles may store the locations and holes as plain attributes
+        if "locations" in state:
+            state["_locations"] = state.pop("locations")
+        if "holes" in state:
+            state["_holes"] = state.pop("holes")
+
+        self.__dict__.update(state)
 
     @property
     def covariance(self) -> ndarray:
@@ -348,6 +399,78 @@ class CartesianPolygon(Polygon):
         Polygon.__init__(self, locations, holes, location_type, name, identifier, covariance)
 
     @classmethod
+    def from_geometry(
+        cls,
+        geometry: ShapelyPolygon,
+        location_type: str | None = None,
+        name: str | None = None,
+        identifier: int | None = None,
+        covariance: ndarray | None = None,
+        origin: PolarLocation | None = None,
+    ) -> "CartesianPolygon":
+        """Create a polygon from a shapely polygon.
+
+        The polygon's :attr:`~locations` and :attr:`~holes` are only built from the geometry
+        when they are first accessed, which keeps creating many polygons cheap.
+
+        Args:
+            geometry: The shapely polygon in local coordinates
+            location_type: The type of this polygon
+            name: The name of this polygon
+            identifier: The polygon's optional unique identifier, in :math:`[0, 2**63)`
+            covariance: An optional matrix representing the variance of this polygon's
+                east and north coordinates respectively
+            origin: A reference that can be used to project this cartesian representation (back)
+                into a polar one
+
+        Returns:
+            The polygon with the given geometry and other parameters
+        """
+
+        polygon = cls.__new__(cls)
+        polygon.origin = origin
+        polygon.geometry = geometry
+        polygon._locations = None
+        polygon._holes = None
+        polygon.covariance = covariance
+        Geospatial.__init__(polygon, location_type=location_type, name=name, identifier=identifier)
+
+        return polygon
+
+    def _locations_from_geometry(self) -> tuple[list[CartesianLocation], list[list[CartesianLocation]]]:
+        return _ring_to_locations(self.geometry.exterior), [
+            _ring_to_locations(ring) for ring in self.geometry.interiors
+        ]
+
+    def sample(self, number_of_samples: int = 1) -> list["CartesianPolygon"]:
+        """Sample polygons given this polygon's uncertainty.
+
+        Each sample translates the whole geometry at once, and builds its locations only
+        when they are accessed, since spatial relations only need the geometry.
+
+        Args:
+            number_of_samples: How many samples to draw
+
+        Returns:
+            The set of sampled polygons, each with same name, identifier etc.
+        """
+
+        # Check if a distribution is given
+        if self.distribution is None:
+            return super().sample(number_of_samples)
+
+        sampled_polygons = []
+        for translation in self.distribution.sample(number_of_samples).T:
+            geometry = transform(self.geometry, lambda coordinates: coordinates + translation)
+            sampled_polygons.append(
+                CartesianPolygon.from_geometry(
+                    geometry, self.location_type, self.name, self.identifier, self.covariance, self.origin
+                )
+            )
+
+        return sampled_polygons
+
+    @classmethod
     def from_numpy(cls, data: ndarray, *args, **kwargs) -> "CartesianPolygon":
         """Create a polygon from a numpy representation.
 
@@ -433,6 +556,11 @@ class CartesianPolygon(Polygon):
             axis: The axis object to use for plotting
             kwargs: Keyword arguments to pass to Matplotlib
         """
+
+        # Plotting is optional and matplotlib is slow to load
+        from matplotlib.collections import PatchCollection
+        from matplotlib.patches import PathPatch
+        from matplotlib.path import Path
 
         path = Path.make_compound_path(
             Path(asarray(self.geometry.exterior.coords)[:, :2]),

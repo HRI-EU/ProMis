@@ -2,10 +2,54 @@ import * as React from "react";
 import PropTypes from "prop-types";
 
 import Grid from "@mui/material/Grid2";
-import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
+import {
+  Box,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  InputAdornment,
+  Typography,
+} from "@mui/material";
 import TextField from "@mui/material/TextField";
 
 import { C } from "../../managers/Core";
+import Hint from "../Hint";
+
+// names and explanations of the interpolation methods
+const INTERPOLATION_METHODS = [
+  {
+    value: "linear",
+    label: "Linear",
+    description: "Blends between neighboring inference cells",
+  },
+  {
+    value: "nearest",
+    label: "Nearest",
+    description: "Copies the closest inference cell, fastest",
+  },
+  {
+    value: "gaussian_process",
+    label: "Gaussian process",
+    description: "Smooth fit with uncertainty, slowest",
+  },
+];
+
+// heading of a group of settings, with an explanation as tooltip
+function GroupTitle({ title, help }) {
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", color: "#ffffff" }}>
+      <Typography variant="subtitle2">{title}</Typography>
+      <Hint title={help} sx={{ marginLeft: "6px" }} />
+    </Box>
+  );
+}
+
+GroupTitle.propTypes = {
+  title: PropTypes.string.isRequired,
+  help: PropTypes.string.isRequired,
+};
 
 /*
     React function component for landscape setting in bottom bar.
@@ -15,7 +59,7 @@ import { C } from "../../managers/Core";
     @param {(int, int)} resolutions
     @param {(int, int)} supportResolutions
     @param {int} sampleSize
-    @param {bool} highlightOriginElement
+    @param {object} errors - Invalid inputs to outline, or null to outline none
     @param {function(LandscapeSetting)} onEdit
 */
 export default function LandscapeSetting({
@@ -25,7 +69,7 @@ export default function LandscapeSetting({
   supportResolutions,
   sampleSize,
   interpolation,
-  highlightOriginElement,
+  errors,
   onEdit,
 }) {
   let landscapeSetting = {
@@ -37,32 +81,24 @@ export default function LandscapeSetting({
     interpolation: interpolation,
   };
 
-  const inputSize = 100;
+  const inputSize = 88;
 
   // create origin select items from existing origin markers
   function createOriginSelectItems() {
-    let items = [];
     const markers = C().mapMan.listOriginMarkers();
-    for (let i = 0; i < markers.length; i++) {
-      items.push(
-        <MenuItem key={i + 1} value={markers[i].feature.properties["name"]}>
-          {markers[i].feature.properties["name"]}
+    if (markers.length === 0) {
+      return [
+        <MenuItem key={0} value="" disabled sx={{ whiteSpace: "normal" }}>
+          No origin yet: place a marker on the map, then pick it under Map
+          features → ORIGIN
         </MenuItem>,
-      );
+      ];
     }
-    return items;
-  }
-
-  // create interpolation select items
-  function createInterpolationItems() {
-    let items = ["linear", "nearest", "gaussian_process"];
-    return items.map((item, index) => {
-      return (
-        <MenuItem key={index} value={item}>
-          {item}
-        </MenuItem>
-      );
-    });
+    return markers.map((marker, i) => (
+      <MenuItem key={i + 1} value={marker.feature.properties["name"]}>
+        {marker.feature.properties["name"]}
+      </MenuItem>
+    ));
   }
 
   function handleOriginChange(event) {
@@ -76,342 +112,194 @@ export default function LandscapeSetting({
     C().mapMan.recenterMap(latLon);
   }
 
+  // highlight the mission area and grids on the map while editing them
+  function highlightBoundary(
+    newDimensions = dimensions,
+    newResolutions = resolutions,
+    newSupportResolutions = supportResolutions,
+  ) {
+    C().mapMan.highlightBoundaryAlter(
+      origin,
+      newDimensions,
+      newResolutions,
+      newSupportResolutions,
+    );
+  }
+
+  // a number input that highlights the mission area while focused
+  function numberField(label, value, onChange, error = false) {
+    return (
+      <TextField
+        type="number"
+        size="small"
+        label={label}
+        variant="outlined"
+        value={value}
+        onFocus={() => highlightBoundary()}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={() => C().mapMan.unhighlightBoundaryAlter()}
+        error={error}
+        sx={{ width: inputSize }}
+      />
+    );
+  }
+
+  // two number inputs for a (width, height) or (columns, rows) pair
+  function pairField(labels, values, onChange, pairErrors = [false, false]) {
+    return (
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        {numberField(
+          labels[0],
+          values[0],
+          (v) => onChange([v, values[1]]),
+          pairErrors[0],
+        )}
+        <div style={{ margin: "0px 4px", color: "#ffffff" }}>×</div>
+        {numberField(
+          labels[1],
+          values[1],
+          (v) => onChange([values[0], v]),
+          pairErrors[1],
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Grid
       container
       spacing={2}
-      direction="column"
+      wrap="nowrap"
+      direction="row"
       alignItems="start"
-      justifyContent="center"
+      justifyContent="start"
       m={1}
       style={{ marginLeft: "38px", width: "90%" }}
     >
-      {/* First Row: Origin, Dimensions, Sample Size */}
-      <Grid
-        container
-        size={12}
-        direction="row"
-        justifyContent="start"
-        alignItems="center"
-        spacing={2}
-      >
-        {/* Origin Selection Input */}
-        <Grid container size={4}>
-          <FormControl
-            sx={{ minWidth: 125 }}
-            size="small"
-            error={highlightOriginElement}
-          >
-            <InputLabel style={{ color: "#ffffff" }}>Origin</InputLabel>
-            <Select
-              label="Origin"
-              variant="outlined"
-              value={origin}
-              onChange={handleOriginChange}
-            >
-              {createOriginSelectItems()}
-            </Select>
-          </FormControl>
-        </Grid>
-        {/* Dimensions Input */}
-        <Grid
-          container
-          direction="row"
-          justifyContent="start"
-          alignItems="center"
-          spacing={0}
-          size={5}
+      {/* Mission area: origin and dimensions */}
+      <Grid container direction="column" spacing={1.5}>
+        <GroupTitle
+          title="Mission area"
+          help="The rectangle around the origin marker in which map features are loaded and the mission landscape is computed. Origins are markers of the type ORIGIN, see Map features."
+        />
+        <FormControl
+          sx={{ width: 2 * inputSize + 20 }}
+          size="small"
+          error={Boolean(errors?.origin)}
         >
-          <Grid>
-            {/* Width Input */}
-            <TextField
-              type="number"
-              size="small"
-              label="Width (m)"
-              variant="outlined"
-              value={dimensions[0]}
-              onFocus={() =>
-                C().mapMan.highlightBoundaryAlter(
-                  origin,
-                  dimensions,
-                  resolutions,
-                  supportResolutions,
-                )
-              }
-              onChange={(e) => {
-                const newValue = e.target.value;
-                const newDimensions = [newValue, dimensions[1]];
-                landscapeSetting.dimensions = newDimensions;
-                onEdit(landscapeSetting);
-                C().mapMan.highlightBoundaryAlter(
-                  origin,
-                  newDimensions,
-                  resolutions,
-                  supportResolutions,
-                );
-              }}
-              onBlur={() => {
-                C().mapMan.unhighlightBoundaryAlter();
-              }}
-              sx={{
-                width: inputSize,
-              }}
-            />
-          </Grid>
-          <div
-            style={{
-              marginLeft: "2px",
-              color: "#ffffff",
-            }}
-          >
-            x
-          </div>
-          <Grid>
-            {/* Height Input */}
-            <TextField
-              type="number"
-              size="small"
-              label="Height (m)"
-              variant="outlined"
-              value={dimensions[1]}
-              onFocus={() =>
-                C().mapMan.highlightBoundaryAlter(
-                  origin,
-                  dimensions,
-                  resolutions,
-                  supportResolutions,
-                )
-              }
-              onChange={(e) => {
-                const newValue = e.target.value;
-                const newDimensions = [dimensions[0], newValue];
-                landscapeSetting.dimensions = newDimensions;
-                onEdit(landscapeSetting);
-                C().mapMan.highlightBoundaryAlter(
-                  origin,
-                  newDimensions,
-                  resolutions,
-                  supportResolutions,
-                );
-              }}
-              onBlur={() => {
-                C().mapMan.unhighlightBoundaryAlter();
-              }}
-              sx={{
-                width: inputSize,
-              }}
-            />
-          </Grid>
-        </Grid>
-
-        {/* Sample Size Input */}
-        <Grid size={3} container>
-          <TextField
-            type="number"
-            size="small"
+          <InputLabel style={{ color: "#ffffff" }}>Origin</InputLabel>
+          <Select
+            label="Origin"
             variant="outlined"
-            label="Sampled Maps"
-            value={sampleSize}
-            onChange={(e) => {
-              landscapeSetting.sampleSize = e.target.value;
-              onEdit(landscapeSetting);
-            }}
-            sx={{
-              width: 125,
-            }}
-          />
-        </Grid>
+            sx={{ textAlign: "left" }}
+            value={origin}
+            onChange={handleOriginChange}
+            MenuProps={{ PaperProps: { sx: { maxWidth: 260 } } }}
+          >
+            {createOriginSelectItems()}
+          </Select>
+          {errors?.origin ? (
+            <FormHelperText>Choose an origin marker</FormHelperText>
+          ) : null}
+        </FormControl>
+        {pairField(
+          ["Width (m)", "Height (m)"],
+          dimensions,
+          (newDimensions) => {
+            landscapeSetting.dimensions = newDimensions;
+            onEdit(landscapeSetting);
+            highlightBoundary(newDimensions);
+          },
+          errors?.dimensions,
+        )}
       </Grid>
-      {/* Second Row: Resolutions, Support Resolutions and Interpolation */}
-      <Grid
-        container
-        size={12}
-        direction="row"
-        justifyContent="start"
-        justifyItems="start"
-        alignItems="center"
-        spacing={2}
-      >
-        {/* Resolutions Input */}
-        <Grid alignItems={"center"} size={4} sx={{ display: "flex" }}>
-          <TextField
-            type="number"
-            size="small"
-            variant="outlined"
+
+      {/* Inference: support grid and number of sampled maps */}
+      <Grid container direction="column" spacing={1.5}>
+        <GroupTitle
+          title="Inference"
+          help="Spatial relations such as distance(primary) are estimated on this grid of cells, from randomly shifted variants of the map. Finer grids and more samples are more accurate but slower."
+        />
+        {pairField(
+          ["Columns", "Rows"],
+          supportResolutions,
+          (newSupportResolutions) => {
+            landscapeSetting.supportResolutions = newSupportResolutions;
+            onEdit(landscapeSetting);
+            highlightBoundary(dimensions, resolutions, newSupportResolutions);
+          },
+          errors?.supportResolutions,
+        )}
+        <TextField
+          type="number"
+          size="small"
+          variant="outlined"
+          label="Sampled maps"
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Hint title="How many randomly shifted variants of the map are sampled to estimate each relation, according to the uncertainties of the map features" />
+                </InputAdornment>
+              ),
+            },
+          }}
+          error={Boolean(errors?.sampleSize)}
+          value={sampleSize}
+          onChange={(e) => {
+            landscapeSetting.sampleSize = e.target.value;
+            onEdit(landscapeSetting);
+          }}
+          sx={{ width: 2 * inputSize + 20 }}
+        />
+      </Grid>
+
+      {/* Display: output grid and interpolation */}
+      <Grid container direction="column" spacing={1.5}>
+        <GroupTitle
+          title="Display"
+          help="The computed landscape is interpolated from the inference grid onto this finer grid of cells for display on the map, using the chosen interpolation method."
+        />
+        {pairField(
+          ["Columns", "Rows"],
+          resolutions,
+          (newResolutions) => {
+            landscapeSetting.resolutions = newResolutions;
+            onEdit(landscapeSetting);
+            highlightBoundary(dimensions, newResolutions);
+          },
+          errors?.resolutions,
+        )}
+        <FormControl sx={{ width: 2 * inputSize + 20 }} size="small">
+          <InputLabel style={{ color: "rgba(255, 255, 255, 0.7)" }}>
+            Interpolation
+          </InputLabel>
+          <Select
             label="Interpolation"
-            value={resolutions[0]}
-            onFocus={() =>
-              C().mapMan.highlightBoundaryAlter(
-                origin,
-                dimensions,
-                resolutions,
-                supportResolutions,
-              )
-            }
-            onChange={(e) => {
-              const newValue = e.target.value;
-              const newResolutions = [newValue, resolutions[1]];
-              landscapeSetting.resolutions = newResolutions;
+            variant="outlined"
+            sx={{ textAlign: "left" }}
+            value={interpolation}
+            onChange={(event) => {
+              landscapeSetting.interpolation = event.target.value;
               onEdit(landscapeSetting);
-              C().mapMan.highlightBoundaryAlter(
-                origin,
-                dimensions,
-                newResolutions,
-                supportResolutions,
-              );
             }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: inputSize,
-            }}
-          />
-          <div
-            style={{
-              marginLeft: "2px",
-              color: "#ffffff",
-            }}
+            renderValue={(value) =>
+              INTERPOLATION_METHODS.find((method) => method.value === value)
+                ?.label ?? value
+            }
           >
-            x
-          </div>
-          <TextField
-            type="number"
-            size="small"
-            variant="outlined"
-            label="Grid"
-            value={resolutions[1]}
-            onFocus={() =>
-              C().mapMan.highlightBoundaryAlter(
-                origin,
-                dimensions,
-                resolutions,
-                supportResolutions,
-              )
-            }
-            onChange={(e) => {
-              const newValue = e.target.value;
-              const newResolutions = [resolutions[0], newValue];
-              landscapeSetting.resolutions = newResolutions;
-              onEdit(landscapeSetting);
-              C().mapMan.highlightBoundaryAlter(
-                origin,
-                dimensions,
-                newResolutions,
-                supportResolutions,
-              );
-            }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: inputSize,
-            }}
-          />
-        </Grid>
-        {/* Support Resolutions Input */}
-        <Grid
-          container
-          direction="row"
-          justifyContent="start"
-          alignItems="center"
-          spacing={0}
-          size={5}
-        >
-          <TextField
-            type="number"
-            size="small"
-            variant="outlined"
-            label="Inference"
-            value={supportResolutions[0]}
-            onFocus={() =>
-              C().mapMan.highlightBoundaryAlter(
-                origin,
-                dimensions,
-                resolutions,
-                supportResolutions,
-              )
-            }
-            onChange={(e) => {
-              const newValue = e.target.value;
-              const newSupportResolutions = [newValue, supportResolutions[1]];
-              landscapeSetting.supportResolutions = newSupportResolutions;
-              onEdit(landscapeSetting);
-              C().mapMan.highlightBoundaryAlter(
-                origin,
-                dimensions,
-                resolutions,
-                newSupportResolutions,
-              );
-            }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: inputSize,
-            }}
-          />
-          <div
-            style={{
-              marginLeft: "2px",
-              color: "#ffffff",
-            }}
-          >
-            x
-          </div>
-          <TextField
-            type="number"
-            size="small"
-            variant="outlined"
-            label="Grid"
-            value={supportResolutions[1]}
-            onFocus={() =>
-              C().mapMan.highlightBoundaryAlter(
-                origin,
-                dimensions,
-                resolutions,
-                supportResolutions,
-              )
-            }
-            onChange={(e) => {
-              const newValue = e.target.value;
-              const newSupportResolutions = [supportResolutions[0], newValue];
-              landscapeSetting.supportResolutions = newSupportResolutions;
-              onEdit(landscapeSetting);
-              C().mapMan.highlightBoundaryAlter(
-                origin,
-                dimensions,
-                resolutions,
-                newSupportResolutions,
-              );
-            }}
-            onBlur={() => {
-              C().mapMan.unhighlightBoundaryAlter();
-            }}
-            sx={{
-              width: inputSize,
-            }}
-          />
-        </Grid>
-        {/* Interpolation Method Selection */}
-        <Grid size={3} container>
-          <FormControl sx={{ minWidth: 125 }} size="small">
-            <InputLabel style={{ color: "rgba(255, 255, 255, 0.7)" }}>
-              Interpolation
-            </InputLabel>
-            <Select
-              label="Interpolation"
-              variant="outlined"
-              value={interpolation}
-              onChange={(event) => {
-                landscapeSetting.interpolation = event.target.value;
-                onEdit(landscapeSetting);
-              }}
-            >
-              {createInterpolationItems()}
-            </Select>
-          </FormControl>
-        </Grid>
+            {INTERPOLATION_METHODS.map((method) => (
+              <MenuItem key={method.value} value={method.value}>
+                <Box>
+                  <Typography variant="body2">{method.label}</Typography>
+                  <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                    {method.description}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Grid>
     </Grid>
   );
@@ -424,6 +312,6 @@ LandscapeSetting.propTypes = {
   supportResolutions: PropTypes.arrayOf(PropTypes.string).isRequired,
   sampleSize: PropTypes.string.isRequired,
   interpolation: PropTypes.string.isRequired,
-  highlightOriginElement: PropTypes.bool,
+  errors: PropTypes.object,
   onEdit: PropTypes.func.isRequired,
 };

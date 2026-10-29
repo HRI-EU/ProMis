@@ -976,7 +976,7 @@ class SidebarRightItem extends React.Component {
                       inputProps: {
                         min: 0,
                         style: { textAlign: "center" },
-                        pattern: "[+-]?([0-9]*[.])?[0-9]+",
+                        pattern: "[+\\-]?([0-9]*[.])?[0-9]+",
                       },
                       style: {
                         color: "#ffffff",
@@ -1069,7 +1069,7 @@ class SidebarRightItem extends React.Component {
                     inputProps: {
                       min: 0,
                       style: { textAlign: "center" },
-                      pattern: "[+-]?([0-9]*[.])?[0-9]+",
+                      pattern: "[+\\-]?([0-9]*[.])?[0-9]+",
                     },
                     style: {
                       color: "#ffffff",
@@ -1121,7 +1121,7 @@ class SidebarRightItem extends React.Component {
                     inputProps: {
                       min: 0,
                       style: { textAlign: "center" },
-                      pattern: "[+-]?([0-9]*[.])?[0-9]+",
+                      pattern: "[+\\-]?([0-9]*[.])?[0-9]+",
                     },
                     style: {
                       color: "#ffffff",

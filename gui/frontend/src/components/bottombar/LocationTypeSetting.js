@@ -209,7 +209,7 @@ export default function LocationTypeSetting({ initialRows }) {
       width: 120,
       editable: true,
     },
-    { field: "filter", headerName: "Osm Filter", width: 250, editable: true },
+    { field: "filter", headerName: "Map Filter", width: 250, editable: true },
     { field: "color", headerName: "Color", width: 80, editable: true },
     {
       field: "uncertainty",

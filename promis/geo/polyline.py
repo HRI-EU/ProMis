@@ -15,6 +15,7 @@ from typing import Any, TypeVar
 
 # Third Party
 from numpy import array, isfinite, ndarray, vstack
+from shapely import get_coordinates, points, transform
 from shapely.geometry import LineString
 
 # ProMis
@@ -47,6 +48,31 @@ class PolyLine(Geospatial):
 
         # Setup Geospatial
         super().__init__(location_type=location_type, name=name, identifier=identifier)
+
+    @property
+    def locations(self) -> list[PolarLocation | CartesianLocation]:
+        """The points that make up this polyline."""
+
+        if self._locations is None:
+            self._locations = self._locations_from_geometry()
+
+        return self._locations
+
+    @locations.setter
+    def locations(self, value: list[PolarLocation | CartesianLocation]) -> None:
+        self._locations = value
+
+    def _locations_from_geometry(self) -> list[PolarLocation | CartesianLocation]:
+        """Builds the locations of a polyline that was created from its geometry."""
+
+        raise NotImplementedError(f"{type(self).__name__} is always created from its locations")
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        # Pickles may store the locations as a plain attribute
+        if "locations" in state:
+            state["_locations"] = state.pop("locations")
+
+        self.__dict__.update(state)
 
     @property
     def covariance(self) -> ndarray:
@@ -254,6 +280,79 @@ class CartesianPolyLine(PolyLine):
 
         # Setup PolyLine
         PolyLine.__init__(self, locations, location_type, name, identifier, covariance)
+
+    @classmethod
+    def from_geometry(
+        cls,
+        geometry: LineString,
+        location_type: str | None = None,
+        name: str | None = None,
+        identifier: int | None = None,
+        covariance: ndarray | None = None,
+        origin: PolarLocation | None = None,
+    ) -> "CartesianPolyLine":
+        """Create a polyline from a shapely line string.
+
+        The polyline's :attr:`~locations` are only built from the geometry when they are first
+        accessed, which keeps creating many polylines cheap.
+
+        Args:
+            geometry: The shapely line string in local coordinates
+            location_type: The type of this polyline
+            name: The name of this polyline
+            identifier: The polyline's optional unique identifier, in :math:`[0, 2**63)`
+            covariance: An optional value representing the variance of this polyline's
+                east and north coordinates respectively
+            origin: A reference that can be used to project this cartesian representation (back)
+                into a polar one
+
+        Returns:
+            The polyline with the given geometry and other parameters
+        """
+
+        polyline = cls.__new__(cls)
+        polyline.origin = origin
+        polyline.geometry = geometry
+        polyline._locations = None
+        polyline.covariance = covariance
+        Geospatial.__init__(polyline, location_type=location_type, name=name, identifier=identifier)
+
+        return polyline
+
+    def _locations_from_geometry(self) -> list[CartesianLocation]:
+        coordinates = get_coordinates(self.geometry)
+
+        return [
+            CartesianLocation(x, y, geometry=point) for (x, y), point in zip(coordinates, points(coordinates))
+        ]
+
+    def sample(self, number_of_samples: int = 1) -> list["CartesianPolyLine"]:
+        """Sample polylines given this polyline's uncertainty.
+
+        Each sample translates the whole geometry at once, and builds its locations only
+        when they are accessed, since spatial relations only need the geometry.
+
+        Args:
+            number_of_samples: How many samples to draw
+
+        Returns:
+            The set of sampled polylines, each with same name, identifier etc.
+        """
+
+        # Check if a distribution is given
+        if self.distribution is None:
+            return super().sample(number_of_samples)
+
+        sampled_polylines = []
+        for translation in self.distribution.sample(number_of_samples).T:
+            geometry = transform(self.geometry, lambda coordinates: coordinates + translation)
+            sampled_polylines.append(
+                CartesianPolyLine.from_geometry(
+                    geometry, self.location_type, self.name, self.identifier, self.covariance, self.origin
+                )
+            )
+
+        return sampled_polylines
 
     def to_polar(self, origin: PolarLocation | None = None) -> PolarPolyLine:
         """Computes the polar representation of this polyline.

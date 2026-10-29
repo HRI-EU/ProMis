@@ -1,7 +1,7 @@
 """This module implements the FastAPI backend for the ProMis GUI.
 
 It provides endpoints for:
-    - Loading and caching map data from OpenStreetMap
+    - Loading and caching map data from Overture Maps and OpenStreetMap
     - Managing and updating layer, dynamic layer, and location type table configurations
     - Running StaRMap computations and inference
     - Adding and updating geographic features (markers, lines, polygons) via GeoJSON
@@ -12,8 +12,13 @@ and integration with the ProMis and StaRMap core logic.
 """
 
 import asyncio
+import hashlib
+import json
 import os
+import pickle
 import re
+import threading
+from collections import OrderedDict
 from uuid import uuid4
 import logging
 from contextlib import asynccontextmanager
@@ -41,7 +46,7 @@ from promis.gui.models.location_type_table import LocationTypeEntry
 from promis.gui.models.marker import Marker
 from promis.gui.models.polygon import Polygon
 from promis.gui.models.run_request import RunRequest
-from promis.loaders import OsmLoader
+from promis.loaders import OsmLoader, OvertureLoader
 
 program_storage_path = os.path.join(os.path.expanduser('~'), ".promis_gui")
 resources_path_dev = os.path.join(os.path.dirname(__file__), "..", "..")
@@ -99,16 +104,19 @@ def path_of_cache_or_config(filename:str):
         case _:
             return os.path.join(cache_dir_path, filename)
 
-def find_necessary_type(source: str) -> set[str]:
+def find_necessary_relations(source: str) -> list[tuple[str, str]]:
+    """The (relation, location type) pairs that the StaR Map computes for a Resin program."""
     # Matches Resin source declarations: relation(location_type) <- source(...)
     matches = re.findall(r'(\w+)\((\w+)\)\s*<-\s*source\(', source)
-    return {location_type for relation, location_type in matches if relation in ("distance", "over", "depth")}
+    return sorted({(relation, location_type) for relation, location_type in matches
+                   if relation in ("distance", "over", "depth")})
 
-def create_hash(text:str):
-  hash=0
-  for ch in text:
-    hash = ( hash*281  ^ ord(ch)*997) & 0xFFFFFFFF
-  return hash
+def find_necessary_type(source: str) -> set[str]:
+    return {location_type for _, location_type in find_necessary_relations(source)}
+
+def create_hash(data) -> str:
+    """A stable hash of JSON serializable data, naming the cache files of its results."""
+    return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()[:32]
 
 def _get_config() -> LayerConfig:
     config = LayerConfig([])
@@ -122,29 +130,7 @@ def _get_config() -> LayerConfig:
                 print(e)
                 raise HTTPException(status_code=500, detail="fail to parse config file")
     except FileNotFoundError:
-        # create an empty file in place
-        data_path = os.path.join(os.path.dirname(__file__), 'data', 'default_layer.json')
-        try:
-            with open(data_path) as f:
-                default_layer = f.read()
-                try:
-                    default_layer = Layer.model_validate_json(default_layer)
-                    config.append(default_layer)
-                except ValidationError as e:
-                    print(e)
-                    raise HTTPException(status_code=500, detail="fail to parse default layer")
-        except FileNotFoundError:
-            # if the file is not inplace then search for it in dev folder
-            data_path_dev = os.path.join(resources_path_dev, 'data', 'default_layer.json')
-            with open(data_path_dev) as f:
-                default_layer = f.read()
-                try:
-                    default_layer = Layer.model_validate_json(default_layer)
-                    config.append(default_layer)
-                except ValidationError as e:
-                    print(e)
-                    raise HTTPException(status_code=500, detail="fail to parse default layer")
-
+        # create an empty file in place, new projects start without layers
         dir_path = os.path.join(program_storage_path, "config")
         os.makedirs(dir_path, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
@@ -219,86 +205,155 @@ def _get_location_type_table() -> LocationTypeTable:
             f.write(location_type_table.model_dump_json(indent=2))
     return location_type_table
 
-def _rm_unnecessary_loc_type(table: LocationTypeTable, source: str):
-    needed_loc_type = find_necessary_type(source)
-    locations_to_remove = []
-    for location_type, filter in table.items():
-        if filter == "" or location_type not in needed_loc_type:
-            locations_to_remove.append(location_type)
-    for loc_type in locations_to_remove:
-        del table[loc_type]
+def _map_data_description(req: RunRequest) -> dict[str, str]:
+    """The filters of the location types that the rules need and that are loaded from map data."""
+    needed_loc_type = find_necessary_type(req.source)
+    return {
+        location_type: map_filter
+        for location_type, map_filter in req.location_types.items()
+        if location_type in needed_loc_type and map_filter.strip() != ""
+    }
 
+def create_hash_uam(req: RunRequest) -> str:
+    # The map data only depends on the mission area and the filters of the needed location types
+    return create_hash({
+        "origin": req.origin,
+        "dimensions": req.dimensions,
+        "filters": _map_data_description(req),
+    })
 
-def create_hash_uam(req: RunRequest):
-    # prepare for hash
-    req_dict = req.model_dump()
-    _rm_unnecessary_loc_type(req_dict["location_types"], req_dict["source"])
-    del req_dict["source"]
-    del req_dict["resolutions"]
-    del req_dict["support_resolutions"]
-    del req_dict["sample_size"]
-    del req_dict["interpolation"]
+def create_hash_features(req: RunRequest, map_filter: str) -> str:
+    # The features of a single filter, so that changing other location types does not reload them
+    return create_hash({"origin": req.origin, "dimensions": req.dimensions, "filter": map_filter})
 
-    return create_hash(repr(req_dict))
-
-def create_hash_starmap(req: RunRequest, dynamic_layer: DynamicLayer, hash_val: int):
-    # prepare for hash
-    req_dict = req.model_dump()
-    del req_dict["source"]
-    req_dict["hashVal"] = hash_val
-    req_dict["dynamic_layer"] = dynamic_layer
-
-    return create_hash(repr(req_dict))
+def create_hash_starmap(req: RunRequest, dynamic_layer: DynamicLayer,
+                        location_type_table: LocationTypeTable, hash_val: str) -> str:
+    # The StaR Map depends on the map data, the inference grid and samples, the relations of the rules,
+    # and the uncertainties and drawn objects of the location types these relations refer to.
+    # The display grid, interpolation and the rest of the rules only matter for the inference.
+    relations = find_necessary_relations(req.source)
+    needed_loc_type = {location_type for _, location_type in relations}
+    uncertainties = {
+        entry.location_type: entry.std_dev
+        for entry in location_type_table
+        if entry.location_type in needed_loc_type
+    }
+    entities = sorted(
+        (
+            json.dumps(entity.model_dump(include={"latlng", "latlngs", "holes", "location_type", "std_dev"}),
+                       sort_keys=True)
+            for entity in [*dynamic_layer.markers, *dynamic_layer.polylines, *dynamic_layer.polygons]
+            if entity.location_type in needed_loc_type
+        )
+    )
+    return create_hash({
+        "map_data": hash_val,
+        "support_resolutions": req.support_resolutions,
+        "sample_size": req.sample_size,
+        "relations": relations,
+        "uncertainties": uncertainties,
+        "entities": entities,
+    })
 
 @app.post("/loadmapdata", include_in_schema=False)
-def load_map_data(req: RunRequest):
+def load_map_data(req: RunRequest) -> str:
     mission_center = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     width, height = req.dimensions
-    source = req.source
 
-    # We load geographic features from OpenStreetMap using a range of filters
-    feature_description = req.location_types
-
-    # prepare for hash
+    # We load geographic features from Overture Maps or OpenStreetMap using a range of filters
+    feature_description = _map_data_description(req)
     hash_val = create_hash_uam(req)
-
-    # remove all location type with empty filter
-
-    _rm_unnecessary_loc_type(feature_description, source)
-    # load the cache info
     path = path_of_cache_or_config(f"uam_{hash_val}.pickle")
-    try:
-        with open(path, 'rb'):
-            uam = PolarMap.load(path)
-            has_cache = True
-            print(f"Found cached map data in file with id uam_{hash_val}")
-    except FileNotFoundError:
-        dir_path = os.path.join(program_storage_path, "cache")
-        os.makedirs(dir_path, exist_ok=True)
-        has_cache = False
+    if os.path.exists(path):
+        print(f"Found cached map data in file with id uam_{hash_val}")
+        return hash_val
+    os.makedirs(os.path.dirname(path), exist_ok=True)
 
-    if (not has_cache):
-        uam = OsmLoader(mission_center, (width, height), feature_description).to_polar_map()
+    # Only load the filters whose features are not cached yet
+    feature_paths = {
+        map_filter: path_of_cache_or_config(f"features_{create_hash_features(req, map_filter)}.pickle")
+        for map_filter in feature_description.values()
+    }
+    missing = {
+        location_type: map_filter
+        for location_type, map_filter in feature_description.items()
+        if not os.path.exists(feature_paths[map_filter])
+    }
+    if missing:
+        loaded = _load_uam(mission_center, (width, height), missing)
+        for location_type, map_filter in missing.items():
+            with open(feature_paths[map_filter], "wb") as f:
+                pickle.dump(loaded.features.get(location_type, []), f)
 
-        uam.save(path)
+    # Assemble the map, naming the cached features by their current location types
+    features = {}
+    for location_type, map_filter in feature_description.items():
+        with open(feature_paths[map_filter], "rb") as f:
+            features[location_type] = pickle.load(f)
+        for feature in features[location_type]:
+            feature.location_type = location_type
+    PolarMap(mission_center, features).save(path)
 
     return hash_val
 
+# Overture loaders of recently used mission areas, keeping the Overture types they downloaded,
+# so that further filters on the same type, e.g., segment, do not download it again
+_overture_loaders: OrderedDict[tuple, OvertureLoader] = OrderedDict()
+_overture_loaders_lock = threading.Lock()
+_OVERTURE_LOADERS_KEPT = 4
+
+def _load_overture(mission_center: PolarLocation, dimensions: tuple[float, float],
+                   feature_description: dict[str, str]) -> PolarMap:
+    key = (mission_center.latitude, mission_center.longitude, *dimensions)
+    with _overture_loaders_lock:
+        loader = _overture_loaders.pop(key, None)
+        if loader is None:
+            loader = OvertureLoader(mission_center, dimensions)
+        _overture_loaders[key] = loader
+        while len(_overture_loaders) > _OVERTURE_LOADERS_KEPT:
+            _overture_loaders.popitem(last=False)
+
+        loader.features = []
+        loader.load(feature_description)
+        return loader.to_polar_map()
+
+def _load_uam(mission_center: PolarLocation, dimensions: tuple[float, float],
+              feature_description: dict[str, str]) -> PolarMap:
+    """Loads the map features, choosing the data source of each filter by its syntax.
+
+    Filters starting with an Overture type, e.g., ``segment[class=primary]``, are loaded
+    from Overture Maps. Overpass-style filters starting with a bracket, e.g.,
+    ``[highway=primary]``, are loaded from OpenStreetMap.
+    """
+    osm_description = {
+        location_type: osm_filter
+        for location_type, osm_filter in feature_description.items()
+        if osm_filter.lstrip().startswith("[")
+    }
+    overture_description = {
+        location_type: overture_filter
+        for location_type, overture_filter in feature_description.items()
+        if location_type not in osm_description
+    }
+
+    uam = _load_overture(mission_center, dimensions, overture_description)
+    if osm_description:
+        osm_map = OsmLoader(mission_center, dimensions, osm_description).to_polar_map()
+        for location_type, features in osm_map.features.items():
+            uam.features[location_type].extend(features)
+
+    return uam
+
 @app.post("/starmap/{hash_val}", include_in_schema=False)
-def calculate_star_map(req: RunRequest, hash_val: int):
+def calculate_star_map(req: RunRequest, hash_val: str):
     origin = PolarLocation(latitude=req.origin[0], longitude=req.origin[1])
     dimensions = req.dimensions
     width, height = dimensions
     sample_size = req.sample_size
     logic = req.source
 
-    # load the cache info
-    try:
-        path = path_of_cache_or_config(f"uam_{hash_val}.pickle")
-        with open(path, 'rb'):
-            polar_map = PolarMap.load(path)
-
-    except FileNotFoundError:
+    uam_path = path_of_cache_or_config(f"uam_{hash_val}.pickle")
+    if not os.path.exists(uam_path):
         raise HTTPException(status_code=404, detail="No map data found on this request.")
 
     # get dynamic markers, line and polygons
@@ -308,7 +363,8 @@ def calculate_star_map(req: RunRequest, hash_val: int):
     polylines = dynamic_layer.polylines
     polygons = dynamic_layer.polygons
 
-    star_map_hash_val = create_hash_starmap(req, dynamic_layer, hash_val)
+    loc_type_table = _get_location_type_table()
+    star_map_hash_val = create_hash_starmap(req, dynamic_layer, loc_type_table, hash_val)
 
     path = path_of_cache_or_config(f"starmap_{star_map_hash_val}.pickle")
 
@@ -319,9 +375,10 @@ def calculate_star_map(req: RunRequest, hash_val: int):
             star_map = StaRMap.load(path)
 
     except FileNotFoundError:
+        polar_map = PolarMap.load(uam_path)
+
         # create polar map
         # apply uncertainty to all osm fetched map feature
-        loc_type_table = _get_location_type_table()
         loc_to_uncertainty = dict()
         for entry in loc_type_table:
             if entry.std_dev != 0:
@@ -401,7 +458,7 @@ def calculate_star_map(req: RunRequest, hash_val: int):
     return star_map_hash_val
 
 @app.post("/inference/{hash_val}")
-def inference(req: RunRequest, hash_val: int, cache_latest_pml=True):
+def inference(req: RunRequest, hash_val: str, cache_latest_pml=True):
     # load the cache info
     #try:
     #    with open(f"./cache/starmap_{hashVal}.pickle", 'rb') as f:

@@ -12,6 +12,15 @@
 from promis.loaders.ais_loader import AisLoader
 from promis.loaders.nautical_loader import NauticalLoader
 from promis.loaders.osm_loader import LocalOsmLoader, OsmLoader
+from promis.loaders.overture_loader import LocalOvertureLoader, OvertureLoader
 from promis.loaders.spatial_loader import SpatialLoader
 
-__all__ = ["AisLoader", "LocalOsmLoader", "NauticalLoader", "OsmLoader", "SpatialLoader"]
+__all__ = [
+    "AisLoader",
+    "LocalOsmLoader",
+    "LocalOvertureLoader",
+    "NauticalLoader",
+    "OsmLoader",
+    "OvertureLoader",
+    "SpatialLoader",
+]

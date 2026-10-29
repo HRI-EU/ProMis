@@ -19,13 +19,13 @@ from promis.geo import (
     PolarLocation,
     PolarRasterBand,
 )
-from promis.loaders import OsmLoader
+from promis.loaders import OvertureLoader
 
 
 class TestBasics(TestCase):
     def test_example_notebook(self):
         feature_description = {
-            "primary": "['highway' = 'primary']",
+            "primary": "segment[subtype=road][class=primary]",
         }
 
         covariance = {
@@ -54,8 +54,8 @@ permits -> target("/landscape").
         with TemporaryDirectory() as tmpdir_path:
             tmpdir = Path(tmpdir_path)
 
-            uam = OsmLoader(origin, (width, height), feature_description).to_cartesian_map()
-            print("Done OSM loading")
+            uam = OvertureLoader(origin, (width, height), feature_description).to_cartesian_map()
+            print("Done Overture loading")
 
             uam.features["operator"].append(CartesianLocation(0.0, 0.0, location_type="operator"))
             uam.apply_covariance(covariance)

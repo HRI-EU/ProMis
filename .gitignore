@@ -293,3 +293,6 @@ examples/**/*.pdf
 _build/
 doc/build/
 doc/source/notebooks/
+
+# Data used by the tests
+!tests/data/*.pkl

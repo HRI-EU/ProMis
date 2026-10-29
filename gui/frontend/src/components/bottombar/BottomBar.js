@@ -15,24 +15,36 @@ import Grid from "@mui/material/Grid2";
 import Alert from "@mui/material/Alert";
 import IconButton from "@mui/material/IconButton";
 import Collapse from "@mui/material/Collapse";
+import Button from "@mui/material/Button";
+import Tooltip from "@mui/material/Tooltip";
+import Badge from "@mui/material/Badge";
 import { ThemeProvider } from "@mui/material";
 import { createTheme } from "@mui/material/styles";
 
 //Icon imports
 import TerminalIcon from "@mui/icons-material/TerminalRounded";
-import TerminalTwoToneIcon from "@mui/icons-material/TerminalTwoTone";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreRounded from "@mui/icons-material/ExpandMoreRounded";
 import PlayCircleIcon from "@mui/icons-material/PlayCircleOutline";
 import CloseIcon from "@mui/icons-material/CloseRounded";
-import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
-import ListAltOutlinedIcon from "@mui/icons-material/ListAltOutlined";
+import CropFreeIcon from "@mui/icons-material/CropFree";
+import CategoryIcon from "@mui/icons-material/CategoryOutlined";
 import MapIcon from "@mui/icons-material/Map";
 import PolylineIcon from "@mui/icons-material/Polyline";
 import PsychologyIcon from "@mui/icons-material/Psychology";
-import CalendarViewMonthIcon from "@mui/icons-material/CalendarViewMonth";
-import CalendarViewMonthTwoToneIcon from "@mui/icons-material/CalendarViewMonthTwoTone";
 import LocationTypeSettingTabs from "./LocationTypeSettingTabs";
+import { describeFilter } from "../../utils/MapFilter";
+
+// explanations of the menus, shown when hovering them
+const MENU_HINTS = {
+  Rules:
+    "The mission rules in Resin. Declare a source for each relation you use, e.g. distance(primary), " +
+    'and send the result to target("/landscape").',
+  "Mission area": "Where the mission landscape is computed, and how finely.",
+  "Map features":
+    "The location types your rules refer to, e.g. primary in distance(primary), " +
+    "loaded from map data or picked on the map.",
+};
 
 const darkTheme = createTheme({
   palette: {
@@ -73,18 +85,56 @@ export default class BottomBar extends React.Component {
       sourceCodeToggled: true,
       locationTabsToggled: false,
       runningState: 0,
+      // whether to outline invalid inputs, set when a run is started with invalid inputs
+      showErrors: false,
     };
   }
 
-  highlightOriginElement = false;
-  highlightSourceElement = false;
+  // the current rules, from the editor if it was opened already
+  currentSource = () => {
+    const codeEditor = C().getCodeEditor();
+    return codeEditor !== null
+      ? codeEditor.getValue()
+      : C().sourceMan.getSource();
+  };
+
+  // check all inputs needed for a run, true marks an invalid or empty input
+  validate = () => {
+    const setting = this.state.landscapeSetting;
+    const isPositive = (value) => value !== "" && Number(value) > 0;
+    const isCount = (value) =>
+      isPositive(value) && Number.isInteger(Number(value));
+    const errors = {
+      rules: this.currentSource().trim() === "",
+      origin: setting.origin === "",
+      dimensions: setting.dimensions.map((value) => !isPositive(value)),
+      supportResolutions: setting.supportResolutions.map(
+        (value) => !isCount(value),
+      ),
+      sampleSize: !isCount(setting.sampleSize),
+      resolutions: setting.resolutions.map((value) => !isCount(value)),
+      mapFeatures: C().sourceMan.locationTypes.some(
+        (entry) => describeFilter(entry.filter).error !== null,
+      ),
+    };
+    errors.missionArea =
+      errors.origin ||
+      errors.sampleSize ||
+      [
+        ...errors.dimensions,
+        ...errors.supportResolutions,
+        ...errors.resolutions,
+      ].some(Boolean);
+    errors.any = errors.rules || errors.missionArea || errors.mapFeatures;
+    return errors;
+  };
 
   inputSize = 100;
 
   // function to update the UI through core call
   updateUI = () => {
     this.setState({ update: this.state.update + 1 });
-    // check origin
+    // check origin, and choose it when there is only one origin marker
     const markers = C().mapMan.listOriginMarkers();
     const markersName = markers.map(
       (marker) => marker.feature.properties["name"],
@@ -93,7 +143,7 @@ export default class BottomBar extends React.Component {
       this.setState({
         landscapeSetting: {
           ...this.state.landscapeSetting,
-          origin: "",
+          origin: markersName.length === 1 ? markersName[0] : "",
         },
       });
     }
@@ -130,42 +180,31 @@ export default class BottomBar extends React.Component {
 
   // Toggle the running state of the source code
   toggleRun = async () => {
-    // check if source code is available
-    const sourceCode = C().getCodeEditor().getValue();
-    if (sourceCode === "") {
-      // toggle source code and hide running params and location type
+    // check all inputs, and outline the invalid ones until they are fixed
+    const errors = this.validate();
+    if (errors.any) {
+      const panels = [
+        ["sourceCodeToggled", errors.rules],
+        ["runningParamsToggled", errors.missionArea],
+        ["locationTabsToggled", errors.mapFeatures],
+      ];
+      // stay on the opened menu if it has errors, otherwise open the first one with errors
+      const opened = panels.find(([key]) => this.state[key]);
+      const [panel] =
+        opened !== undefined && opened[1]
+          ? opened
+          : panels.find(([, hasErrors]) => hasErrors);
       this.setState({
-        sourceCodeToggled: true,
-        runningParamsToggled: false,
-        locationTabsToggled: false,
+        showErrors: true,
+        sourceCodeToggled: panel === "sourceCodeToggled",
+        runningParamsToggled: panel === "runningParamsToggled",
+        locationTabsToggled: panel === "locationTabsToggled",
       });
-      this.highlightSourceElement = true;
-      this.updateUI();
-      setTimeout(() => {
-        this.highlightSourceElement = false;
-        this.updateUI();
-      }, 1000);
       return;
     }
-    // check if origin is set
-    if (this.state.landscapeSetting.origin === "") {
-      this.highlightOriginElement = true;
-      // toggle running params to show origin
-      this.setState({
-        runningParamsToggled: true,
-        locationTabsToggled: false,
-        sourceCodeToggled: false,
-      });
-
-      this.updateUI();
-      setTimeout(() => {
-        this.highlightOriginElement = false;
-        this.updateUI();
-      }, 1000);
-      return;
-    }
+    const sourceCode = this.currentSource();
     // set running state to loading map data
-    this.setState({ runningState: 1 });
+    this.setState({ runningState: 1, showErrors: false });
 
     // prepare the run parameters
     let runParam = {
@@ -184,14 +223,15 @@ export default class BottomBar extends React.Component {
         runParam,
         "loadmapdata",
       );
-      const mapHashValue = Number(mapHashData);
+      // the backend names its cached results by hashes, returned as JSON strings
+      const mapHashValue = JSON.parse(mapHashData);
       this.setState({ runningState: 2 });
       const starmapHashData = await C().sourceMan.intermediateCalls(
         runParam,
         "starmap",
         mapHashValue,
       );
-      const starmapHashValue = Number(starmapHashData);
+      const starmapHashValue = JSON.parse(starmapHashData);
       this.setState({ runningState: 3 });
       await C().sourceMan.intermediateCalls(
         runParam,
@@ -282,18 +322,49 @@ export default class BottomBar extends React.Component {
     });
   };
 
-  runningParams = () => (
+  // labeled button to switch between the menus of the bottom bar
+  menuButton = (label, icon, active, onClick, ariaLabel, hasErrors) => (
+    <Grid>
+      <Tooltip title={MENU_HINTS[label]}>
+        <Button
+          onClick={onClick}
+          startIcon={
+            <Badge
+              variant="dot"
+              color="error"
+              invisible={!(this.state.showErrors && hasErrors)}
+            >
+              {icon}
+            </Badge>
+          }
+          aria-label={ariaLabel}
+          size="small"
+          sx={{
+            color: active ? "#ffffff" : "#ffffff99",
+            textTransform: "none",
+            borderRadius: "16px",
+            backgroundColor: active ? "#7e86bd33" : "transparent",
+            "&:hover": { backgroundColor: "#7e86bd22" },
+          }}
+        >
+          {label}
+        </Button>
+      </Tooltip>
+    </Grid>
+  );
+
+  runningParams = (errors) => (
     <ThemeProvider theme={darkTheme}>
       <LandscapeSetting
         {...this.state.landscapeSetting}
-        highlightOriginElement={this.highlightOriginElement}
+        errors={this.state.showErrors ? errors : null}
         onEdit={this.landscapeEdit}
       />
     </ThemeProvider>
   );
 
   // panel that will appear when the bottom bar is clicked
-  list = () => (
+  list = (errors) => (
     <Box
       role="presentation"
       style={{
@@ -339,55 +410,32 @@ export default class BottomBar extends React.Component {
             alignItems="center"
             justifyContent="start"
             m={0}
-            size={4}
+            size={8}
           >
-            <Grid size={2}>
-              <IconButton // source editor expand button
-                onClick={() => {
-                  this.toggleSourceCode();
-                }}
-                style={{ color: "#eeeeee", fontSize: 12 }}
-                aria-label="Open source editor menu"
-              >
-                {this.state.sourceCodeToggled ? (
-                  <TerminalTwoToneIcon />
-                ) : (
-                  <TerminalIcon />
-                )}
-              </IconButton>
-            </Grid>
-
-            <Grid size={2}>
-              <IconButton // landscape setting expand button
-                onClick={() => {
-                  this.toggleRunningParams();
-                }}
-                style={{ color: "#eeeeee", fontSize: 12 }}
-                aria-label="Open landscape setting menu"
-              >
-                {this.state.runningParamsToggled ? (
-                  <CalendarViewMonthTwoToneIcon />
-                ) : (
-                  <CalendarViewMonthIcon />
-                )}
-              </IconButton>
-            </Grid>
-
-            <Grid size={2}>
-              <IconButton // location type menu expand button
-                onClick={() => {
-                  this.toggleLocationTabs();
-                }}
-                style={{ color: "#eeeeee", fontSize: 12 }}
-                aria-label="Open location type menu"
-              >
-                {this.state.locationTabsToggled ? (
-                  <ListAltOutlinedIcon />
-                ) : (
-                  <FormatListBulletedIcon />
-                )}
-              </IconButton>
-            </Grid>
+            {this.menuButton(
+              "Rules",
+              <TerminalIcon />,
+              this.state.sourceCodeToggled,
+              this.toggleSourceCode,
+              "Open source editor menu",
+              errors.rules,
+            )}
+            {this.menuButton(
+              "Mission area",
+              <CropFreeIcon />,
+              this.state.runningParamsToggled,
+              this.toggleRunningParams,
+              "Open landscape setting menu",
+              errors.missionArea,
+            )}
+            {this.menuButton(
+              "Map features",
+              <CategoryIcon />,
+              this.state.locationTabsToggled,
+              this.toggleLocationTabs,
+              "Open location type menu",
+              errors.mapFeatures,
+            )}
           </Grid>
 
           <Grid // contains run button
@@ -396,7 +444,7 @@ export default class BottomBar extends React.Component {
             direction="row"
             alignItems="center"
             justifyContent="flex-end"
-            size={8}
+            size={4}
             style={{
               paddingRight: "32px",
             }}
@@ -437,36 +485,48 @@ export default class BottomBar extends React.Component {
             </Collapse>
 
             <ThemeProvider theme={darkTheme}>
-              <LoadingButton // run button
-                loading={this.state.runningState !== 0}
-                loadingPosition="start"
-                startIcon={this.getRunningIcons(this.state.runningState)}
-                onClick={this.toggleRun}
-                variant="outlined"
-                size="small"
-                sx={{
-                  color: "#ffffff",
-                  borderColor: "#7e86bd22",
-                  borderRadius: "24px",
-                }}
-              >
-                {this.getRunningLabels(this.state.runningState)}
-              </LoadingButton>
+              <Tooltip title="Loads the map features, estimates the spatial relations of your rules and computes the mission landscape">
+                <span>
+                  <LoadingButton // run button
+                    loading={this.state.runningState !== 0}
+                    loadingPosition="start"
+                    startIcon={this.getRunningIcons(this.state.runningState)}
+                    onClick={this.toggleRun}
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      color: "#ffffff",
+                      borderColor: "#7e86bd22",
+                      borderRadius: "24px",
+                    }}
+                  >
+                    {this.getRunningLabels(this.state.runningState)}
+                  </LoadingButton>
+                </span>
+              </Tooltip>
+              <Tooltip title="Hide panel">
+                <IconButton // collapse button
+                  aria-label="Hide panel"
+                  onClick={this.toggleDrawer("bottom", false)}
+                  size="small"
+                  style={{ color: "#ffffff", marginLeft: "8px" }}
+                >
+                  <ExpandMoreRounded />
+                </IconButton>
+              </Tooltip>
             </ThemeProvider>
           </Grid>
         </Grid>
 
         {
           // logic to display landscape settings
-          this.state.runningParamsToggled ? this.runningParams() : null
+          this.state.runningParamsToggled ? this.runningParams(errors) : null
         }
 
         {
           // logic to display source editor menu
           this.state.sourceCodeToggled ? (
-            <SourceCodeInterface
-              highlightSourceElement={this.highlightSourceElement}
-            />
+            <SourceCodeInterface showErrors={this.state.showErrors} />
           ) : null
         }
 
@@ -474,28 +534,11 @@ export default class BottomBar extends React.Component {
           // logic to display source editor menu
           this.state.locationTabsToggled ? (
             <ThemeProvider theme={darkTheme}>
-              <LocationTypeSettingTabs />
+              <LocationTypeSettingTabs showErrors={this.state.showErrors} />
             </ThemeProvider>
           ) : null
         }
       </Grid>
-
-      <IconButton // collapse button
-        aria-label="add"
-        onClick={this.toggleDrawer("bottom", false)}
-        style={{
-          color: "#ffffff",
-          backgroundColor: "#0D0F21",
-          border: "1px solid #7e86bd22",
-          width: "100px",
-          borderRadius: "24px",
-          position: "absolute",
-          top: "3px",
-          left: "45%",
-        }}
-      >
-        <ExpandMoreRounded />
-      </IconButton>
     </Box>
   );
 
@@ -544,7 +587,7 @@ export default class BottomBar extends React.Component {
               },
             }}
           >
-            {this.list("bottom")}
+            {this.list(this.validate())}
           </Drawer>
         </React.Fragment>
       </div>

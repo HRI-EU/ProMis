@@ -9,13 +9,12 @@
 #
 
 # Standard Library
+from __future__ import annotations
+
 from abc import ABC
 from collections.abc import Callable
 from itertools import product
-from typing import Any, NoReturn
-
-# Plotting
-from networkx import Graph, astar_path
+from typing import TYPE_CHECKING, Any, NoReturn
 
 # Third Party
 from numpy import array, concatenate, linspace, meshgrid, ndarray, ravel, vstack, zeros
@@ -25,6 +24,24 @@ from scipy.spatial import KDTree
 
 # ProMis
 from promis.geo import CartesianCollection, CartesianLocation, PolarCollection, PolarLocation
+
+if TYPE_CHECKING:
+    # Path planning is optional and networkx is slow to load, so it is imported where it is used
+    from networkx import DiGraph
+
+
+def _default_cost_model(
+    source: tuple[Any], dest: tuple[Any], source_value: float, dest_value: float
+) -> float:
+    """The default edge weight for path planning, preferring to enter nodes with high values."""
+
+    return 1 - dest_value
+
+
+def _default_value_filter(node: tuple[Any], value: float) -> bool:
+    """The default node filter for path planning, keeping all nodes."""
+
+    return True
 
 
 class RasterBand(ABC):
@@ -51,68 +68,69 @@ class RasterBand(ABC):
         self.center_x = self.width / 2
         self.center_y = self.height / 2
 
+    @property
+    def node_spacing(self) -> tuple[float, float]:
+        """The distance between neighboring raster coordinates along x and y in meters."""
+
+        return self.pixel_width, self.pixel_height
+
     def append(self, location: CartesianLocation | PolarLocation, values: list[float]) -> NoReturn:
         raise NotImplementedError(f"{type(self).__name__} cannot be extended with locations")
 
     def to_graph(
         self,
-        cost_model: Callable[[tuple[Any], tuple[Any], float, float], float] = lambda source, dest, w1, w2: 1
-        - w1,
-        value_filter: Callable[[tuple[Any], float], bool] = lambda node, value: True,
-    ) -> Graph:
-        """Convert a RasterBand into a NetworkX Graph for path planning.
+        cost_model: Callable[[tuple[Any], tuple[Any], float, float], float] = _default_cost_model,
+        value_filter: Callable[[tuple[Any], float], bool] = _default_value_filter,
+        value_index: int = 0,
+    ) -> DiGraph:
+        """Convert a RasterBand into a directed NetworkX graph for path planning.
+
+        Each node is connected to its axis-aligned neighbors by one edge per direction,
+        so moving between two nodes can cost differently depending on the direction.
 
         Args:
             cost_model: A function that maps ``(source_node, target_node, source_value, dest_value)``
-                to edge weights
-            value_filter: A function that is applied to ``(node, value)`` to decide if they
-                should become nodes in the graph
+                to the weight of the edge from source to target
+            value_filter: A function that is applied to ``(node, value)`` to decide if the node
+                may be entered, i.e., if edges lead to it
+            value_index: Which value of the RasterBand is passed to cost_model and value_filter
 
         Returns:
-            The corresponding graph where the cost of visiting a node is
+            The corresponding graph where the cost of moving between nodes is
             determined by the RasterBand's values and cost_model
         """
 
         # TODO: Despite being defined in the base class, this method only works reliably for
         # CartesianRasterBand. For PolarRasterBand, it does not correctly compute distances.
-        # On a cartesian grid, the entire implementation is correct, but could be much faster
-        # by avoiding the KDTree altogether and using the fact that the graph is a regular grid.
+
+        from networkx import DiGraph
 
         # Create graph with nodes with cost from own data
-        graph = Graph()
-        values = self.values()
+        graph = DiGraph()
+        values = self.values()[:, value_index].tolist()
         coordinates = [tuple(coordinate.tolist()) for coordinate in self.coordinates()]
-        for i, coordinate in enumerate(coordinates):
-            graph.add_node(coordinate)
+        graph.add_nodes_from(coordinates)
 
-        # Connect each node to k nearest actual neighbors
-        tree = KDTree(coordinates)
-        for i, coordinate in enumerate(coordinates):
-            value = values[i]
+        # Find the 4 nearest neighbors of all nodes at once (5 to include the node itself)
+        all_dists, all_indices = KDTree(coordinates).query(coordinates, k=5)
+        assert (all_dists[:, 0] == 0).all(), "KDTree query should return each node itself first"
+        all_dists, all_indices = all_dists[:, 1:].tolist(), all_indices[:, 1:].tolist()
 
-            dists, indices = tree.query(coordinate, k=5)  # 4 + 1 to include itself
-            assert dists[0] == 0, "KDTree query should return itself first"
+        # Skip neighbors that are not axis-parallel. E.g., diagonal can sneak in here
+        # at the edges of the grid where there are not enough neighbors.
+        # We assume that resolution is uniform in both directions
+        max_neighbor_distance = max(self.node_spacing) * 1.1
 
-            for j in range(1, len(indices)):  # skip index 0 (self)
-                dist = dists[j]
+        def edges():
+            for i, coordinate in enumerate(coordinates):
+                for dist, j in zip(all_dists[i], all_indices[i]):
+                    if dist > max_neighbor_distance or not value_filter(coordinates[j], values[j]):
+                        continue
 
-                # Skip neighbors that are not axis-parallel. E.g., diagonal can sneak in here
-                # at the edges of the grid where there are not enough neighbors.
-                # We assume that resolution is uniform in both directions
-                if dist > max(self.pixel_width, self.pixel_height) * 1.1:
-                    continue
+                    weight = cost_model(coordinate, coordinates[j], values[i], values[j])
+                    yield coordinate, coordinates[j], {"weight": weight, "dist": dist}
 
-                neighbor_coord = coordinates[indices[j]]
-                neighbor_value = values[indices[j]]
-
-                if value_filter(neighbor_coord, neighbor_value):
-                    weight = cost_model(
-                        coordinate,
-                        neighbor_coord,
-                        value,
-                        neighbor_value,
-                    )
-                    graph.add_edge(coordinate, neighbor_coord, weight=weight, dist=dist)
+        graph.add_edges_from(edges())
 
         return graph
 
@@ -120,10 +138,11 @@ class RasterBand(ABC):
         self,
         start: tuple[float, float],
         goal: tuple[float, float],
-        graph: Graph | None = None,
-        cost_model: Callable[[float], float] = lambda x: 1 - x,  # TODO this is an odd API
-        value_filter: Callable[[float], float] = lambda x: True,
+        graph: DiGraph | None = None,
+        cost_model: Callable[[tuple[Any], tuple[Any], float, float], float] = _default_cost_model,
+        value_filter: Callable[[tuple[Any], float], bool] = _default_value_filter,
         min_cost: float = 0.3,
+        value_index: int = 0,
     ) -> NDArray:
         """Search the shortest path through this RasterBand using A*.
 
@@ -135,9 +154,14 @@ class RasterBand(ABC):
         Args:
             start: The starting location (clipped to the nearest RasterBand pixel)
             goal: The goal location (clipped to the nearest RasterBand pixel)
-            cost_model: A function that maps RasterBand values to edge weights
-            value_filter: A function that is applied to RasterBand values to decide if they
-                should become edges in the graph
+            graph: A graph to search in, e.g., from :meth:`stack_graphs`, built with
+                :meth:`to_graph` if not given
+            cost_model: A function that maps ``(source_node, target_node, source_value, dest_value)``
+                to edge weights, see :meth:`to_graph`
+            value_filter: A function that is applied to ``(node, value)`` to decide if they
+                should become nodes in the graph, see :meth:`to_graph`
+            min_cost: A lower bound on the weight of every edge, which keeps the heuristic admissible
+            value_index: Which value of the RasterBand is passed to cost_model and value_filter
 
         Returns:
             The shortest path from start to goal given the costs induced by the given
@@ -148,17 +172,21 @@ class RasterBand(ABC):
 
         # Make sure that we have a graph to work with
         if graph is None:
-            graph = self.to_graph(cost_model, value_filter)
+            graph = self.to_graph(cost_model, value_filter, value_index)
 
         # Define Manhattan distance as heuristic for A*
         # The distance is rescaled such that one axis-aligned hop in any direction
         # (horizontal or vertical) is equal to 1.0.
         # After that, to be admissible, the heuristic is multiplied by the minimum cost
         # of the path, which is assumed to be between 0 and 1.
+        spacing_x, spacing_y = self.node_spacing
+
         def heuristic(a: tuple[float, float], b: tuple[float, float]) -> float:
-            dx = abs(a[0] - b[0]) / self.pixel_width
-            dy = abs(a[1] - b[1]) / self.pixel_height
+            dx = abs(a[0] - b[0]) / spacing_x
+            dy = abs(a[1] - b[1]) / spacing_y
             return (dx + dy) * min_cost
+
+        from networkx import astar_path
 
         # Search path from approximate start and goal positions
         path = astar_path(
@@ -172,7 +200,7 @@ class RasterBand(ABC):
         return array(path)
 
     @staticmethod
-    def stack_graphs(graphs: dict[tuple[Any], Graph], vertical_weight: float = 0.0) -> Graph:
+    def stack_graphs(graphs: dict[tuple[Any], DiGraph], vertical_weight: float = 0.0) -> DiGraph:
         """Create a new graph containing the data of the old ones with 'vertical' connections.
 
         Args:
@@ -184,32 +212,32 @@ class RasterBand(ABC):
                 For simplicity, this is currently assumed to be the same for all graphs.
         """
 
-        stacked_graph = Graph()
+        from networkx import DiGraph
+
+        stacked_graph = DiGraph()
 
         previous_label = None  # Not a tuple, so discernable from (None,)
 
         for label, graph in graphs.items():
             # Add nodes
-            for node in graph.nodes:
-                stacked_graph.add_node((node[0], node[1], *label))
+            stacked_graph.add_nodes_from((node[0], node[1], *label) for node in graph.nodes)
 
-            # Add normal edges
-            for edge in graph.edges:
-                stacked_graph.add_edge(
-                    (edge[0][0], edge[0][1], *label),
-                    (edge[1][0], edge[1][1], *label),
-                    # copy all edge attributes
-                    **graph[edge[0]][edge[1]],
-                )
+            # Add normal edges, keeping their direction and copying all edge attributes
+            stacked_graph.add_edges_from(
+                ((u[0], u[1], *label), (v[0], v[1], *label), attributes)
+                for u, v, attributes in graph.edges(data=True)
+            )
 
             if previous_label is not None:
-                # Add vertical edges
-                for node in graph.nodes:
-                    n0 = (node[0], node[1], *label)
-                    n1 = (node[0], node[1], *previous_label)
-                    # Add forward and reverse edges between the two graphs
-                    stacked_graph.add_edge(n0, n1, weight=vertical_weight)
-                    stacked_graph.add_edge(n1, n0, weight=vertical_weight)
+                # Add vertical edges, forward and reverse between the two graphs
+                def vertical_edges():
+                    for node in graph.nodes:
+                        n0 = (node[0], node[1], *label)
+                        n1 = (node[0], node[1], *previous_label)
+                        yield n0, n1, {"weight": vertical_weight}
+                        yield n1, n0, {"weight": vertical_weight}
+
+                stacked_graph.add_edges_from(vertical_edges())
 
             previous_label = label
 
@@ -249,6 +277,19 @@ class CartesianRasterBand(RasterBand, CartesianCollection):
             (raster_coordinates, zeros((n_points, n_meta + number_of_values))), axis=1
         )
         self.data = DataFrame(raster_entries, columns=self.data.columns)
+
+    @property
+    def node_spacing(self) -> tuple[float, float]:
+        """The distance between neighboring raster coordinates along x and y in meters.
+
+        The coordinates span the whole width and height including the borders,
+        so neighbors are slightly further apart than the pixel size.
+        """
+
+        return (
+            self.width / max(self.resolution[0] - 1, 1),
+            self.height / max(self.resolution[1] - 1, 1),
+        )
 
     @property
     def _x_coordinates(self) -> ndarray:

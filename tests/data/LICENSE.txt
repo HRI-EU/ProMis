@@ -1,0 +1,14 @@
+# Data Licensing and Attribution
+
+This directory contains sample datasets used by the tests.
+These datasets are sourced from third parties and are subject to their respective licenses.
+
+## 1. AIS Vessel Tracking Data
+* **File(s):** `AIS_*.pkl`
+* **Source:** [NOAA Office for Coastal Management](https://coast.noaa.gov/htdata/CMSP/AISDataHandler/2024/index.html)
+* **License:** Public Domain / U.S. Government Work
+* **Attribution:** Data provided by NOAA (National Oceanic and Atmospheric Administration).
+
+## Disclaimers
+* **No Warranty:** This data is provided "as-is" without warranty of any kind.
+* **Not for Navigation:** The AIS data provided here is for example and visualization purposes only. They are NOT intended for navigation or safety-of-life applications.

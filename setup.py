@@ -30,14 +30,20 @@ setuptools.setup(
     description="A Python package to apply probabilistic logic programming to navigation tasks.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="",
-    packages=setuptools.find_packages(),
+    url="https://github.com/HRI-EU/ProMis",
+    project_urls={
+        "Documentation": "https://hri-eu.github.io/ProMis",
+        "Source": "https://github.com/HRI-EU/ProMis",
+        "Issues": "https://github.com/HRI-EU/ProMis/issues",
+    },
+    license="BSD-3-Clause",
+    license_files=["LICENSE.md"],
+    packages=setuptools.find_packages(exclude=["tests", "tests.*"]),
     package_data={
         "promis": ["py.typed", "loaders/data/*.json"],  # https://www.python.org/dev/peps/pep-0561/
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.10",
@@ -58,12 +64,14 @@ setuptools.setup(
         "shapely",
         "overpy",
         "osmium",
+        "overturemaps>=1.0.2",  # record_batch_reader with STAC file selection
+        "pyarrow",
         "geojson_pydantic",
         # probabilistic modelling
         "torch",
         "gpytorch",
         # reactive probabilistic inference
-        "pyresin",
+        "pyresin>=0.2.0",
         # plotting and visualization
         "fastapi[standard]",
         "graphviz",
@@ -94,6 +102,7 @@ setuptools.setup(
             "ruff",
             # dynamic code analysis
             "pytest",
+            "pytest-cov",
         ],
     },
     entry_points={

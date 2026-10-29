@@ -17,8 +17,8 @@ from pickle import dump, load
 from typing import Any
 
 # Third Party
-import smopy
-from matplotlib import pyplot as plt
+# Plotting (matplotlib, smopy), clustering (sklearn) and Gaussian processes (torch) are optional
+# and slow to load, so they are imported where they are used
 from numpy import (
     argsort,
     array,
@@ -40,12 +40,9 @@ from scipy.interpolate import CloughTocher2DInterpolator, LinearNDInterpolator, 
 from scipy.spatial import distance_matrix
 from scipy.stats import entropy as shannon_entropy
 from scipy.stats.qmc import LatinHypercube, scale
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.neighbors import NearestNeighbors
 
 # ProMis
 from promis.geo.location import CartesianLocation, PolarLocation
-from promis.models import GaussianProcess
 
 
 @lru_cache(maxsize=None)
@@ -294,6 +291,8 @@ class Collection(ABC):
             The basemap image.
         """
 
+        import smopy
+
         # Would cause circular import if done at module scope
         from promis.loaders import OsmLoader
 
@@ -369,7 +368,11 @@ class Collection(ABC):
                 Supported methods are "entropy" and "gaussian_process".
         """
 
+        from sklearn.neighbors import NearestNeighbors
+
         if acquisition_method == "gaussian_process":
+            from promis.models import GaussianProcess
+
             gp = GaussianProcess()
             gp.fit(self.coordinates(), self.values()[:, value_index, None], 50)
 
@@ -425,6 +428,8 @@ class Collection(ABC):
             The local entropy for each point.
         """
 
+        from sklearn.neighbors import NearestNeighbors
+
         coordinates = self.coordinates()
         values = self.values()[:, value_index]
 
@@ -453,6 +458,8 @@ class Collection(ABC):
             zoom: The zoom level of the OSM basemap, default 16.
             **kwargs: Args passed to the matplotlib scatter function.
         """
+
+        from matplotlib import pyplot as plt
 
         # Either render with given axis or default context
         if ax is None:
@@ -659,6 +666,8 @@ class CartesianCollection(Collection):
             case "hybrid":
                 return HybridInterpolator(self.coordinates(), self.values())
             case "gaussian_process":
+                from promis.models import GaussianProcess
+
                 gp = GaussianProcess()
                 gp.fit(self.coordinates(), self.values())
 
@@ -683,6 +692,8 @@ class CartesianCollection(Collection):
         Args:
             threshold: The maximum distance between points to be considered in the same cluster.
         """
+
+        from sklearn.cluster import AgglomerativeClustering
 
         coordinates = self.coordinates()
         clusters = AgglomerativeClustering(n_clusters=None, distance_threshold=threshold).fit(coordinates)

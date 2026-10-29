@@ -15,6 +15,33 @@ import FileUploadIcon from "@mui/icons-material/FileUploadOutlined";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
+import Hint from "../Hint";
+
+// cheat sheet for the Resin syntax of the rules, shown as a hint
+const RULES_HELP = (
+  <span style={{ fontSize: 12, lineHeight: 1.6 }}>
+    <b>Sources</b> bring relations of map features into the rules:
+    <br />
+    <code>
+      distance(primary) &lt;- source(&quot;/star_map/distance/primary&quot;,
+      Density).
+    </code>
+    <br />
+    <code>
+      over(park) &lt;- source(&quot;/star_map/over/park&quot;, Probability).
+    </code>
+    <br />
+    <b>Rules</b> combine them with <code>if</code>, <code>and</code>,{" "}
+    <code>not</code> and comparisons:
+    <br />
+    <code>permits if distance(primary) &lt; 15.0.</code>
+    <br />
+    <b>Target</b>: the landscape is computed from one atom:
+    <br />
+    <code>permits -&gt; target(&quot;/landscape&quot;).</code>
+  </span>
+);
+
 /*
   SourceCodeInterface Component
   - Display the source code editor using Petrel
@@ -22,8 +49,12 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
   - Allow expanding/collapsing the editor view
   - Allow syntax highlighting for Prolog code
  */
-export default function SourceCodeInterface({ highlightSourceElement }) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+export default function SourceCodeInterface({ showErrors }) {
+  const [isExpanded, setIsExpanded] = React.useState(true);
+  // whether the editor is empty, to outline it when a run is started without rules
+  const [isEmpty, setIsEmpty] = React.useState(
+    C().sourceMan.getSource().trim() === "",
+  );
   const hiddenFileInput = React.useRef(null);
   let codeEditor = null;
   let isInit = false;
@@ -69,9 +100,20 @@ export default function SourceCodeInterface({ highlightSourceElement }) {
       const codeEditor = C().getCodeEditor();
       if (codeEditor != null) {
         codeEditor.setValue(source);
+        updateEmpty();
       }
     };
     fileReader.readAsText(file);
+  }
+
+  // track whether the editor is empty, and refresh the bottom bar when this changes
+  function updateEmpty() {
+    const codeEditor = C().getCodeEditor();
+    const empty = codeEditor !== null && codeEditor.getValue().trim() === "";
+    if (empty !== isEmpty) {
+      setIsEmpty(empty);
+      C().updateBottomBar();
+    }
   }
 
   function reSize() {
@@ -134,11 +176,17 @@ export default function SourceCodeInterface({ highlightSourceElement }) {
             marginLeft: "8px",
           }}
         />
+        <Hint
+          title={RULES_HELP}
+          sx={{ color: "#ffffff", marginLeft: "12px" }}
+        />
       </Grid>
       {/* Source Code Editor */}
       <div
         id="editorWrapper"
-        className={highlightSourceElement ? "errorSignal" : ""}
+        className={showErrors && isEmpty ? "errorOutline" : ""}
+        onInput={updateEmpty}
+        onKeyUp={updateEmpty}
         style={{
           border: "1px solid #282C34",
           marginLeft: "32px",
@@ -164,5 +212,5 @@ export default function SourceCodeInterface({ highlightSourceElement }) {
 }
 
 SourceCodeInterface.propTypes = {
-  highlightSourceElement: PropTypes.bool.isRequired,
+  showErrors: PropTypes.bool.isRequired,
 };

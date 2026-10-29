@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/logo.png" width=512/>
+  <img src="https://raw.githubusercontent.com/HRI-EU/ProMis/main/images/logo.png" width=512/>
 </p>
 
 # Probabilistic Mission Design
@@ -18,7 +18,7 @@ The rules are written in [Resin](https://github.com/simon-kohaut/resin), a react
 Using ProMis, scalar fields of the probability of adhering to the agent's constitution are obtained across its state space.
 
 <p align="center">
-  <img src="https://github.com/HRI-EU/ProMis/blob/main/images/landscapes.png"/>
+  <img src="https://raw.githubusercontent.com/HRI-EU/ProMis/main/images/landscapes.png"/>
 </p>
 
 Building on these landscapes, we further provide [CoFi](https://github.com/simon-kohaut/CoFi), which tracks agents that are expected to follow their constitution, and [CoCo](https://github.com/simon-kohaut/CoCo), steering agents to comply with it.

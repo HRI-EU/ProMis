@@ -13,6 +13,7 @@ import logging
 import re
 from pathlib import Path
 from time import sleep
+from urllib.request import Request
 
 # Third Party
 import osmium
@@ -47,6 +48,12 @@ class OsmLoader(SpatialLoader):
         timeout: The number of seconds to wait before retrying a failed API query.
     """
 
+    #: The Overpass API endpoint to query
+    OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+
+    #: The user agent identifying ProMis to the Overpass API
+    USER_AGENT = "ProMis (https://github.com/HRI-EU/ProMis)"
+
     def __init__(
         self,
         origin: PolarLocation,
@@ -54,8 +61,8 @@ class OsmLoader(SpatialLoader):
         feature_description: dict[str, str | list[str]] | None = None,
         timeout: float = 5.0
     ):
-        # Initialize Overpass API
-        self.overpass_api = Overpass()
+        # Initialize Overpass API, which rejects generic user agents such as urllib's with HTTP 406
+        self.overpass_api = Overpass(url=Request(self.OVERPASS_URL, headers={"User-Agent": self.USER_AGENT}))
         self.timeout = timeout
         super().__init__(origin, dimensions)
 
@@ -446,7 +453,8 @@ class LocalOsmLoader(SpatialLoader):
                 self._load_ways(osm_filter, location_type)
                 self._load_relations(osm_filter, location_type)
 
-    def _matches_filter(self, tags: dict[str, str], osm_filter: str) -> bool:
+    @classmethod
+    def _matches_filter(cls, tags: dict[str, str], osm_filter: str) -> bool:
         """Check whether a tag dict satisfies an Overpass-style filter string.
 
         Supports ``[key]``, ``[!key]``, ``[key=val]``, ``[key!=val]``,
@@ -460,7 +468,7 @@ class LocalOsmLoader(SpatialLoader):
         Returns:
             ``True`` if all conditions in the filter are satisfied.
         """
-        for m in self._CONDITION_PATTERN.finditer(osm_filter):
+        for m in cls._CONDITION_PATTERN.finditer(osm_filter):
             negate, key, op, value = m.groups()
             value = value or ""
 

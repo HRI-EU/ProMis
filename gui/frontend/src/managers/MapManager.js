@@ -776,6 +776,9 @@ class MapManager {
     this.importMarkers(this._filterUnique(dynamicLayers.markers));
     this.importPolylines(this._filterUnique(dynamicLayers.polylines));
     this.importPolygons(this._filterUnique(dynamicLayers.polygons));
+
+    // update the origin choices of the bottom bar with the imported markers
+    C().updateBottomBar();
   }
 
   // import a single external entity (marker, polyline or polygon) from backend updates

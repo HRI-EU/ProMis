@@ -15,7 +15,7 @@ import pandas as pd
 from promis.geo import CartesianLocation, PolarLocation
 from promis.loaders import AisLoader
 
-DATA = Path(__file__).parent.parent / "examples" / "data" / "AIS_2024_02_24.pkl"
+DATA = Path(__file__).parent / "data" / "AIS_2024_02_24.pkl"
 NEW_YORK_HARBOR = PolarLocation(latitude=40.61, longitude=-73.965)
 
 

@@ -7,18 +7,23 @@
 #
 
 # Standard Library
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 from warnings import warn
 
 # Third Party
-import matplotlib.pyplot as plt
-from matplotlib.colors import CenteredNorm
 from shapely import points, STRtree
 
 # ProMis
 from promis.geo import CartesianGeometry, CartesianRasterBand
 from promis.geo.collection import CartesianCollection
 from promis.logic.spatial.relation import ScalarRelation
+
+if TYPE_CHECKING:
+    # Plotting is optional and matplotlib is slow to load, so it is imported where it is used
+    from matplotlib.axes import Axes
 
 DEFAULT_UNIFORM_VARIANCE = 0.25
 
@@ -78,7 +83,7 @@ class Depth(ScalarRelation):
     def plot(
         self,
         value_index: int = 0,
-        axis: plt.Axes | None = None,
+        axis: Axes | None = None,
         grid_shape: tuple[int, int] | None = None,
         **kwargs,
     ):
@@ -105,11 +110,15 @@ class Depth(ScalarRelation):
                 is not provided.
         """
 
+        import matplotlib.pyplot as plt
+        from matplotlib.colors import CenteredNorm
+
         if axis is None:
             _, axis = plt.subplots()
 
         if isinstance(self.parameters, CartesianRasterBand):
-            shape = (self.parameters.height, self.parameters.width)
+            # Rows are the y coordinates and columns the x coordinates, see CartesianRasterBand
+            shape = (self.parameters.resolution[1], self.parameters.resolution[0])
         elif grid_shape is not None:
             shape = grid_shape
         else:

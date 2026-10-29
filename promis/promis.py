@@ -54,12 +54,12 @@ class ProMis:
         self.logic = logic
         self.dimension = dimension
 
-        # Parse and validate the target declaration
-        target_match = re.search(r'landscape\s*->\s*target\(\"/landscape\"\)\.', logic)
+        # Parse and validate the target declaration, any atom may be routed to the landscape channel
+        target_match = re.search(r'->\s*target\(\s*\"/landscape\"\s*\)\s*\.', logic)
         if target_match is None:
             raise ValueError(
                 "No target declaration found in Resin program. "
-                "Define the landscape clause and declar: landscape -> target(\"/landscape\")."
+                "Declare the atom to compute the landscape from, e.g.: landscape -> target(\"/landscape\")."
             )
         self._target_name = "/landscape"
 
